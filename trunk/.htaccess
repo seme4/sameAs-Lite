@@ -1,0 +1,27 @@
+RewriteEngine On
+
+RewriteRule ^index\.php$ - [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule . index.php [QSA,L]
+
+ServerSignature Off
+Options -Indexes
+
+<Files config.ttl>
+  Order deny,allow
+  AuthType Basic
+  AuthName "Authentication Required"
+  AuthUserFile auth.htpasswd
+  Require valid-user
+</Files>
+
+<Files .htaccess>
+  Order Allow,Deny
+  Deny from all
+</Files>
+
+<Files auth.htpasswd>
+  Order Allow,Deny
+  Deny from all
+</Files>

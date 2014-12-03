@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<ruleset name="Seme4">
+
+ <description>PSR-1, PSR-2, and (most of) the PEAR DocBlock standards</description>
+
+ <!-- exclude paths we don't want to check -->
+ <exclude-pattern>assets/*</exclude-pattern>
+ <exclude-pattern>docs/*</exclude-pattern>
+ <exclude-pattern>dev-tools/*</exclude-pattern>
+ <exclude-pattern>vendor/*</exclude-pattern>
+
+ <!-- import PSR1 and PSR2 -->
+ <rule ref="PSR1">
+   <exclude name="PSR1.Files.SideEffects"/>
+ </rule>
+ <rule ref="PSR2"/>
+
+ <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+
+ <!-- include most of the Squiz DocBlock rules, but ignore some tags (severity=0) -->
+ <rule ref="PEAR.Commenting.InlineComment"/>
+ <rule ref="Squiz.Commenting.FileComment"/>
+ <rule ref="Squiz.Commenting.FunctionComment"/>
+ <rule ref="Squiz.Commenting.ClassComment"/>
+ <rule ref="Squiz.Commenting.FileComment.SpacingAfterOpen"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FileComment.IncorrectAuthor"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FileComment.IncorrectCopyright"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FileComment.MissingSubpackageTag"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FileComment.ShortFullStop"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FunctionComment.ShortFullStop"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FunctionComment.ParamCommentFullStop"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FunctionComment.MissingReturn"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FunctionComment.ShortSingleLine"><severity>0</severity></rule>
+ <rule ref="Squiz.Commenting.FunctionComment.TypeHintMissing"><severity>0</severity></rule>
+
+ <!-- error on fixme, warning on todo -->
+ <rule ref="Generic.Commenting.Fixme"/>
+ <rule ref="Generic.Commenting.Todo"/>
+ <rule ref="Generic.Commenting.Todo.CommentFound"><severity>3</severity></rule>
+
+ <!-- custom sniffers -->
+ <rule ref="CodeStandard.Commenting.FunctionComment"/>
+
+</ruleset>
