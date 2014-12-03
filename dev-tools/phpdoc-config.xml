@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdoc>
+  <title>SameAs Lite</title>
+  <parser>
+    <target>phpdoc-tmp/</target>
+    <markers>
+      <item>TODO</item>
+      <item>FIXME</item>
+      <item>XXX</item>
+    </markers>
+  </parser>
+  <transformer>
+    <target>../docs/</target>
+  </transformer>
+  <transformations>
+    <template name="clean" />
+  </transformations>
+  <files>
+    <file>../index.php</file>
+    <directory>../src/</directory>
+    <directory>../vendor/slim/slim/Slim/</directory>
+  </files>
+</phpdoc>

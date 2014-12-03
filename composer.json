@@ -1,0 +1,42 @@
+{
+    "name": "seme4/sameas-lite",
+    "version": "0.0.1",
+    "description": "SameAs Lite is a framework for storing and managing SameAs relationships between Linked Data and Semantic Web resources",
+    "type": "library",
+    "keywords": [ "sameAs", "Linked Data", "RDF", "Semantic Web" ],
+    "license": "MIT Public License",
+    "authors": [
+        {
+            "name": "Seme4 Ltd",
+            "email": "sameAs@sseme4.com",
+            "homepage": "http://www.seme4.com/",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "forum": "http://groups.google.com/group/easyrdf/",
+        "issues": "http://github.com/njh/easyrdf/issues",
+        "irc": "irc://chat.freenode.net/easyrdf"
+    },
+    "require": {
+        "php": ">=5.3.0",
+        "ext-mbstring": "*",
+        "ext-pcre": "*",
+        "ext-pdo": "*",
+        "slim/slim": "*"
+    },
+    "require-dev": {
+        "ext-xsl": "*",
+        "phpdocumentor/phpdocumentor": "*",
+        "squizlabs/php_codesniffer": "*",
+        "fabpot/php-cs-fixer": "*",
+        "phploc/phploc": "*",
+	"phpunit/PHPUnit": "*",
+        "behat/behat": "*"
+    },
+
+    "autoload": {
+        "psr-4": {"SameAsLite\\": "src/"}
+    }
+}
+
