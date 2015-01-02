@@ -1,44 +1,58 @@
 <?xml version="1.0"?>
 <ruleset name="Seme4">
 
- <description>PSR-1, PSR-2, and (most of) the PEAR DocBlock standards</description>
+  <description>PSR-1, PSR-2, and (most of) the Squiz commenting/DocBlock standards</description>
 
- <!-- exclude paths we don't want to check -->
- <exclude-pattern>assets/*</exclude-pattern>
- <exclude-pattern>docs/*</exclude-pattern>
- <exclude-pattern>dev-tools/*</exclude-pattern>
- <exclude-pattern>vendor/*</exclude-pattern>
+  <!-- exclude paths we don't want to check -->
+  <exclude-pattern>assets/*</exclude-pattern>
+  <exclude-pattern>docs/*</exclude-pattern>
+  <exclude-pattern>dev-tools/*</exclude-pattern>
+  <exclude-pattern>vendor/*</exclude-pattern>
 
- <!-- import PSR1 and PSR2 -->
- <rule ref="PSR1">
-   <exclude name="PSR1.Files.SideEffects"/>
- </rule>
- <rule ref="PSR2"/>
+  <!-- import PSR1 and PSR2 -->
+  <rule ref="PSR1"/>
+  <rule ref="PSR2"/>
 
- <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+  <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
 
- <!-- include most of the Squiz DocBlock rules, but ignore some tags (severity=0) -->
- <rule ref="PEAR.Commenting.InlineComment"/>
- <rule ref="Squiz.Commenting.FileComment"/>
- <rule ref="Squiz.Commenting.FunctionComment"/>
- <rule ref="Squiz.Commenting.ClassComment"/>
- <rule ref="Squiz.Commenting.FileComment.SpacingAfterOpen"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FileComment.IncorrectAuthor"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FileComment.IncorrectCopyright"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FileComment.MissingSubpackageTag"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FileComment.ShortFullStop"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FunctionComment.ShortFullStop"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FunctionComment.ParamCommentFullStop"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FunctionComment.MissingReturn"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FunctionComment.ShortSingleLine"><severity>0</severity></rule>
- <rule ref="Squiz.Commenting.FunctionComment.TypeHintMissing"><severity>0</severity></rule>
+  <!-- include most of the Squiz commenting rules -->
+  <rule ref="Squiz.Commenting">
+    <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+    <exclude name="Squiz.Commenting.InlineComment.NotCapital"/>
+    <exclude name="Squiz.Commenting.InlineComment.SpacingAfter"/>
 
- <!-- error on fixme, warning on todo -->
- <rule ref="Generic.Commenting.Fixme"/>
- <rule ref="Generic.Commenting.Todo"/>
- <rule ref="Generic.Commenting.Todo.CommentFound"><severity>3</severity></rule>
+    <exclude name="Squiz.Commenting.ClosingDeclarationComment.Missing"/>
+    <exclude name="Squiz.Commenting.LongConditionClosingComment.Missing"/>
+    <exclude name="Squiz.Commenting.LongConditionClosingComment.SpacingBefore"/>
 
- <!-- custom sniffers -->
- <rule ref="CodeStandard.Commenting.FunctionComment"/>
+    <exclude name="Squiz.Commenting.FunctionComment.ParamCommentFullStop"/>
+    <exclude name="Squiz.Commenting.FunctionComment.MissingReturn"/>
+    <exclude name="Squiz.Commenting.FunctionComment.MissingReturnType"/>
+    <exclude name="Squiz.Commenting.FunctionComment.ThrowsNoFullStop"/>
+    <exclude name="Squiz.Commenting.FunctionComment.ThrowsNotCapital" />
+
+    <exclude name="Squiz.Commenting.FileComment.SpacingAfterOpen"/>
+    <exclude name="Squiz.Commenting.FileComment.IncorrectAuthor"/>
+    <exclude name="Squiz.Commenting.FileComment.IncorrectCopyright"/>
+    <exclude name="Squiz.Commenting.FileComment.@authorTagOrder"/>
+    <exclude name="Squiz.Commenting.FileComment.@copyrightTagOrder"/>
+    <exclude name="Squiz.Commenting.FileComment.@subpackageTagOrder"/>
+    <exclude name="Squiz.Commenting.FileComment.Missing@subpackageTag"/>
+
+    <exclude name="Squiz.Commenting.PostStatementComment.Found"/>
+
+    <exclude name="CodeStandard.Commenting.FunctionComment.ParamCommentFullStop" />
+    <exclude name="CodeStandard.Commenting.FunctionComment.ThrowsNoFullStop"/>
+    <exclude name="CodeStandard.Commenting.FunctionComment.ThrowsNotCapital" />
+
+  </rule>
+
+  <!-- error on fixme, warning on todo -->
+  <rule ref="Generic.Commenting.Fixme"/>
+  <rule ref="Generic.Commenting.Todo"/>
+  <rule ref="Generic.Commenting.Todo.CommentFound"><severity>3</severity></rule>
+
+  <!-- custom sniffs -->
+  <rule ref="CodeStandard.Commenting.FunctionComment"/>
 
 </ruleset>

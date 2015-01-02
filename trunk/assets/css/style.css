@@ -1,0 +1,77 @@
+/**
+ * CSS for SameAs Lite Web application
+ * Extensions/tweaks to Bootstrap 3.3.1
+ */
+
+/**
+  color scheme
+
+  #34495e "wet asphalt" nav bar background
+  #3498db "peter river" header background
+  #2ecc71 "emerald"     green
+*/
+
+/* fonts */
+@import url(http://fonts.googleapis.com/css?family=Raleway:400,700,900|Lato:400,700);
+
+/* basic layout and typography */
+html { position: relative; min-height: 100%; }
+body { margin-bottom: 100px; font-family: 'Lato', sans-serif; background: #eee; } /* margin-bottom = footer height */
+h1, h2, h3 { font-family: 'Raleway', sans-serif; }
+body.error h4 { margin-top: 40px; }
+pre.white { background: transparent; border: 0; padding: 0; margin: 20px 0; }
+.centered { text-align: center; }
+.right { text-align: right; }
+
+/* nav bar */
+.navbar { min-height: 70px; padding-top: 10px; margin-bottom: 0px; }
+.navbar-brand { font-family: 'Raleway', sans-serif; font-weight: 900; color: white }
+.navbar-header .navbar-brand { color: white; }
+.navbar-header .navbar-brand:hover { color: #3498db; }
+.navbar-brand sup { font-weight: normal; font-size: 12px; top: -0.9em; }
+
+.navbar-default { background-color: #384452; border-color: transparent; }
+.navbar-default .navbar-nav > li > a { color: white; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+.navbar-default .navbar-nav > li > a:hover { color: #3498db; }
+
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus
+  { color: #3498db; background-color: transparent; }
+
+.navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav > .open > a:hover,
+.navbar-default .navbar-nav > .open > a:focus
+  { color: #3498db; background-color: transparent; }
+
+.dropdown-menu { background: #384452; }
+.dropdown-menu > li > a { color: white; font-weight: 700; font-size: 12px; }
+
+/* header */
+header { background: #3498db; padding: 80px 0 20px 0; color: white; }
+header h1 + p { margin: -10px 0 5px 0; }
+header p a { color: white; padding: 0 5px; }
+header p a:first-child { padding-left: 0; }
+header p a:hover { color: #34495e; text-decoration: none; }
+
+/* footer */
+footer { position: absolute; bottom: 0; width: 100%; height: 100px; padding: 40px 0; background: #222; color: #aaa; }
+footer p { margin: 0; }
+footer a:hover { color: #45a9ec; }
+
+/* main content */
+main#content { padding-bottom: 40px; }
+main > div.container { margin: 40px auto; padding: 40px; background: white; }
+main > div.container > h2 { margin-top: 0; }
+main > div.container > h2 + h3 { margin: -5px 0 20px 0; font-size: 18px }
+main > div.container > *:last-child { margin-bottom: 0; }
+
+div.alt-formats { float: right; text-align: right; }
+div.alt-formats a { background: #aaa; }
+div.alt-formats a:hover { background: #3498db; }
+
+/* API pages */
+.panel-api .panel-heading { cursor: pointer; }
+.panel-api .panel-heading .method { min-width: 50px; float: left; margin-right: 20px; }
+.panel-api .panel-heading b span { color: #c0392b; padding: 0 2px; }
+ul li span.label { position: absolute; margin: 2px 0 0 10px; }

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>SameAs Lite{{titleHTML}}</title>
+
+    <!-- stylesheets -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <link href="{{path}}/assets/css/style.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="http://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="http://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="{{path}}/">SameAs <sup>LITE</sup></a>
+        </div>
+        <div class="navbar-collapse collapse navbar-right">
+          <ul class="nav navbar-nav">
+            {% block menu %}
+            <li><a href="{{path}}/about">About</a></li>
+            <li><a href="{{path}}/api">API</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Datasets <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="{{path}}/datasets/one">Dataset 1</a></li>
+                <li><a href="{{path}}/datasets/two">Dataset 2</a></li>
+                <li><a href="{{path}}/datasets/three">Dataset 3</a></li>
+              </ul>
+            </li>
+            <li><a href="{{path}}/contact">Contact</a></li>
+          </ul>
+          {% endblock %}
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <header>
+      <div class="container">
+        <h1>{{titleHeader}}</h1>
+        {{summaryHeader}}
+      </div>
+    </header>
+
+    <main id="content">
+      <div class="container">
+
+{{body}}
+
+      </div>
+    </main><! --/content -->
+
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-8">
+            <p>{{footerText}}</p>
+          </div>
+          <div class="col-lg-4">
+            <p class="text-right">Powered by <a href="http://seme4.com/">SameAs Lite</a></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+    <!--script src="assets/js/retina-1.1.0.js"></script>
+    <script src="assets/js/jquery.hoverdir.js"></script>
+    <script src="assets/js/jquery.hoverex.min.js"></script>
+    <script src="assets/js/jquery.prettyPhoto.js"></script>
+    <script src="assets/js/jquery.isotope.min.js"></script>
+    <script src="assets/js/custom.js"></script-->
+
+  </body>
+</html>
