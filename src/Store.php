@@ -35,107 +35,144 @@
 
 namespace SameAsLite;
 
-ini_set('max_execution_time', 1800);
-
 /**
  * Provides storage and management of SameAs relationships.
  */
 class Store
 {
-    const DBNAMEDEFAULT = "sameaslitedb";
+
     const CANON = 1;
     const NOTCANON = 0;
 
-    // PDO needs different treatment for different DBs
-    // sqlite|mysql currently supported
-    //private $dbType = 'mysql'; // TODO mySql is not tested or complete, but does work
-    private $dbType = 'sqlite';
-
-    /**
-     * @var string $dbName The DB name - for SQLite, this is the path and
-     * name of the file to keep the database in for SQLite. Default defined in
-     * the class file. The sqlite extension is added by the code.
-     */
-    protected $dbName;
+    /** @var string $dbType Indicates the type of database, ie sqlite|mysql */
+    private $dbType = null;
 
     /** @var \PDO $dbHandle The PDO object for the DB, once opened */
     protected $dbHandle;
 
-    /** @var string $store The name of the store */
-    protected $storeName;
+    /** @var string $dsn The PDO dataset connection strin */
+    private $dsn = null;
+
+    /** @var string|null $dbUser Database usename */
+    private $dbUser = null;
+
+    /** @var string|null $dbPass Database password */
+    private $dbPass = null;
 
     /**
-     * This is the constructor for a sameAsLite store
-     *
-     * Create a sameAs service
-     *    And the table to put it in:
-     *        symbol - the symbol - hopefully a URI
-     *        Bundle - the bundle identifier for the symbol
-     *        Flags - Information, such as Canon - at the moment
-     *                Canon=self::CANON, self::NOTCANON otherwise
-     *
-     * TODO: remove dependencies on SQLite. DB should be configured via a PDO
-     * connection string, and/or via helper methods eg connectMySQL(...) or
-     * connectSQLite(...)
-     *
-     * @param string $storeName The string for the name of the store
-     * @param string $dbName    The DB name
-     *
-     * @throws \InvalidArgumentException If the database cannot be accessed, an
-     * Exception is thrown.
+     * @var string|null $dbName Optional database name, used where the PDO
+     * connection is to a system eg MySQL which supports multiple databases
      */
-    public function __construct($storeName, $dbName = null)
+    protected $dbName = null;
+
+    /**
+     * This is the constructor for a SameAs Lite store, validates and saves
+     * settings. Once a Store object is created, call the connect() function to
+     * establish connection to the underlying database.
+     *
+     * @param string $dsn    The PDO database connection string
+     * @param string $name   Name of this store (used to define database tables)
+     * @param string $user   Optional database username
+     * @param string $pass   Optional database password
+     * @param string $dbName Optional database name
+     *
+     * @throws \InvalidArgumentException If any parameters are deemed invalid
+     */
+    public function __construct($dsn, $name, $user = null, $pass = null, $dbName = null)
     {
-        // TODO? Ensure ownership, group and perms are right on the DB file, if using SQLite
-        // validate parameters
-        if (!is_string($storeName)) {
-            throw new \InvalidArgumentException('$storeName parameter is expected to be a string');
-        }
-        if ($dbName != null && !is_string($storeName)) {
-            throw new \InvalidArgumentException('$dbName parameter is expected to be a string');
+
+        // get dbase type
+        if (($p = strpos($dsn, ':')) !== false) {
+            $this->dbType = substr($dsn, 0, $p);
+        } else {
+            throw new \InvalidArgumentException('Invalid PDO database connection string.');
         }
 
-        // Determine the database name
-        $this->dbName = (($dbName == null) ? self::DBNAMEDEFAULT : $dbName);
-
-        // Create the DB object and remember it
-        try {
-            switch ($this->dbType) {
-                case 'sqlite':
-                    $this->dbHandle = new \PDO("sqlite:$this->dbName".".sqlite");
-                    break;
-                case 'mysql':
-                    // TODO It seems to need to have the DB already created before I can do anything :-(
-                    // TODO This is probably the sam eproblem that causes the DB list to fail
-                    $this->dbHandle =
-                        new \PDO("mysql:host=localhost;port=3306;dbname=$this->dbName;charset=utf8", "root", "mysql");
-                    break;
-                default: $this->error("Unknown DB type '$this->dbType' requested");
-            }
-        } catch (\PDOException $e) {
+        // ensure dbase type is one we can handle
+        $acceptable = array('mysql', 'sqlite');
+        if (!in_array($this->dbType, $acceptable)) {
             throw new \InvalidArgumentException(
-                'Unable to open database with name "' . $this->dbName . '" ' .
-                $e->getMessage()
+                'Invalid PDO database connection string, only "mysql" and "sqlite" databases are supported.'
             );
         }
 
-        // Remember the store name
-        $this->storeName = $storeName;
+        // ensure we have correct info if mysql
+        if ($this->dbType == 'mysql') {
+            if ($user == null) {
+                throw new \InvalidArgumentException('You must specify the $user parameter for mysql databases.');
+            }
+            if ($pass == null) {
+                throw new \InvalidArgumentException('You must specify the $pass parameter for mysql databases.');
+            }
+            if ($dbName == null) {
+                throw new \InvalidArgumentException('You must specify the $dbName parameter for mysql databases.');
+            }
+        }
+
+        // ensure store name is sensible
+        if (preg_match('/[^a-zA-Z0-9_]/', $name)) {
+            throw new \InvalidArgumentException(
+                'Invalid store name: only characters A-Z, a-z, 0-9 and underscores are permitted.'
+            );
+        }
+
+        // save config
+        $this->dsn = $dsn;
+        $this->storeName = $name;
+        $this->dbUser = $user;
+        $this->dbPass = $pass;
+        $this->dbName = $dbName;
+    }
+
+    /**
+     * Establish connection to database, if not already made
+     * @throws \Exception Exception is thrown if connection fails or table cannot be accessed/created.
+     */
+    public function connect()
+    {
+
+        // skip if we've already connected
+        if ($this->dbHandle != null) {
+            return null;
+        }
+
+        // connect and authenticate to database
+        try {
+                $this->dbHandle = new \PDO($this->dsn, $this->dbUser, $this->dbPass);
+        } catch (\PDOException $e) {
+            throw new \Exception(
+                'Unable to to connect to ' . $this->dbType . ' // ' .
+                $e->getMessage()
+            );
+        }
 
         // For debugging and sanity, make PDO report any problems, not fail silently
         $this->dbHandle->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-        // One table required, with the same name as the store
+        // if mysql, we need to select the appropriate database
+        if ($this->dbType == 'mysql') {
+            try {
+                $this->dbHandle->exec('USE ' . $this->dbName);
+            } catch (\PDOException $e) {
+                throw new \Exception(
+                    'Failed to access database named ' . $this->dbName . ' // ' .
+                    $e->getMessage()
+                );
+            }
+        }
+
+        // try to create table for this store, if it does not exist
         try {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $this->storeName .
-                   ' (Symbol varchar(256) PRIMARY KEY, Bundle integer, Flags integer)';
+                   ' (symbol VARCHAR(256) PRIMARY KEY, bundle INTEGER, flags INTEGER)';
             $this->dbHandle->exec($sql);
         } catch (\PDOException $e) {
-            throw new \InvalidArgumentException(
+            throw new \Exception(
                 'Failed to create Store with name ' . $this->storeName . " query: =$sql=" .
                 $e->getMessage()
             );
         }
+
     }
 
     /**
@@ -162,6 +199,10 @@ class Store
      */
     public function querySymbol($symbol)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             // Do we have it?
             $b = $this->queryGetBundleID($symbol);
@@ -171,18 +212,17 @@ class Store
             } else {
                 // Yes we do have it already
                 $statement = $this->dbHandle->prepare(
-                    "SELECT Symbol, Flags FROM $this->storeName WHERE Bundle = '$b' ORDER BY Flags DESC, Symbol ASC;"
+                    "SELECT symbol, Flags FROM $this->storeName WHERE bundle = '$b' ORDER BY Flags DESC, symbol ASC;"
                 );
                 $statement->execute();
                 $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
                 $output = array();
                 foreach ($result as $row) {
-                    $output[] = $row['Symbol'];
+                    $output[] = $row['symbol'];
                 }
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Query symbol '$s' failed");
+            $this->error("Query symbol '$s' failed", $e);
         }
 
         return $output;
@@ -202,10 +242,14 @@ class Store
      */
     public function search($string)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             // Do we have it at all?
             $statement = $this->dbHandle->prepare(
-                "SELECT Symbol FROM $this->storeName WHERE Symbol LIKE :string ORDER BY Symbol;"
+                "SELECT symbol FROM $this->storeName WHERE symbol LIKE :string ORDER BY symbol;"
             );
             $statement->bindValue(':string', "%$string%", \PDO::PARAM_STR);
             $statement->execute();
@@ -215,8 +259,7 @@ class Store
                 $output[] = $row[0];
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Search for '$string' failed");
+            $this->error("Search for '$string' failed", $e);
         }
 
         return $output;
@@ -247,7 +290,6 @@ class Store
             $bundleID1 = $this->queryGetBundleID($symbol1);
             $bundleID2 = $this->queryGetBundleID($symbol2);
             // $bundleID1 & $bundleID2 now have the bundleIDs, or null if there wasn't one
-
             if ($bundleID1 === null && $bundleID2 === null) {
                 // Both symbols are new - create a new bundle
                 // First we find the maximum Bundle identifer, so we can use the next one up
@@ -276,8 +318,7 @@ class Store
                 }
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Unable to assert pair ($symbol1, $symbol2)");
+            $this->error("Unable to assert pair ($symbol1, $symbol2)", $e);
         }
     }
 
@@ -288,9 +329,9 @@ class Store
      * like after a second TAB, if there is one.
      * Does no checking - simply skips lines that don't have a TAB in them.
      *
-     * @param string[] $data The array of pairs
+     * @param array $data The array of pairs, each being a tab-separated line
      */
-    public function assertPairs($data)
+    public function assertPairs(array $data)
     {
         foreach ($data as $line) {
             $line = trim($line);
@@ -393,20 +434,23 @@ class Store
      */
     public function allCanons()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             $statement = $this->dbHandle->prepare(
-                "SELECT Symbol FROM $this->storeName WHERE " .
-                "Flags=" . self::CANON . " ORDER BY Symbol ASC"
+                "SELECT symbol FROM $this->storeName WHERE " .
+                "Flags=" . self::CANON . " ORDER BY symbol ASC"
             );
             $statement->execute();
             $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
             $output = array();
             foreach ($results as $row) {
-                $output[] = $row['Symbol'];
+                $output[] = $row['symbol'];
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get canons from store");
+            $this->error("Database failure to get canons from store", $e);
         }
 
         return $output;
@@ -417,12 +461,15 @@ class Store
      */
     public function deleteStore()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             $statement = $this->dbHandle->prepare("DROP TABLE $this->storeName;");
             $statement->execute();
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to delete store");
+            $this->error("Database failure to delete store", $e);
         }
     }
 
@@ -431,6 +478,10 @@ class Store
      */
     public function emptyStore()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             if ($this->dbType === 'sqlite') {
                 // SQLite doesn't have TRUNCATE
@@ -440,8 +491,7 @@ class Store
             }
             $statement->execute();
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to empty store");
+            $this->error("Database failure to empty store", $e);
         }
     }
 
@@ -458,10 +508,14 @@ class Store
      */
     public function dumpStore()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             $statement = $this->dbHandle->prepare(
                 "SELECT * FROM $this->storeName " .
-                "ORDER BY Bundle ASC, Flags DESC, Symbol ASC"
+                "ORDER BY bundle ASC, flags DESC, symbol ASC"
             );
             $statement->execute();
             $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
@@ -469,11 +523,10 @@ class Store
             $output = array();
             $output[] = "Bundle\tFlags\tSymbol";
             foreach ($results as $row) {
-                $output[] = "{$row['Bundle']}\t{$row['Flags']}\t{$row['Symbol']}";
+                $output[] = "{$row['bundle']}\t{$row['flags']}\t{$row['symbol']}";
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Unable to dump store");
+            $this->error("Unable to dump store", $e);
         }
         return $output;
     }
@@ -488,20 +541,23 @@ class Store
      */
     public function restoreStore($file)
     {
+        $data = file($file, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
+        if ($data === false) {
+            $this->error("Failed to open file '$file'");
+        }
+
+        // lose the heading line
+        array_shift($data);
+
         try {
-            $data = file($file, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
-            if ($data === false) {
-                $this->error("Failed to open file '$file'");
-            }
-            array_shift($data); // Lose the heading line
+            // assert each row
             foreach ($data as $line) {
                 $line = trim($line);
                 $bits = explode("\t", $line);
                 $this->queryAssertRow($bits[2], $bits[0], $bits[1]);
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Unable to dump store");
+            $this->error("Unable to restore store", $e);
         }
     }
 
@@ -511,12 +567,16 @@ class Store
      * Effectively just lists all the tables - it could try to check to see if
      * they seem to be sameAs or not, but in fact that would always be
      * problematic at the limit.
-     * In fact will simply throw an SQL error if there is no Symbol column.
+     * In fact will simply throw an SQL error if there is no symbol column.
      *
      * @return string[] A header line followed by statistics on each store
      */
     public function listStores()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             if ($this->dbType === 'sqlite') {
                 // SQLite doesn't have SHOW TABLES"
@@ -534,17 +594,16 @@ class Store
             $output[] = "Symbols\tBundles\tStore";
             foreach ($rows as $row) {
                 $store = $row['name'];
-                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT Symbol) FROM $store;");
+                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT symbol) FROM $store;");
                 $statement->execute();
                 $count = $statement->fetch(\PDO::FETCH_NUM);
-                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT Bundle) FROM $store ;");
+                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT bundle) FROM $store ;");
                 $statement->execute();
                 $bundles = $statement->fetch(\PDO::FETCH_NUM);
                 $output[] = "{$count[0]}\t{$bundles[0]}\t$store";
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the store list");
+            $this->error("Database failure to get the store list", $e);
         }
         return $output;
     }
@@ -556,27 +615,30 @@ class Store
      */
     public function statistics()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         $output = array();
         $output[] = "Statistics for sameAs store $this->storeName:";
         try {
-            //  get number of symbols
+            // get number of symbols
             $statement = $this->dbHandle->prepare(
-                "SELECT COUNT(DISTINCT Symbol) FROM $this->storeName ;"
+                "SELECT COUNT(DISTINCT symbol) FROM $this->storeName ;"
             );
             $statement->execute();
             $symbols = $statement->fetch(\PDO::FETCH_NUM);
             $output[] = $symbols[0]."\tsymbols";
 
-            //  get number of bundles
+            // get number of bundles
             $statement = $this->dbHandle->prepare(
-                "SELECT COUNT(DISTINCT Bundle) FROM $this->storeName ;"
+                "SELECT COUNT(DISTINCT bundle) FROM $this->storeName ;"
             );
             $statement->execute();
             $bundles = $statement->fetch(\PDO::FETCH_NUM);
             $output[] = $bundles[0]."\tbundles";
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get statistics for store");
+            $this->error("Database failure to get statistics for store", $e);
         }
         return $output;
     }
@@ -601,13 +663,17 @@ class Store
      */
     public function analyse()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         $output = array();
         $output[] = "Analysis of sameAs store '$this->storeName' in Database '$this->dbName':";
         // Can return from the middle of the store is actually empty
         try {
             // Just get the whole store into an array to work on
             $statement = $this->dbHandle->prepare(
-                "SELECT * FROM $this->storeName ORDER BY Bundle ASC, Flags DESC, Symbol ASC;"
+                "SELECT * FROM $this->storeName ORDER BY bundle ASC, flags DESC, symbol ASC;"
             );
             $statement->execute();
             $store = $statement->fetchAll(\PDO::FETCH_ASSOC);
@@ -616,29 +682,27 @@ class Store
                 return $output;
             };
 
-            $nSymbols = 0;            // Symbols in the store
-            $nBundles = 0;            // Bundles in the store
-            $bundlesAssoc = array();    // An array of bundleID => array of symbols
-            $bundleSizes = array();        // An array of bundleID => bundle size
-            $httpSymbols = array();        // Array of symbols that have http:// at the start
-            $httpsSymbols = array();    // Array of symbols that have https:// at the start
-            $plainSymbols = array();    // Array of symbols that have neither http:// nor https:// at the start
-            $httpDomains = array();        // Array of http domains, with symbol counts in
-            $httpTLDDomains = array();    // Array of http TLD domains, with symbol counts in
-            $http2LDDomains = array();    // Array of http second level+TLD domains, with symbol counts in
-            $httpsDomains = array();    // Array of https domains, with symbol counts in
-            $httpsTLDDomains = array();    // Array of https TLD domains, with symbol counts in
-            $https2LDDomains = array();    // Array of https second level+TLD domains, with symbol counts in
-
+            $nSymbols = 0; // Symbols in the store
+            $nBundles = 0; // Bundles in the store
+            $bundlesAssoc = array(); // An array of bundleID => array of symbols
+            $bundleSizes = array(); // An array of bundleID => bundle size
+            $httpSymbols = array(); // Array of symbols that have http:// at the start
+            $httpsSymbols = array(); // Array of symbols that have https:// at the start
+            $plainSymbols = array(); // Array of symbols that have neither http:// nor https:// at the start
+            $httpDomains = array(); // Array of http domains, with symbol counts in
+            $httpTLDDomains = array(); // Array of http TLD domains, with symbol counts in
+            $http2LDDomains = array(); // Array of http second level+TLD domains, with symbol counts in
+            $httpsDomains = array(); // Array of https domains, with symbol counts in
+            $httpsTLDDomains = array(); // Array of https TLD domains, with symbol counts in
+            $https2LDDomains = array(); // Array of https second level+TLD domains, with symbol counts in
             foreach ($store as $row) {
-                $s = $row['Symbol'];
-                $b = $row['Bundle'];
-                $f = $row['Flags'];
+                $s = $row['symbol'];
+                $b = $row['bundle'];
+                $f = $row['flags'];
                 $nSymbols++;
                 $bundlesAssoc[$b][] = $s;
                 $bundleSizes[$b]++;
-                //  TODO preg_match is slow, use substr if regexp is no required.
-                if (preg_match('%^http://%', $s)) {
+                if (substr($s, 0, 7) == 'http://') {
                     // http:// URI
                     $httpSymbols[] = $s;
                     // Get and record the domain name
@@ -649,7 +713,7 @@ class Store
                     $http2LDDomains[] = $matches2D[0];
                     // Record the TLD itself
                     $httpTLDDomains[] = $matches2D[2];
-                } elseif (preg_match('%^https://%', $s)) {
+                } elseif (substr($s, 0, 8) == 'https://') {
                     // https:// URI
                     $httpsSymbols[] = $s;
                     // Get and record the domain name
@@ -754,14 +818,14 @@ class Store
             $output[] = $minisep;
             $output[] = "Bundles that have canon issues:";
             // Now run through doing sanity checks on bundles
-            $previousBundle = -1;        // Start with an invalid bundle number, so it won't match the first bundle
-            $previousSymbol = "";        // To report soemthing useful
-            $canonCount = 1;        // And pretend that the previous one had a canon
+            $previousBundle = -1; // Start with an invalid bundle number, so it won't match the first bundle
+            $previousSymbol = ""; // To report soemthing useful
+            $canonCount = 1; // And pretend that the previous one had a canon
             foreach ($store as $row) {
                 // $store is sorted by bundle during the original query
-                $s = $row['Symbol'];
-                $b = $row['Bundle'];
-                $f = $row['Flags'];
+                $s = $row['symbol'];
+                $b = $row['bundle'];
+                $f = $row['flags'];
                 if ($b !== $previousBundle) {
                     // Then we have changed to a new bundle
                     // Report any problems with the previous one
@@ -779,14 +843,13 @@ class Store
                 }
                 if ($f == self::CANON) {
                     $canonCount++;
-                } // Use == because $f is a string!
+                } //end if
             }
             $output[] = $sep;
             $output[] = "(You can get all the canons by invoking the appropriate method/service)";
             $output[] = $sep;
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get some analysis data for store");
+            $this->error("Database failure to get some analysis data for store", $e);
         }
 
         return $output;
@@ -802,15 +865,18 @@ class Store
      */
     private function queryGetBundleID($symbol)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
-            $statement = $this->dbHandle->prepare("SELECT Bundle FROM $this->storeName WHERE Symbol = :symbol LIMIT 1");
+            $statement = $this->dbHandle->prepare("SELECT bundle FROM $this->storeName WHERE symbol = :symbol LIMIT 1");
             $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
             $statement->execute();
             $bundles = $statement->fetch(\PDO::FETCH_NUM);
             return $bundles[0];
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the bundleID for '$symbol'");
+            $this->error("Database failure to get the bundleID for '$symbol'", $e);
         }
     }
 
@@ -825,8 +891,12 @@ class Store
      */
     private function queryGetBundleSymbols($bundleID)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
-            $statement = $this->dbHandle->prepare("SELECT Symbol FROM $this->storeName WHERE Bundle = :bundle;");
+            $statement = $this->dbHandle->prepare("SELECT symbol FROM $this->storeName WHERE bundle = :bundle;");
             $statement->bindValue(':bundle', $bundleID, \PDO::PARAM_INT);
             $statement->execute();
             $rs = $statement->fetchAll(\PDO::FETCH_NUM);
@@ -837,8 +907,7 @@ class Store
 
             return $result;
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the bundle symbols for bundle '$bundleID'");
+            $this->error("Database failure to get the bundle symbols for bundle '$bundleID'", $e);
         }
     }
 
@@ -851,15 +920,18 @@ class Store
      */
     private function queryGetMaxBundle()
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
-            $statement = $this->dbHandle->prepare("SELECT MAX(Bundle) FROM $this->storeName;");
+            $statement = $this->dbHandle->prepare("SELECT MAX(bundle) FROM $this->storeName;");
             $statement->execute();
             $r = $statement->fetch(\PDO::FETCH_NUM);
 
             return $r[0];
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the maximum bundle ID");
+            $this->error("Database failure to get the maximum bundle ID", $e);
         }
     }
 
@@ -874,10 +946,14 @@ class Store
      */
     private function queryGetCanon($bundleID)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             $statement = $this->dbHandle->prepare(
-                "SELECT Symbol FROM $this->storeName WHERE " .
-                "Bundle = :bundle AND Flags = " . self::CANON . " LIMIT 1;"
+                "SELECT symbol FROM $this->storeName WHERE " .
+                "bundle = :bundle AND Flags = " . self::CANON . " LIMIT 1;"
             );
             $statement->bindValue(':bundle', $bundleID, \PDO::PARAM_INT);
             $statement->execute();
@@ -885,8 +961,7 @@ class Store
 
             return $r[0];
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the get the canon for bundle '$bundleID'");
+            $this->error("Database failure to get the get the canon for bundle '$bundleID'", $e);
         }
     }
 
@@ -899,13 +974,16 @@ class Store
      */
     private function queryDeleteSymbol($symbol)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
-            $statement = $this->dbHandle->prepare("DELETE FROM $this->storeName WHERE Symbol = :symbol;");
+            $statement = $this->dbHandle->prepare("DELETE FROM $this->storeName WHERE symbol = :symbol;");
             $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
             $statement->execute();
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to delete '$symbol'");
+            $this->error("Database failure to delete '$symbol'", $e);
         }
     }
 
@@ -926,6 +1004,10 @@ class Store
      */
     private function queryAssertRow($symbol, $bundleID, $canonFlag)
     {
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             $statement = $this->dbHandle->prepare("REPLACE INTO $this->storeName VALUES (:symbol, :bundle, :canon)");
             $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
@@ -933,8 +1015,7 @@ class Store
             $statement->bindValue(':canon', $canonFlag, \PDO::PARAM_INT);
             $statement->execute();
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to assert for '$symbol' with bundle='$bundleID' and canon='$canonFlag'");
+            $this->error("Database failure to assert for '$symbol' with bundle='$bundleID' and canon='$canonFlag'", $e);
         }
     }
 
@@ -943,14 +1024,16 @@ class Store
      *
      * Raises and exception with the given message
      *
-     * @param string $message The error message to display
+     * @param string          $message The error message to display
+     * @param \Exception|null $e       The exception which raised the initial error, if any.
      *
      * @throws \Exception A generic exception is thrown, containing useful
      * details and the desired error message.
      */
-    private function error($message)
+    private function error($message, \Exception $e = null)
     {
-        throw new \Exception(get_class() . " (store '$this->storeName'): $message");
+        $additional = ($e == null) ? '' : ' // ' . $e->getMessage();
+        throw new \Exception(get_class() . " (store '{$this->storeName}'): " . $message . $additional);
     }
 }
 

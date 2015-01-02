@@ -1,0 +1,35 @@
+
+      <div class="panel panel-default panel-api">
+        <div class="panel-heading" data-toggle="collapse" data-target="#panel-{{hash}}">
+          <div class="method"><label class="label label-{{method}}">{{method}}</label></div>
+          <b>{{endpoint}}</b><span class="pull-right">{{summary}}</span>
+        </div>
+        <div id="panel-{{hash}}" class="panel-collapse collapse">
+          <div class="panel-body">
+            <form class="form-horizontal" role="form">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Description</label>
+                <div class="col-sm-10">
+                  <p class="form-control-static">{{description}}</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Example invocation</label>
+                <div class="col-sm-10">
+                  <p class="form-control-static"><tt>{{invocation}}</tt></p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Try it now</label>
+                <div class="col-sm-10">
+                  <p class="form-control-static">{{try}}</p>
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+

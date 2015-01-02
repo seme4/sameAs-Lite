@@ -25,8 +25,8 @@ install-dev:
 
 checks:
 	# checking code style
-	-vendor/bin/php-cs-fixer --level=psr2 fix src/
-	-vendor/bin/phpcs --standard=dev-tools/CodeStandard ./
+	-vendor/bin/phpcbf --standard=dev-tools/CodeStandard ./
+	-vendor/bin/phpcs  --standard=dev-tools/CodeStandard ./
 
 tests:
 	# run tests

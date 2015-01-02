@@ -10,8 +10,8 @@
  * @copyright 2014. All rights reserved.
  */
 
-if (class_exists('PHP_CodeSniffer_CommentParser_FunctionCommentParser', true) === false) {
-    $error = 'Class PHP_CodeSniffer_CommentParser_FunctionCommentParser not found';
+if (class_exists('Squiz_Sniffs_Commenting_FunctionCommentSniff', true) === false) {
+    $error = 'Class Squiz_Sniffs_Commenting_FunctionCommentSniff not found';
     throw new PHP_CodeSniffer_Exception($error);
 }
 
@@ -28,10 +28,8 @@ if (class_exists('PHP_CodeSniffer_CommentParser_FunctionCommentParser', true) ==
  * @author    Ian Millard <ian@ianmillard.com>
  * @copyright 2014. All rights reserved.
  */
-class CodeStandard_Sniffs_Commenting_FunctionCommentSniff implements PHP_CodeSniffer_Sniff
+class CodeStandard_Sniffs_Commenting_FunctionCommentSniff
 {
-
-
     /**
      * Returns an array of tokens this test wants to listen for.
      *
@@ -40,7 +38,6 @@ class CodeStandard_Sniffs_Commenting_FunctionCommentSniff implements PHP_CodeSni
     public function register()
     {
         return array(T_FUNCTION);
-
     }//end register()
 
     /**
@@ -55,41 +52,62 @@ class CodeStandard_Sniffs_Commenting_FunctionCommentSniff implements PHP_CodeSni
     public function process(PHP_CodeSniffer_File $phpcsFile, $stackPtr)
     {
         $tokens = $phpcsFile->getTokens();
+        $find   = PHP_CodeSniffer_Tokens::$methodPrefixes;
+        $find[] = T_WHITESPACE;
 
-        $find = array(
-                 T_COMMENT,
-                 T_DOC_COMMENT,
-                 T_CLASS,
-                 T_FUNCTION,
-                 T_OPEN_TAG,
-                );
+        $commentEnd = $phpcsFile->findPrevious($find, ($stackPtr - 1), null, true);
+        $commentStart = $tokens[$commentEnd]['comment_opener'];
 
-        $commentEnd = $phpcsFile->findPrevious($find, ($stackPtr - 1));
+        $this->processReturn($phpcsFile, $stackPtr, $commentStart);
 
-        if ($commentEnd === false) {
-            return;
-        }
+    }//end process()
 
-        // Find the first doc comment.
-        $commentStart   = ($phpcsFile->findPrevious(T_DOC_COMMENT, ($commentEnd - 1), null, true) + 1);
-        $commentString  = $phpcsFile->getTokensAsString($commentStart, ($commentEnd - $commentStart + 1));
-
-        try {
-            $this->commentParser = new PHP_CodeSniffer_CommentParser_FunctionCommentParser($commentString, $phpcsFile);
-            $this->commentParser->parse();
-        } catch (PHP_CodeSniffer_CommentParser_ParserException $e) {
-            $line = ($e->getLineWithinComment() + $commentStart);
-            $phpcsFile->addError($e->getMessage(), $line, 'FailedParse');
-            return;
-        }
-
-        //  determine whether the function actually contains a return statement
-        $hasReturn = false;
+    /**
+     * Process the return comment of this function comment.
+     *
+     * @param PHP_CodeSniffer_File $phpcsFile    The file being scanned.
+     * @param int                  $stackPtr     The position of the current token
+     *                                           in the stack passed in $tokens.
+     * @param int                  $commentStart The position in the stack where the comment started.
+     *
+     * @return void
+     */
+    protected function processReturn(PHP_CodeSniffer_File $phpcsFile, $stackPtr, $commentStart)
+    {
         $tokens = $phpcsFile->getTokens();
+
+        // Skip constructor and destructor.
+        $className = '';
+        foreach ($tokens[$stackPtr]['conditions'] as $condPtr => $condition) {
+            if ($condition === T_CLASS || $condition === T_INTERFACE) {
+                $className = $phpcsFile->getDeclarationName($condPtr);
+                $className = strtolower(ltrim($className, '_'));
+            }
+        }
+
+        $methodName      = $phpcsFile->getDeclarationName($stackPtr);
+        $isSpecialMethod = ($methodName === '__construct' || $methodName === '__destruct');
+        if ($methodName !== '_') {
+            $methodName = strtolower(ltrim($methodName, '_'));
+        }
+
+        $return = null;
+        foreach ($tokens[$commentStart]['comment_tags'] as $tag) {
+            if ($tokens[$tag]['content'] === '@return') {
+                if ($return !== null) {
+                    $error = 'Only 1 @return tag is allowed in a function comment';
+                    $phpcsFile->addError($error, $tag, 'DuplicateReturn');
+                    return;
+                }
+
+                $return = $tag;
+            }
+        }
+
+        //  find out if this function actually returns anything
+        $functionHasReturn = false;
         if (isset($tokens[$stackPtr]['scope_closer']) === true) {
             $endToken = $tokens[$stackPtr]['scope_closer'];
-
-            $tokens = $phpcsFile->getTokens();
             for ($returnToken = $stackPtr; $returnToken < $endToken; $returnToken++) {
                 if ($tokens[$returnToken]['code'] === T_CLOSURE) {
                     $returnToken = $tokens[$returnToken]['scope_closer'];
@@ -97,52 +115,109 @@ class CodeStandard_Sniffs_Commenting_FunctionCommentSniff implements PHP_CodeSni
                 }
 
                 if ($tokens[$returnToken]['code'] === T_RETURN) {
-                    $hasReturn = true;
+                    $functionHasReturn = true;
+                    break;
                 }
             }
         }
 
-        //  get method name
-        $data     = array($phpcsFile->getDeclarationName($stackPtr));
 
-        //  parse the function doc block
-        $comment = $this->commentParser->getComment();
+        if ($isSpecialMethod === false && $methodName !== $className) {
+            if ($return !== null) {
+                $content = $tokens[($return + 2)]['content'];
+                if (empty($content) === true || $tokens[($return + 2)]['code'] !== T_DOC_COMMENT_STRING) {
 
-        //  try to parse the return tag from within comment
-        $return  = $this->commentParser->getReturn();
-        if ($return === null) {
-            $content  = null;
-            $errorPos = $commentEnd;
+                    if ($functionHasReturn) {
+                        $error = 'Return type missing for @return tag in function comment';
+                        $phpcsFile->addError($error, $return, 'MissingReturnType');
+                    } else {
+                        $error = 'Invalid @return tag, function does not return anything';
+                        $phpcsFile->addError($error, $return, 'MissingReturnType');
+                    }
+                } else {
+                    // Check return type (can be multiple, separated by '|').
+                    $typeNames      = explode('|', $content);
+                    $suggestedNames = array();
+                    foreach ($typeNames as $i => $typeName) {
+                        $suggestedName = PHP_CodeSniffer::suggestType($typeName);
+                        if (in_array($suggestedName, $suggestedNames) === false) {
+                            $suggestedNames[] = $suggestedName;
+                        }
+                    }
+
+                    $suggestedType = implode('|', $suggestedNames);
+                    if ($content !== $suggestedType) {
+                        $error = 'Function return type "%s" is invalid';
+                        $error = 'Expected "%s" but found "%s" for function return type';
+                        $data  = array(
+                                  $suggestedType,
+                                  $content,
+                                 );
+                        $phpcsFile->addError($error, $return, 'InvalidReturn', $data);
+                    }
+
+                    // If the return type is void, make sure there is
+                    // no return statement in the function.
+                    if ($content === 'void') {
+                        if (isset($tokens[$stackPtr]['scope_closer']) === true) {
+                            $endToken = $tokens[$stackPtr]['scope_closer'];
+                            for ($returnToken = $stackPtr; $returnToken < $endToken; $returnToken++) {
+                                if ($tokens[$returnToken]['code'] === T_CLOSURE) {
+                                    $returnToken = $tokens[$returnToken]['scope_closer'];
+                                    continue;
+                                }
+
+                                if ($tokens[$returnToken]['code'] === T_RETURN) {
+                                    break;
+                                }
+                            }
+
+                            if ($returnToken !== $endToken) {
+                                // If the function is not returning anything, just
+                                // exiting, then there is no problem.
+                                $semicolon = $phpcsFile->findNext(T_WHITESPACE, ($returnToken + 1), null, true);
+                                if ($tokens[$semicolon]['code'] !== T_SEMICOLON) {
+                                    $error = 'Function return type is void, but function contains return statement';
+                                    $phpcsFile->addError($error, $return, 'InvalidReturnVoid');
+                                }
+                            }
+                        }//end if
+                    } else if ($content !== 'mixed') {
+                        // If return type is not void, there needs to be a return statement
+                        // somewhere in the function that returns something.
+                        if (isset($tokens[$stackPtr]['scope_closer']) === true) {
+                            $endToken    = $tokens[$stackPtr]['scope_closer'];
+                            $returnToken = $phpcsFile->findNext(T_RETURN, $stackPtr, $endToken);
+                            if ($returnToken === false) {
+                                $error = 'Invalid @return tag, function has no return statement';
+                                $phpcsFile->addError($error, $return, 'InvalidNoReturn');
+                            } else {
+                                $semicolon = $phpcsFile->findNext(T_WHITESPACE, ($returnToken + 1), null, true);
+                                if ($tokens[$semicolon]['code'] === T_SEMICOLON) {
+                                    $error = 'Superflous or Invalid @return tag, function returns void';
+                                    $phpcsFile->addError($error, $returnToken, 'InvalidReturnNotVoid');
+                                }
+                            }
+                        }
+                    }//end if
+                }//end if
+            } else if ($functionHasReturn) {
+                $content = $tokens[($return + 2)]['content'];
+                if (trim($content) != '') {
+                    $error = 'Missing @return tag in function comment';
+                    $phpcsFile->addError($error, $tokens[$commentStart]['comment_closer'], 'MissingReturn');
+                }
+            }//end if
         } else {
-            $content = trim($return->getRawContent());
-            $errorPos = ($commentStart + $return->getLine());
-        }
-
-        if ($content === 'void') {
-            $error = '@return void is unnecessary and against best practice in PHP';
-            $phpcsFile->addError($error, $errorPos, 'InvalidReturnVoid', $data);
-        } else if (!$hasReturn && $return !== null) {
-            $error = 'Function does not return anything, please remove @return tag';
-            $phpcsFile->addError($error, $errorPos, 'UnneccessaryReturnTag', $data);
-        } else if ($hasReturn && $return === null) {
-            $error = 'Missing @return tag in function: %s';
-            $phpcsFile->addError($error, $errorPos, 'MissingReturnTag', $data);
-        }
+            // No return tag for constructor and destructor.
+            if ($return !== null) {
+                $error = '@return tag is not required for constructor and destructor';
+                $phpcsFile->addError($error, $return, 'ReturnNotRequired');
+            }
+        }//end if
 
     }//end processReturn()
 
-
-    /**
-     * Check whether the current function contains a return statement.
-     *
-     * @return boolean A boolean value representing the presence
-     *                 of at least one return statement
-     */
-    private function containsReturnStatement()
-    {
-
-
-    }//end containsReturnStatement
 
 }//end class
 

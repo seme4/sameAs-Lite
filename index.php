@@ -3,7 +3,7 @@
 /**
  * SameAs Lite Web Application
  *
- * This script configures and launches the SameAs Lite RESTful Web Application.
+ * Configure and launch the SameAs Lite RESTful Web Application.
  *
  * @package   SameAsLite
  * @author    Seme4 Ltd <sameAs@seme4.com>
@@ -35,8 +35,38 @@
 
 require_once 'vendor/autoload.php';
 
-$store = new \SameAsLite\Store('testStore');
-$app = new \SameAsLite\WebApp($store);
+// initialise the web application
+$app = new \SameAsLite\WebApp(array(
+    'titleHeader' => 'this is the title',
+    'footerText' => 'This data is released under a CC0 License. Do with it as you will ;)',
+));
+
+$app->addStore(
+    new \SameAsLite\Store('sqlite:test.sqlite', 'webdemo'),
+    array(
+        'slug'    => 'store-1',
+        'name'    => 'My SameAs Store',
+        'contact' => 'Joe Bloggs',
+        'email'   => 'Joe.Bloggs@acme.org'
+    )
+);
+
+$app->addStore(
+    new \SameAsLite\Store(
+        'mysql:host=localhost;port=3306;charset=utf8',
+        'webdemo',
+        'testuser',
+        'testpass',
+        'testdb'
+    ),
+    array(
+        'slug'    => 'store-2',
+        'name'    => 'My SameAs Store in MySQL',
+        'contact' => 'Joe Bloggs',
+        'email'   => 'Joe.Bloggs@acme.org'
+    )
+);
+
 $app->run();
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:

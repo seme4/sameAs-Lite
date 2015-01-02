@@ -40,6 +40,23 @@ namespace SameAsLite;
 class StoreTest extends \PHPUnit_Framework_TestCase
 {
 
+    /** @const DSN The DSN Connection string to use **/
+    const DSN = 'sqlite:test.sqlite';
+
+    /** @const DSN The name of the store (used to form table names) **/
+    const STORE_NAME = 'test';
+
+    /**
+     * Check that an exception is raised if DSN name is invalid
+     *
+     * @covers            \SameAsLite\Store::__construct
+     * @expectedException \InvalidArgumentException
+     */
+    public function testExceptionIsRaisedForInvalidDSN()
+    {
+        new \SameAsLite\Store('foo:baa', self::STORE_NAME);
+    }
+
     /**
      * Check that an exception is raised if store name is invalid
      *
@@ -48,7 +65,7 @@ class StoreTest extends \PHPUnit_Framework_TestCase
      */
     public function testExceptionIsRaisedForInvalidDbaseTableName()
     {
-        new \SameAsLite\Store(null);
+        new \SameAsLite\Store(self::DSN, 'invalid name!');
     }
 
     /**
@@ -58,7 +75,7 @@ class StoreTest extends \PHPUnit_Framework_TestCase
      */
     public function testStoreCanBeConstructedForValidConstructorArguments()
     {
-        $s = new Store('test');
+        $s = new Store(self::DSN, self::STORE_NAME);
         $this->assertInstanceOf('SameAsLite\\Store', $s);
     }
 
@@ -69,12 +86,11 @@ class StoreTest extends \PHPUnit_Framework_TestCase
      */
     public function testAnEmptyStoreCanBeDumped()
     {
-        $s = new Store('test');
+        $s = new Store(self::DSN, self::STORE_NAME);
         $expected = array("Bundle\tFlags\tSymbol");
         $result = $s->dumpStore();
         $this->assertEquals($expected, $result);
     }
-
 }
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:
