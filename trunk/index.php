@@ -55,8 +55,8 @@ $app->addStore(
     new \SameAsLite\Store(
         'mysql:host=localhost;port=3306;charset=utf8',
         'webdemo',
-        'testuser',
-        'testpass',
+        'root', //'testuser',
+        'mysql', //'testpass',
         'testdb'
     ),
     array(

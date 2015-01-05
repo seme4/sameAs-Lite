@@ -35,8 +35,15 @@
 
 namespace SameAsLite;
 
+ini_set('max_execution_time', 1800);
+
 /**
  * Provides storage and management of SameAs relationships.
+ * TODO Note that the is the possibility/probability of there being symbols in the symbol table
+ *      that don't have entries in the data tables.
+ *      That is, if some inconsistency arises.
+ *      At the moment we assume that no such inconsistency occurs.
+ *      If there are such symbols, then the system will largely ignore them.
  */
 class Store
 {
@@ -119,6 +126,8 @@ class Store
         // save config
         $this->dsn = $dsn;
         $this->storeName = $name;
+        $this->symbolTable = $name."_symbols";
+        $this->dataTable = $name."_data";
         $this->dbUser = $user;
         $this->dbPass = $pass;
         $this->dbName = $dbName;
@@ -161,10 +170,12 @@ class Store
             }
         }
 
-        // try to create table for this store, if it does not exist
+        // try to create tables for this store, if they don't exist
         try {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $this->storeName .
-                   ' (symbol VARCHAR(256) PRIMARY KEY, bundle INTEGER, flags INTEGER)';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $this->symbolTable .
+                   ' (id BIGINT, symbol VARCHAR(256), PRIMARY KEY (id), KEY symbol (symbol) ); ' .
+                   'CREATE TABLE IF NOT EXISTS ' . $this->dataTable .
+                   ' (id BIGINT, bundle BIGINT, flags BIGINT DEFAULT \'0\', PRIMARY KEY (id), KEY bundle (bundle) ); ';
             $this->dbHandle->exec($sql);
         } catch (\PDOException $e) {
             throw new \Exception(
@@ -199,26 +210,30 @@ class Store
      */
     public function querySymbol($symbol)
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
 
         try {
             // Do we have it?
-            $b = $this->queryGetBundleID($symbol);
+            $id = $this->queryGetSymbolID($symbol);
+            $b = $this->queryGetBundleID($id);
             if ($b === null) {
                 // No we don't have it already
                 $output = array($symbol);
             } else {
                 // Yes we do have it already
+                // TODO All of this can probably be done in one query, including sorting
                 $statement = $this->dbHandle->prepare(
-                    "SELECT symbol, Flags FROM $this->storeName WHERE bundle = '$b' ORDER BY Flags DESC, symbol ASC;"
+                    "SELECT id, flags FROM $this->dataTable WHERE bundle = '$b' ORDER BY flags DESC;"
                 );
                 $statement->execute();
                 $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
                 $output = array();
+                // TODO It might be nice to sort the symbols somehow - canon comes first is the only order at the moment
                 foreach ($result as $row) {
-                    $output[] = $row['symbol'];
+                    $output[] = $this->queryGetSymbolSymbol($row['id']);
                 }
             }
         } catch (\PDOException $e) {
@@ -242,6 +257,7 @@ class Store
      */
     public function search($string)
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
@@ -285,38 +301,54 @@ class Store
      */
     public function assertPair($symbol1, $symbol2)
     {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         try {
             // Are the symbols already in the store?
-            $bundleID1 = $this->queryGetBundleID($symbol1);
-            $bundleID2 = $this->queryGetBundleID($symbol2);
-            // $bundleID1 & $bundleID2 now have the bundleIDs, or null if there wasn't one
-            if ($bundleID1 === null && $bundleID2 === null) {
+            $symbolID1 = $this->queryGetSymbolID($symbol1);
+            $symbolID2 = $this->queryGetSymbolID($symbol2);
+            $bundleID1 = $this->queryGetBundleID($symbolID1);
+            $bundleID2 = $this->queryGetBundleID($symbolID2);
+            // These now have the IDs, or null if there wasn't one
+
+            if ($symbolID1 === null && $symbolID2 === null) {
                 // Both symbols are new - create a new bundle
                 // First we find the maximum Bundle identifer, so we can use the next one up
-                // And make the Canon the $s1
-                $bundle = 1 + $this->queryGetMaxBundle();
-                $this->queryAssertRow($symbol1, $bundle, self::CANON);
-                $this->queryAssertRow($symbol2, $bundle, self::NOTCANON);
-            } elseif ($bundleID1 === null) {
+                // And make the Canon $symbol1
+                $symbolID = 1 + $this->queryGetMaxSymbolID(); // TODO Should probably use the auto increment
+                $bundle = 1 + $this->queryGetMaxBundle(); // TODO Should probably use the auto increment
+                $this->queryAssertSymbol($symbol1, $symbolID);
+                $this->queryAssertSymbol($symbol2, $symbolID+1);
+                $this->queryAssertRow($symbolID, $bundle, self::CANON);
+                $this->queryAssertRow($symbolID+1, $bundle, self::NOTCANON);
+            } elseif ($symbolID1 === null) {
                 // Insert new $symbol1 into existing $bundleID2
                 // No need to do anything about canons
-                $this->queryAssertRow($symbol1, $bundleID2, self::NOTCANON);
-            } elseif ($bundleID2 === null) {
+                $symbolID = 1 + $this->queryGetMaxSymbolID(); // TODO Should probably use the auto increment
+                $this->queryAssertSymbol($symbol1, $symbolID);
+                $this->queryAssertRow($symbolID, $bundleID2, self::NOTCANON);
+            } elseif ($symbolID2 === null) {
                 // Insert new $symbol2 into existing $bundleID1
                 // No need to do anything about canons
-                $this->queryAssertRow($symbol2, $bundleID1, self::NOTCANON);
+                $symbolID = 1 + $this->queryGetMaxSymbolID(); // TODO Should probably use the auto increment
+                $this->queryAssertSymbol($symbol2, $symbolID);
+                $this->queryAssertRow($symbolID, $bundleID1, self::NOTCANON);
             } elseif ($bundleID1 === $bundleID2) {
                 // They were both already in the same bundle
                 // Do nothing
             } else {
                 // They are in different bundles
                 // So join the two bundles - set all of bundle 2 to be in bundle 1
-                // Canon will be the canon of bundle 1, since the changed ones all get Flags=self::NOTCANON
-                $symbols = $this->queryGetBundleSymbols($bundleID2);
-                foreach ($symbols as $symbol) {
-                    $this->queryAssertRow($symbol, $bundleID1, self::NOTCANON);
+                // Canon will be the canon of bundle 1, since the changed ones all get flags=self::NOTCANON
+                $IDs = $this->queryGetBundleIDs($bundleID2);
+                foreach ($IDs as $id) {
+                    $this->queryAssertRow($id, $bundleID1, self::NOTCANON);
                 }
             }
+
         } catch (\PDOException $e) {
             $this->error("Unable to assert pair ($symbol1, $symbol2)", $e);
         }
@@ -343,6 +375,7 @@ class Store
     }
 
     /**
+//TODO Not needed - done in the WebApp?
      * Take a file of Tab-separated symbols and assert into the store
      *
      * Not a public service - just in the Class
@@ -358,6 +391,7 @@ class Store
         if ($data === false) {
             $this->error("Failed to open file '$file'");
         }
+echo "foo"; exit;
         $this->assertPairs(explode("\n", $data));
     }
 
@@ -371,6 +405,11 @@ class Store
      */
     public function removeSymbol($symbol)
     {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         $this->queryDeleteSymbol($symbol);
     }
 
@@ -385,6 +424,11 @@ class Store
      */
     public function setCanon($symbol)
     {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         // Do we have it?
         $bundleID = $this->queryGetBundleID($symbol);
         if ($bundleID === null) {
@@ -414,6 +458,11 @@ class Store
      */
     public function getCanon($symbol)
     {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         // Do we have it?
         $bundle = $this->queryGetBundleID($symbol);
         if ($bundle === null) {
@@ -441,7 +490,7 @@ class Store
         try {
             $statement = $this->dbHandle->prepare(
                 "SELECT symbol FROM $this->storeName WHERE " .
-                "Flags=" . self::CANON . " ORDER BY symbol ASC"
+                "flags=" . self::CANON . " ORDER BY symbol ASC"
             );
             $statement->execute();
             $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
@@ -461,12 +510,15 @@ class Store
      */
     public function deleteStore()
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
 
         try {
-            $statement = $this->dbHandle->prepare("DROP TABLE $this->storeName;");
+            $statement = $this->dbHandle->prepare("DROP TABLE $this->dataTable;");
+            $statement->execute();
+            $statement = $this->dbHandle->prepare("DROP TABLE $this->symbolTable;");
             $statement->execute();
         } catch (\PDOException $e) {
             $this->error("Database failure to delete store", $e);
@@ -478,6 +530,7 @@ class Store
      */
     public function emptyStore()
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
@@ -485,11 +538,14 @@ class Store
         try {
             if ($this->dbType === 'sqlite') {
                 // SQLite doesn't have TRUNCATE
-                $statement = $this->dbHandle->prepare("DELETE FROM $this->storeName;");
+                $statement1 = $this->dbHandle->prepare("DELETE FROM $this->dataTable;");
+                $statement2 = $this->dbHandle->prepare("DELETE FROM $this->symbolTable;");
             } else {
-                $statement = $this->dbHandle->prepare("TRUNCATE $this->storeName;");
+                $statement1 = $this->dbHandle->prepare("TRUNCATE $this->dataTable;");
+                $statement2 = $this->dbHandle->prepare("TRUNCATE $this->symbolTable;");
             }
-            $statement->execute();
+            $statement1->execute();
+            $statement2->execute();
         } catch (\PDOException $e) {
             $this->error("Database failure to empty store", $e);
         }
@@ -508,26 +564,30 @@ class Store
      */
     public function dumpStore()
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
 
         try {
+            // TODO Do it as one query, and sort on symbol as well
             $statement = $this->dbHandle->prepare(
-                "SELECT * FROM $this->storeName " .
-                "ORDER BY bundle ASC, flags DESC, symbol ASC"
+                "SELECT * FROM $this->dataTable " .
+                "ORDER BY bundle ASC, flags DESC"
             );
             $statement->execute();
             $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
             $output = array();
+            $output[] = "<pre>";
             $output[] = "Bundle\tFlags\tSymbol";
             foreach ($results as $row) {
-                $output[] = "{$row['bundle']}\t{$row['flags']}\t{$row['symbol']}";
+                $output[] = "{$row['bundle']}\t{$row['flags']}\t{$this->queryGetSymbolSymbol($row['id'])}";
             }
         } catch (\PDOException $e) {
             $this->error("Unable to dump store", $e);
         }
+        $output[] = "</pre>";
         return $output;
     }
 
@@ -541,6 +601,11 @@ class Store
      */
     public function restoreStore($file)
     {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
         $data = file($file, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
         if ($data === false) {
             $this->error("Failed to open file '$file'");
@@ -573,6 +638,7 @@ class Store
      */
     public function listStores()
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
@@ -591,13 +657,14 @@ class Store
             $rows = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
             $output = array();
+            $output[] = "<pre>\n";
             $output[] = "Symbols\tBundles\tStore";
             foreach ($rows as $row) {
-                $store = $row['name'];
-                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT symbol) FROM $store;");
+                $store = $row['name']; // TODO This doesn't work for mySQL - it's Array ( [Tables_in_testdb] => webdemo )
+                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT id) FROM $this->dataTable;");
                 $statement->execute();
                 $count = $statement->fetch(\PDO::FETCH_NUM);
-                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT bundle) FROM $store ;");
+                $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT bundle) FROM $this->dataTable ;");
                 $statement->execute();
                 $bundles = $statement->fetch(\PDO::FETCH_NUM);
                 $output[] = "{$count[0]}\t{$bundles[0]}\t$store";
@@ -605,6 +672,7 @@ class Store
         } catch (\PDOException $e) {
             $this->error("Database failure to get the store list", $e);
         }
+        $output[] = "</pre>\n";
         return $output;
     }
 
@@ -615,6 +683,7 @@ class Store
      */
     public function statistics()
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
@@ -624,7 +693,7 @@ class Store
         try {
             // get number of symbols
             $statement = $this->dbHandle->prepare(
-                "SELECT COUNT(DISTINCT symbol) FROM $this->storeName ;"
+                "SELECT COUNT(DISTINCT id) FROM $this->dataTable ;"
             );
             $statement->execute();
             $symbols = $statement->fetch(\PDO::FETCH_NUM);
@@ -632,7 +701,7 @@ class Store
 
             // get number of bundles
             $statement = $this->dbHandle->prepare(
-                "SELECT COUNT(DISTINCT bundle) FROM $this->storeName ;"
+                "SELECT COUNT(DISTINCT bundle) FROM $this->dataTable ;"
             );
             $statement->execute();
             $bundles = $statement->fetch(\PDO::FETCH_NUM);
@@ -663,6 +732,7 @@ class Store
      */
     public function analyse()
     {
+        // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
@@ -856,27 +926,70 @@ class Store
     }
 
     /**
-     * Raw DB function to get the bundle ID for a given symbol
+     * Raw DB function to get the ID for a given symbol
      * [sqlInjectionProtected]
      *
      * @param string $symbol The symbol being looked up
      *
+     * @return int The ID, null if the symbol was not in the symbols table
+     */
+    private function queryGetSymbolID($symbol)
+    {
+        try {
+            $statement = $this->dbHandle->prepare("SELECT id FROM $this->symbolTable WHERE symbol = :symbol LIMIT 1");
+            $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
+            $statement->execute();
+            $IDs = $statement->fetch(\PDO::FETCH_NUM);
+            return $IDs[0];
+        } catch (\PDOException $e) {
+            print $e->getMessage();
+            $this->error("Database failure to get the ID for '$symbol'");
+        }
+    }
+
+    /**
+     * Raw DB function to get the symbol for a given ID
+     * not [sqlInjectionProtected] - it's an ID
+     *
+     * @param int $id The ID being looked up
+     *
+     * @return string The symbol, null if the ID was not in the symbols table
+     */
+    private function queryGetSymbolSymbol($id)
+    {
+        try {
+            $statement = $this->dbHandle->prepare("SELECT symbol FROM $this->symbolTable WHERE id = '$id' LIMIT 1"); // TODO
+            $statement->execute();
+            $symbols = $statement->fetch(\PDO::FETCH_NUM);
+            return $symbols[0];
+        } catch (\PDOException $e) {
+            print $e->getMessage();
+            $this->error("Database failure to get the symbol for ID '$id'");
+        }
+    }
+
+    /**
+     * Raw DB function to get the bundle ID for a given symbol ID
+     * [sqlInjectionProtected] // TODO
+     *
+     * @param int $id The symbol ID being looked up
+     *
      * @return int The bundle ID, null if the symbol was not in the store
      */
-    private function queryGetBundleID($symbol)
+    private function queryGetBundleID($id)
     {
         if ($this->dbHandle == null) {
             $this->connect();
         }
 
         try {
-            $statement = $this->dbHandle->prepare("SELECT bundle FROM $this->storeName WHERE symbol = :symbol LIMIT 1");
-            $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
+            $statement = $this->dbHandle->prepare("SELECT bundle FROM $this->dataTable WHERE id = :id LIMIT 1");
+            $statement->bindValue(':id', $id, \PDO::PARAM_STR);
             $statement->execute();
             $bundles = $statement->fetch(\PDO::FETCH_NUM);
             return $bundles[0];
         } catch (\PDOException $e) {
-            $this->error("Database failure to get the bundleID for '$symbol'", $e);
+            $this->error("Database failure to get the bundleID for symbol with ID '$id'", $e);
         }
     }
 
@@ -912,6 +1025,59 @@ class Store
     }
 
     /**
+     * Raw DB function to get all the symbols from a given bundle (by ID)
+     *
+     *    SQL injection protected
+     *
+     * @param integer $bundleID The bundle being looked up
+     *
+     * @return int[] The bundle symbol IDs, empty if the symbol was not in the store
+     */
+    private function queryGetBundleIDs($bundleID)
+    {
+        try {
+            $statement = $this->dbHandle->prepare("SELECT id FROM $this->dataTable WHERE bundle = :bundle;");
+            $statement->bindValue(':bundle', $bundleID, \PDO::PARAM_INT);
+            $statement->execute();
+            $rs = $statement->fetchAll(\PDO::FETCH_NUM);
+            $result = array();
+            foreach ($rs as $r) {
+                $result[] = $r[0];
+            }
+
+            return $result;
+        } catch (\PDOException $e) {
+            print $e->getMessage();
+            $this->error("Database failure to get the bundle symbols for bundle '$bundleID'");
+        }
+    }
+
+    /**
+     * Raw DB function to find the maximum value for the symbol ID
+     *
+     *    SQL injection protected
+     *
+     * @return integer The maximum symbol ID, 0 if there are no bundles
+     */
+    private function queryGetMaxSymbolID()
+    {
+        try {
+            $statement = $this->dbHandle->prepare("SELECT MAX(id) FROM $this->symbolTable;");
+            $statement->execute();
+            $r = $statement->fetch(\PDO::FETCH_NUM);
+
+            if ($r[0] == NULL) {
+                return 0;
+            } else {
+                return $r[0];
+            }
+        } catch (\PDOException $e) {
+            print $e->getMessage();
+            $this->error("Database failure to get the maximum symbol ID");
+        }
+    }
+
+    /**
      * Raw DB function to find the maximum value for the Bundle column in a store
      *
      *    SQL injection protected
@@ -925,11 +1091,15 @@ class Store
         }
 
         try {
-            $statement = $this->dbHandle->prepare("SELECT MAX(bundle) FROM $this->storeName;");
+            $statement = $this->dbHandle->prepare("SELECT MAX(bundle) FROM $this->dataTable;");
             $statement->execute();
             $r = $statement->fetch(\PDO::FETCH_NUM);
 
-            return $r[0];
+            if ($r[0] == NULL) {
+                return 0;
+            } else {
+                return $r[0];
+            }
         } catch (\PDOException $e) {
             $this->error("Database failure to get the maximum bundle ID", $e);
         }
@@ -953,7 +1123,7 @@ class Store
         try {
             $statement = $this->dbHandle->prepare(
                 "SELECT symbol FROM $this->storeName WHERE " .
-                "bundle = :bundle AND Flags = " . self::CANON . " LIMIT 1;"
+                "bundle = :bundle AND flags = " . self::CANON . " LIMIT 1;"
             );
             $statement->bindValue(':bundle', $bundleID, \PDO::PARAM_INT);
             $statement->execute();
@@ -979,8 +1149,12 @@ class Store
         }
 
         try {
-            $statement = $this->dbHandle->prepare("DELETE FROM $this->storeName WHERE symbol = :symbol;");
+            $ID = $this->queryGetSymbolID($symbol);
+            $statement = $this->dbHandle->prepare("DELETE FROM $this->symbolTable WHERE symbol = :symbol;");
             $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
+            $statement->execute();
+            $statement = $this->dbHandle->prepare("DELETE FROM $this->dataTable WHERE id = :id;");
+            $statement->bindValue(':id', $ID, \PDO::PARAM_STR);
             $statement->execute();
         } catch (\PDOException $e) {
             $this->error("Database failure to delete '$symbol'", $e);
@@ -988,34 +1162,61 @@ class Store
     }
 
     /**
-     * Raw DB function to insert or update the row of an existing symbol
+     * Raw DB function to insert or update the row of an existing symbol ID data
      *
      * This will do an insert if it wasn't there, or update if it was.
      *
      * [sqlInjectionProtected]
      *
-     * @param string  $symbol    The symbol being considered
+     * @param integer  $id    The symbol being considered
      *
      * @param integer $bundleID  The bundle ID for the symbol is now in
      * (overwrites any existing bundle ID for an existing symbol)
      *
-     * @param integer $canonFlag The Flags for this symbol (overwrites any
-     * existing Flags for an existing symbol).
+     * @param integer $canonFlag The flags for this symbol (overwrites any
+     * existing flags for an existing symbol).
      */
-    private function queryAssertRow($symbol, $bundleID, $canonFlag)
+
+    private function queryAssertRow($id, $bundleID, $canonFlag)
     {
         if ($this->dbHandle == null) {
             $this->connect();
         }
 
         try {
-            $statement = $this->dbHandle->prepare("REPLACE INTO $this->storeName VALUES (:symbol, :bundle, :canon)");
-            $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
+            $statement = $this->dbHandle->prepare("REPLACE INTO $this->dataTable VALUES (:id, :bundle, :canon)");
+            $statement->bindValue(':id', $id, \PDO::PARAM_STR);
             $statement->bindValue(':bundle', $bundleID, \PDO::PARAM_INT);
             $statement->bindValue(':canon', $canonFlag, \PDO::PARAM_INT);
             $statement->execute();
         } catch (\PDOException $e) {
-            $this->error("Database failure to assert for '$symbol' with bundle='$bundleID' and canon='$canonFlag'", $e);
+            $this->error("Database failure to assert for symbol with ID='$id', bundle='$bundleID' and canon='$canonFlag'");
+        }
+    }
+
+    /**
+     * Raw DB function to insert or update the row of an existing symbol in symbols
+     *
+     * This will do an insert if it wasn't there, or update if it was.
+     * TODO Pretty sure this should use auto-inc and return the id of the symbol
+     *
+     * [sqlInjectionProtected]
+     *
+     * @param string  $symbol    The symbol being considered
+     *
+     * @param integer  $id    The id to make the symbol
+     *
+     */
+    private function queryAssertSymbol($symbol, $id)
+    {
+        try {
+            $statement = $this->dbHandle->prepare("REPLACE INTO $this->symbolTable VALUES (:id, :symbol)");
+            $statement->bindValue(':id', $id, \PDO::PARAM_INT);
+            $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
+            $statement->execute();
+        } catch (\PDOException $e) {
+            print $e->getMessage();
+            $this->error("Database failure to assert for '$symbol'");
         }
     }
 
