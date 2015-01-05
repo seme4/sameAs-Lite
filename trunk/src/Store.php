@@ -391,7 +391,6 @@ class Store
         if ($data === false) {
             $this->error("Failed to open file '$file'");
         }
-echo "foo"; exit;
         $this->assertPairs(explode("\n", $data));
     }
 
