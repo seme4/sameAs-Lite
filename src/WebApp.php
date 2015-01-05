@@ -534,7 +534,7 @@ class WebApp
     public function assertFile()
     {
         $before = $this->store->statistics();
-        $this->store->assertPairs(explode("\n", $this->request->getBody()));
+        $this->store->assertPairs(explode("\n", $this->app->request->getBody()));
         $after = $this->store->statistics();
         $this->outputData(array_merge(array('Before:'), $before, array('After:'), $after), 'RAW');
     }
