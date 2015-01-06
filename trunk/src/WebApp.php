@@ -379,7 +379,7 @@ class WebApp
             true
         );
         $output .= $this->indexItem(
-            'pairs/{symbol1}/{symbol2}',
+            'pairs/:symbol1/:symbol2',
             'Assert the pair (symbol1, symbol2) into the store',
             'PUT',
             2,
@@ -690,7 +690,7 @@ class WebApp
      */
     protected function indexItem($path, $description = '', $method = 'GET', $paramCount = 0, $auth = false)
     {
-        $endpoint = '/' . $this->app->request()->getRootUri() . $path;
+        $endpoint = $this->app->request()->getRootUri() . '/' . $path;
         $host = $this->app->request()->getUrl();
 
         $endpoint = preg_replace('@(:[^/]*)@', '<span>\1</span>', $endpoint);
