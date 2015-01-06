@@ -41,6 +41,7 @@ ini_set('max_execution_time', 1800);
  * Provides storage and management of SameAs relationships.
  * TODO Note that the is the possibility/probability of there being symbols in the symbol table
  *      that don't have entries in the data tables.
+ *      (And vice versa, but that's a real disaster.)
  *      That is, if some inconsistency arises.
  *      At the moment we assume that no such inconsistency occurs.
  *      If there are such symbols, then the system will largely ignore them.
@@ -172,7 +173,8 @@ class Store
 
         // try to create tables for this store, if they don't exist
         try {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $this->symbolTable .
+            $sql = ($this->dbType === 'mysql' ? 'SET default_storage_engine=MYISAM;' : '') .
+                   'CREATE TABLE IF NOT EXISTS ' . $this->symbolTable .
                    ' (id BIGINT, symbol VARCHAR(256), PRIMARY KEY (id), KEY symbol (symbol) ); ' .
                    'CREATE TABLE IF NOT EXISTS ' . $this->dataTable .
                    ' (id BIGINT, bundle BIGINT, flags BIGINT DEFAULT \'0\', PRIMARY KEY (id), KEY bundle (bundle) ); ';
@@ -224,17 +226,19 @@ class Store
                 $output = array($symbol);
             } else {
                 // Yes we do have it already
-                // TODO All of this can probably be done in one query, including sorting
+                // TODO All of this can probably be done in one query, including secondary sorting
                 $statement = $this->dbHandle->prepare(
                     "SELECT id, flags FROM $this->dataTable WHERE bundle = '$b' ORDER BY flags DESC;"
                 );
                 $statement->execute();
                 $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
                 $output = array();
+                $output[] = "<pre>"; // TODO
                 // TODO It might be nice to sort the symbols somehow - canon comes first is the only order at the moment
                 foreach ($result as $row) {
                     $output[] = $this->queryGetSymbolSymbol($row['id']);
                 }
+                $output[] = "</pre>";
             }
         } catch (\PDOException $e) {
             $this->error("Query symbol '$s' failed", $e);
@@ -264,16 +268,19 @@ class Store
 
         try {
             // Do we have it at all?
+            // TODO All of this can probably be done in one query, including secondary sorting
             $statement = $this->dbHandle->prepare(
-                "SELECT symbol FROM $this->storeName WHERE symbol LIKE :string ORDER BY symbol;"
+                "SELECT id FROM $this->symbolTable WHERE symbol LIKE :string ORDER BY symbol;"
             );
             $statement->bindValue(':string', "%$string%", \PDO::PARAM_STR);
             $statement->execute();
-            $result = $statement->fetchAll(\PDO::FETCH_NUM);
+            $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
             $output = array();
+            $output[] = "<pre>"; // TODO
             foreach ($result as $row) {
-                $output[] = $row[0];
+                $output[] = $this->queryGetSymbolSymbol($row['id']);
             }
+            $output[] = "</pre>";
         } catch (\PDOException $e) {
             $this->error("Search for '$string' failed", $e);
         }
@@ -941,8 +948,7 @@ class Store
             $IDs = $statement->fetch(\PDO::FETCH_NUM);
             return $IDs[0];
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the ID for '$symbol'");
+            $this->error("Database failure to get the ID for '$symbol'", $e);
         }
     }
 
@@ -962,8 +968,7 @@ class Store
             $symbols = $statement->fetch(\PDO::FETCH_NUM);
             return $symbols[0];
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the symbol for ID '$id'");
+            $this->error("Database failure to get the symbol for ID '$id'", $e);
         }
     }
 
@@ -977,10 +982,6 @@ class Store
      */
     private function queryGetBundleID($id)
     {
-        if ($this->dbHandle == null) {
-            $this->connect();
-        }
-
         try {
             $statement = $this->dbHandle->prepare("SELECT bundle FROM $this->dataTable WHERE id = :id LIMIT 1");
             $statement->bindValue(':id', $id, \PDO::PARAM_STR);
@@ -1046,8 +1047,7 @@ class Store
 
             return $result;
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the bundle symbols for bundle '$bundleID'");
+            $this->error("Database failure to get the bundle symbols for bundle '$bundleID'", $e);
         }
     }
 
@@ -1071,8 +1071,7 @@ class Store
                 return $r[0];
             }
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to get the maximum symbol ID");
+            $this->error("Database failure to get the maximum symbol ID", $e);
         }
     }
 
@@ -1214,8 +1213,7 @@ class Store
             $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
             $statement->execute();
         } catch (\PDOException $e) {
-            print $e->getMessage();
-            $this->error("Database failure to assert for '$symbol'");
+            $this->error("Database failure to assert for '$symbol'", $e);
         }
     }
 
