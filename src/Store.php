@@ -226,17 +226,15 @@ class Store
                 $output = array($symbol);
             } else {
                 // Yes we do have it already
-                // TODO All of this can probably be done in one query, including secondary sorting
                 $statement = $this->dbHandle->prepare(
-                    "SELECT id, flags FROM $this->dataTable WHERE bundle = '$b' ORDER BY flags DESC;"
+                    "SELECT symbol, flags FROM $this->dataTable JOIN $this->symbolTable ON $this->dataTable.id=$this->symbolTable.id WHERE bundle = '$b' ORDER BY flags DESC, Symbol ASC;"
                 );
                 $statement->execute();
                 $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
                 $output = array();
                 $output[] = "<pre>"; // TODO
-                // TODO It might be nice to sort the symbols somehow - canon comes first is the only order at the moment
                 foreach ($result as $row) {
-                    $output[] = $this->queryGetSymbolSymbol($row['id']);
+                    $output[] = $row['symbol'];
                 }
                 $output[] = "</pre>";
             }
@@ -267,10 +265,8 @@ class Store
         }
 
         try {
-            // Do we have it at all?
-            // TODO All of this can probably be done in one query, including secondary sorting
             $statement = $this->dbHandle->prepare(
-                "SELECT id FROM $this->symbolTable WHERE symbol LIKE :string ORDER BY symbol;"
+                "SELECT symbol, flags FROM $this->dataTable JOIN $this->symbolTable ON $this->dataTable.id=$this->symbolTable.id WHERE symbol LIKE :string ORDER BY flags DESC, Symbol ASC;"
             );
             $statement->bindValue(':string', "%$string%", \PDO::PARAM_STR);
             $statement->execute();
@@ -278,7 +274,7 @@ class Store
             $output = array();
             $output[] = "<pre>"; // TODO
             foreach ($result as $row) {
-                $output[] = $this->queryGetSymbolSymbol($row['id']);
+                $output[] = $row['symbol'];
             }
             $output[] = "</pre>";
         } catch (\PDOException $e) {
