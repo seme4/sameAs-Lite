@@ -41,7 +41,7 @@ $app = new \SameAsLite\WebApp(array(
     'footerText' => 'This data is released under a CC0 License. Do with it as you will ;)',
 ));
 
-$app->addStore(
+/*$app->addStore(
     new \SameAsLite\Store('sqlite:test.sqlite', 'webdemo'),
     array(
         'slug'    => 'store-1',
@@ -50,10 +50,10 @@ $app->addStore(
         'email'   => 'Joe.Bloggs@acme.org'
     )
 );
-
+*/
 $app->addStore(
     new \SameAsLite\Store(
-        'mysql:host=localhost;port=3306;charset=utf8',
+        'mysql:host=127.0.0.1;port=3306;charset=utf8',
         'webdemo',
         'root', //'testuser',
         'mysql', //'testpass',
