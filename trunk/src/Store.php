@@ -311,13 +311,12 @@ class Store
                 // Do nothing
             } else {
                 // They are in different bundles
-                // So join the two bundles - delete the old canon=canon line and set all of bundle 2 to be in bundle 1
+                // So join the two bundles - set all of bundle 2 to be in bundle 1
                 // Canon will be the canon of bundle 1
                 // TODO Performance? Doesn't need protection since they came out of the table?
-                $sql = "DELETE FROM $this->storeName WHERE :canon2 = :canon2";
-                $this->query($sql, array(':canon2' => $canon2));
                 $sql = "UPDATE $this->storeName SET canon = :canon1 WHERE canon = :canon2";
-                $this->query($sql, array(':canon1' => $canon1, ':canon2' => $canon2));
+                $statement = $this->dbHandle->prepare($sql);
+                $statement->execute(array(':canon1' => $canon1, ':canon2' => $canon2));
             }
 
         } catch (\PDOException $e) {
@@ -921,7 +920,7 @@ class Store
                 ':symbol1' => $symbol1
             );
             if ($symbol2 != null) {
-                $sql .= ', (:symbol2, :canon)';
+                $sql .= ', (:canon, :symbol2)';
                 $values[':symbol2'] = $symbol2;
             }
             $this->query($sql, $values);
