@@ -41,6 +41,7 @@ ini_set('max_execution_time', 1800);
  * Provides storage and management of SameAs relationships.
  * TODO Note that the is the possibility/probability of there being singleton bundles.
  *      If there are such bundles, then the system will largely ignore them.
+ * TODO Some of the queries don't need Injectio Protection, as (for example canons) came out of the DB
  */
 class Store
 {
@@ -295,17 +296,23 @@ class Store
 
             if ($canon1 === null && $canon2 === null) {
                 // Both symbols are new - create a new bundle
-                // First we find the maximum Bundle identifer, so we can use the next one up
                 // And make the Canon $symbol1
-                $this->queryAssertRow($symbol1, $symbol1, $symbol2);
+                // REPLACE handles the case where they are the same - for neatness
+                $sql = "REPLACE INTO $this->storeName VALUES (:symbol1, :symbol1), (:symbol1, :symbol2)";
+                $statement = $this->dbHandle->prepare($sql);
+                $statement->execute(array(':symbol1' => $symbol1, ':symbol2' => $symbol2));
             } elseif ($canon1 === null) {
                 // Insert new $symbol1 into existing bundle for $symbol2
                 // No need to do anything about canons
-                $this->queryAssertRow($canon2, $symbol1);
+                $sql = "INSERT INTO $this->storeName VALUES (:canon2, :symbol1)";
+                $statement = $this->dbHandle->prepare($sql);
+                $statement->execute(array(':symbol1' => $symbol1, ':canon2' => $canon2));
             } elseif ($canon2 === null) {
                 // Insert new $symbol2 into existing bundle for $symbol1
                 // No need to do anything about canons
-                $this->queryAssertRow($canon1, $symbol2);
+                $sql = "INSERT INTO $this->storeName VALUES (:canon1, :symbol2)";
+                $statement = $this->dbHandle->prepare($sql);
+                $statement->execute(array(':canon1' => $canon1, ':symbol2' => $symbol2));
             } elseif ($canon1 === $canon2) {
                 // They were both already in the same bundle
                 // Do nothing
@@ -371,7 +378,12 @@ class Store
      * Simply remove a symbol from this store
      *
      *    Note - if it is the canon, then there will be no canon left
+// TODO
+     *        So what to do?
      *        It could choose another one, but has no way of knowing - so you are advised to setCanon after this.
+     *        It could make them all singleton bundles
+     *        It could delete all the symbols in the bundle
+     *        It *must* do something, otherwise the DB becomes inconsistent, with symbols that don't have canons
      *
      * @param string $symbol The symbol to be deleted.
      */
@@ -382,7 +394,9 @@ class Store
             $this->connect();
         }
 
-        $this->queryDeleteSymbol($symbol);
+        $sql = "DELETE FROM $this->storeName WHERE symbol = :symbol";
+        $statement = $this->dbHandle->prepare($sql);
+        $statement->execute(array(':symbol' => $symbol));
     }
 
     /**
@@ -407,12 +421,12 @@ class Store
             // No we don't have it already
             // Insert new $symbol
             // And make it the Canon of its singleton bundle
-            $this->queryAssertRow($symbol, $symbol);
+            $this->assertPair($symbol, $symbol);
         } else {
             // Yes we do have it already
-            // TODO Performance? $canon doesn't need protection since it came out of the table?
             $sql = "UPDATE $this->storeName SET canon = :symbol WHERE canon = :canon";
-            $this->query($sql, array(':symbol' => $symbol, ':canon' => $canon));
+            $statement = $this->dbHandle->prepare($sql);
+            $statement->execute(array(':symbol' => $symbol, ':canon' => $canon));
         }
     }
 
@@ -579,7 +593,7 @@ class Store
             foreach ($data as $line) {
                 $line = trim($line);
                 $bits = explode("\t", $line);
-                $this->queryAssertRow($bits[0], $bits[1]);
+                $this->assertPair($bits[0], $bits[1]);
             }
         } catch (\PDOException $e) {
             $this->error("Unable to restore store", $e);
@@ -698,6 +712,7 @@ class Store
         }
 
         $output = array();
+        $output[] = "<pre>\n";
         $output[] = "Analysis of sameAs store '$this->storeName' in Database '$this->dbName':";
         // Can return from the middle of the store is actually empty
         try {
@@ -729,6 +744,7 @@ class Store
                 $s = $row['symbol'];
                 $b = $row['bundle'];
                 $nSymbols++;
+// TODO All screwed up here!
                 $bundlesAssoc[$b][] = $s;
                 $bundleSizes[$b]++;
                 if (substr($s, 0, 7) == 'http://') {
@@ -845,6 +861,19 @@ class Store
             }
 
             $output[] = $sep;
+            $output[] = "Errors:";
+            // TODO List of canons that are not symbols
+/*
+            $output[] = "List of canons that are not also listed as symbols:";
+            $badCanons = array();
+This ain't right - it does all of them!
+            foreach ($bundlesAssoc[NULL] as $symbol) {
+                $badCanons[$this->queryGetCanon($symbol)] = NULL;
+            }
+            foreach ($badCanons as $badCanon => $nothing) $output[] = $badCanon;
+*/
+            $output[] = $sep;
+            $output[] = "</pre>\n";
         } catch (\PDOException $e) {
             $this->error("Database failure to get some analysis data for store", $e);
         }
@@ -867,81 +896,13 @@ class Store
             $statement = $this->dbHandle->prepare(
                 "SELECT canon FROM $this->storeName WHERE symbol = :symbol LIMIT 1;"
             );
-            $statement->bindValue(':symbol', $symbol, \PDO::PARAM_INT);
-            $statement->execute();
+            $statement->execute(array(':symbol' => $symbol));
             $r = $statement->fetch(\PDO::FETCH_NUM);
 
             return $r[0];
         } catch (\PDOException $e) {
             $this->error("Database failure to get the get the canon for symbol '$symbol'", $e);
         }
-    }
-
-    /**
-     * Raw DB function to delete the symbol (and whole row) from a store
-     *
-     *    SQL injection protected
-     *
-     * @param string $symbol The symbol to be deleted
-     */
-    private function queryDeleteSymbol($symbol)
-    {
-        try {
-            $statement = $this->dbHandle->prepare("DELETE FROM $this->storeName WHERE symbol = :symbol;");
-            $statement->bindValue(':symbol', $symbol, \PDO::PARAM_STR);
-            $statement->execute();
-        } catch (\PDOException $e) {
-            $this->error("Database failure to delete '$symbol'", $e);
-        }
-    }
-
-    /**
-     * Raw DB function to insert or update the row of an existing symbol ID data
-     *
-     * This will do an insert if it wasn't there, or update if it was.
-     *
-     * [sqlInjectionProtected]
-     *
-     * @param string $canon    The canon for the one or two symbols to be inserted
-     *
-     * @param string $symbol1  A symbol to be inserted
-     * (overwrites any existing information for an existing symbol)
-     *
-     * @param string $symbol2  An optional second symbol to be inserted
-     * (overwrites any existing information for an existing symbol)
-     */
-
-    private function queryAssertRow($canon, $symbol1, $symbol2=null)
-    {
-        try {
-            $sql = "REPLACE INTO $this->storeName VALUES (:canon, :symbol1)";
-            $values = array(
-                ':canon' => $canon,
-                ':symbol1' => $symbol1
-            );
-            if ($symbol2 != null) {
-                $sql .= ', (:canon, :symbol2)';
-                $values[':symbol2'] = $symbol2;
-            }
-            $this->query($sql, $values);
-        } catch (\PDOException $e) {
-            $this->error("Database failure to assert for symbol(s) '$symbol1' and maybe '$symbol2' and canon='$canon'");
-        }
-    }
-
-// TODO Move all this inline or write the documentation
-    protected function query($sql, $values=null)
-    {
-        $statement = $this->dbHandle->prepare($sql);
-        if ($values != null) {
-            foreach($values as $k => $v) {
-                $sql = str_replace($k, '"' . $v . '"', $sql);
-                $statement->bindValue($k, $v);
-            }
-        }
-        $statement->execute();
-
-        return $statement;
     }
 
     /**
