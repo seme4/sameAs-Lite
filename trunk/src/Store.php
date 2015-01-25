@@ -539,6 +539,34 @@ class Store
      */
     public function dumpStore()
     {
+        $file = "sameAsLite_backup_{$this->storeName}.tsv";
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
+        try {
+            $sql = "SELECT canon, symbol FROM $this->storeName INTO OUTFILE '$file' FIELDS TERMINATED BY '\t';";
+            $statement = $this->dbHandle->prepare($sql);
+            $statement->execute();
+        } catch (\PDOException $e) {
+            $this->error("Unable to dump store", $e);
+        }
+    }
+
+    /**
+     * Mainly for diagnostics, but can be used to back up or move stores
+     *  Output the whole sameAs table.
+     *  First line is headers.
+     *  Subsequent lines are each entry.
+     *  Represented as an array of one string per line.
+     *
+     *  A dump that has been saved to file can be re-asserted using restoreStore.
+     *
+     * @return string[] The array of strings
+     */
+    public function dumpStore2()
+    {
         // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
@@ -574,6 +602,30 @@ class Store
      * @param string $file The file name of the source data to be asserted
      */
     public function restoreStore($file)
+    {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
+        try {
+            $sql = "LOAD DATA INFILE '$file' INTO TABLE $this->storeName FIELDS TERMINATED BY '\t';";
+            $statement = $this->dbHandle->prepare($sql);
+            $statement->execute();
+        } catch (\PDOException $e) {
+            $this->error("Unable to restore store from file '$file'", $e);
+        }
+    }
+
+    /**
+     * Takes the output of dumpStore and adds it into this store
+     *
+     * Overwrites any existing values, leaving the others intact.
+     * Assumes the source data is valid.
+     *
+     * @param string $file The file name of the source data to be asserted
+     */
+    public function restoreStore2($file)
     {
         // skip if we've already connected
         if ($this->dbHandle == null) {
@@ -729,7 +781,6 @@ class Store
 
             $nSymbols = 0; // Symbols in the store
             $nBundles = 0; // Bundles in the store
-            $bundlesAssoc = array(); // An array of canon => array of symbols
             $bundleSizes = array(); // An array of canon => bundle size
             $httpSymbols = array(); // Array of symbols that have http:// at the start
             $httpsSymbols = array(); // Array of symbols that have https:// at the start
@@ -742,10 +793,8 @@ class Store
             $https2LDDomains = array(); // Array of https second level+TLD domains, with symbol counts in
             foreach ($store as $row) {
                 $s = $row['symbol'];
-                $b = $row['bundle'];
+                $b = $row['canon'];
                 $nSymbols++;
-// TODO All screwed up here!
-                $bundlesAssoc[$b][] = $s;
                 $bundleSizes[$b]++;
                 if (substr($s, 0, 7) == 'http://') {
                     // http:// URI
@@ -774,7 +823,7 @@ class Store
                     $plainSymbols[] = $s;
                 }
             }
-            $nBundles = count($bundlesAssoc);
+            $nBundles = count($bundleSizes);
 
             $sep = "=====================================================";
             $minisep = "------------------------";
@@ -787,7 +836,7 @@ class Store
             $sortedBundleSizes = $bundleSizes;
             sort($sortedBundleSizes);
             $middle = floor($nBundles / 2);
-            $output[] = $bundleSizes[$middle]."\tbundle size median";
+            $output[] = $sortedBundleSizes[$middle]."\tbundle size median";
             $values = array_count_values($bundleSizes);
             $mode = array_search(max($values), $values);
             $output[] = "$mode\tbundle size mode";
@@ -853,25 +902,23 @@ class Store
             $output[] = $sep;
             $output[] = "Things that might be considered errors:";
             // List of singleton bundle symbols
-            $output[] = "Singleton bundles:";
+            $output[] = "Singleton bundle symbols:";
             $singletons = array_keys($bundleSizes, 1);
-            $output[] = "Canon\tSymbol";
             foreach ($singletons as $singleton) {
-                $output[] = "$singleton\t{$bundlesAssoc[$singleton][0]}";
+                $output[] = "$singleton";
             }
 
             $output[] = $sep;
             $output[] = "Errors:";
             // TODO List of canons that are not symbols
-/*
             $output[] = "List of canons that are not also listed as symbols:";
-            $badCanons = array();
-This ain't right - it does all of them!
-            foreach ($bundlesAssoc[NULL] as $symbol) {
-                $badCanons[$this->queryGetCanon($symbol)] = NULL;
+            $sql = "SELECT DISTINCT canon FROM $this->storeName WHERE canon != symbol ORDER BY canon ASC;";
+            $statement = $this->dbHandle->prepare($sql);
+            $statement->execute();
+            $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($result as $row) {
+                $output[] = $row['canon'];
             }
-            foreach ($badCanons as $badCanon => $nothing) $output[] = $badCanon;
-*/
             $output[] = $sep;
             $output[] = "</pre>\n";
         } catch (\PDOException $e) {
