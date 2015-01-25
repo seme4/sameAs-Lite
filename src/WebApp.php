@@ -668,8 +668,11 @@ class WebApp
             }
         }
 
-        // Is it a single string, rather than an array? - if so make it an array
-        if (is_string($body)) {
+        if (is_null($body)) {
+            // Was there no output from this call?
+            $body = array();
+        } elseif (is_string($body)) {
+            // Is it a single string, rather than an array? - if so make it an array
             $body = array($body);
         }
 
