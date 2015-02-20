@@ -299,6 +299,15 @@ class Store
         }
 
         try {
+/*
+            $statement = $this->dbHandle->prepare(
+                "SELECT canon FROM $this->storeName WHERE canon = :symbol1 AND symbol = :symbol2 LIMIT 1;"
+            );
+            $statement->execute(array(':symbol1' => $symbol1, ':symbol2' => $symbol2));
+            $r = $statement->fetch(\PDO::FETCH_NUM);
+            //if ($r[0] === 1) { echo "foo\n"; print_r($r); exit; return;};
+            if ($r[0] === 1) return;
+*/
             // Are the symbols already in the store?
             $canon1 = $this->queryGetCanon($symbol1);
             $canon2 = $this->queryGetCanon($symbol2);
@@ -311,6 +320,9 @@ class Store
                 $sql = "REPLACE INTO $this->storeName VALUES (:symbol1, :symbol1), (:symbol1, :symbol2)";
                 $statement = $this->dbHandle->prepare($sql);
                 $statement->execute(array(':symbol1' => $symbol1, ':symbol2' => $symbol2));
+            } elseif ($canon1 === $canon2) {
+                // They were both already in the same bundle
+                // Do nothing
             } elseif ($canon1 === null) {
                 // Insert new $symbol1 into existing bundle for $symbol2
                 // No need to do anything about canons
@@ -323,9 +335,6 @@ class Store
                 $sql = "INSERT INTO $this->storeName VALUES (:canon1, :symbol2)";
                 $statement = $this->dbHandle->prepare($sql);
                 $statement->execute(array(':canon1' => $canon1, ':symbol2' => $symbol2));
-            } elseif ($canon1 === $canon2) {
-                // They were both already in the same bundle
-                // Do nothing
             } else {
                 // They are in different bundles
                 // So join the two bundles - set all of bundle 2 to be in bundle 1
