@@ -37,31 +37,45 @@ require_once 'vendor/autoload.php';
 
 // initialise the web application
 $app = new \SameAsLite\WebApp(array(
-    'titleHeader' => 'this is the title',
     'footerText' => 'This data is released under a CC0 License. Do with it as you will ;)',
 ));
 
-/*$app->addStore(
-    new \SameAsLite\Store('sqlite:test.sqlite', 'webdemo'),
+// TODO - think about abstraction of dbase connection, store and dataset. it
+// might make more sense to initialise one PDO object and hand this to the
+// various \SameAsLits\Store(s) which want to use it? otherwise we're
+// duplicating the dbase information for each dataset. alternatively, add all
+// details (incl dbase connection info) to the data passed to addDataset and
+// get that method to instantiate the \SameAsLite\Store object?
+
+$app->addDataset(
+    new \SameAsLite\Store(
+        'mysql:host=127.0.0.1;port=3306;charset=utf8',
+        'webdemo',
+        'testuser',
+        'testpass',
+        'testdb'
+    ),
     array(
-        'slug'    => 'store-1',
-        'name'    => 'My SameAs Store',
+        'slug'      => 'VIAF',
+        'shortName' => 'VIAF',
+        'fullName'  => 'Virtual International Authority File',
         'contact' => 'Joe Bloggs',
         'email'   => 'Joe.Bloggs@acme.org'
     )
 );
-*/
-$app->addStore(
+
+$app->addDataset(
     new \SameAsLite\Store(
         'mysql:host=127.0.0.1;port=3306;charset=utf8',
-        'webdemo',
-        'root', //'testuser',
-        'mysql', //'testpass',
+        'table1',
+        'testuser',
+        'testpass',
         'testdb'
     ),
     array(
-        'slug'    => 'store-2',
-        'name'    => 'My SameAs Store in MySQL',
+        'slug'      => 'test',
+        'shortName' => 'Test Store',
+        'fullName'  => 'Test store used for SameAs Lite development',
         'contact' => 'Joe Bloggs',
         'email'   => 'Joe.Bloggs@acme.org'
     )

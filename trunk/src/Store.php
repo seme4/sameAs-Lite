@@ -35,8 +35,6 @@
 
 namespace SameAsLite;
 
-ini_set('max_execution_time', 1800);
-
 /**
  * Provides storage and management of SameAs relationships.
  * TODO Note that the is the possibility/probability of there being singleton bundles.
@@ -165,17 +163,25 @@ class Store
 
         // try to create tables for this store, if they don't exist
         try {
-            $sql = ($this->dbType === 'mysql' ? 'SET default_storage_engine=MYISAM;' : '') .
-                   'CREATE TABLE IF NOT EXISTS ' . $this->storeName .
-                   ' (canon VARCHAR(256), symbol VARCHAR(256), PRIMARY KEY (symbol), INDEX(canon) ); ' ;
+            if ($this->dbType == 'sqlite') {
+                $sql = 'CREATE TABLE IF NOT EXISTS ' . $this->storeName .
+                    ' (canon TEXT, symbol TEXT PRIMARY KEY)' .
+                    ' WITHOUT ROWID;' .
+                    ' CREATE INDEX IF NOT EXISTS ' . $this->storeName . '_idx' .
+                    ' ON ' . $this->storeName . ' (canon);';
+            } else {
+                $sql = 'CREATE TABLE IF NOT EXISTS ' . $this->storeName .
+                    ' (canon VARCHAR(256), symbol VARCHAR(256), PRIMARY KEY (symbol), INDEX(canon))' .
+                    ' ENGINE = MYISAM;';
+            }
             $this->dbHandle->exec($sql);
         } catch (\PDOException $e) {
             throw new \Exception(
-                'Failed to create Store with name ' . $this->storeName . " query: =$sql=" .
+                'Failed to create Store with name ' . $this->storeName .
+                ' // ' . $this->dbType . ': ' . $sql .
                 $e->getMessage()
             );
         }
-
     }
 
     /**
@@ -208,16 +214,17 @@ class Store
         }
 
         try {
-            $sql = "SELECT t1.canon, t1.symbol FROM {$this->storeName} AS t1, {$this->storeName} AS t2 WHERE t1.canon = t2.canon AND t2.symbol = :search ORDER BY t1.canon DESC, t1.symbol ASC;";
+            $sql = 'SELECT t1.canon, t1.symbol ' .
+                "FROM {$this->storeName} AS t1, {$this->storeName} AS t2 " .
+                'WHERE t1.canon = t2.canon AND t2.symbol = :search ' .
+                'ORDER BY t1.canon DESC, t1.symbol ASC;';
             $statement = $this->dbHandle->prepare($sql);
             $statement->execute(array('search' => $symbol));
             $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
             $output = array();
-            $output[] = "<pre>"; // TODO
             foreach ($result as $row) {
                 $output[] = $row['symbol'];
             }
-            $output[] = "</pre>";
         } catch (\PDOException $e) {
             $this->error("Query symbol '$symbol' failed", $e);
         }
@@ -245,17 +252,20 @@ class Store
         }
 
         try {
-            $sql = "SELECT t1.canon, t1.symbol FROM {$this->storeName} AS t1, {$this->storeName} AS t2 WHERE t1.canon = t2.canon AND t2.symbol LIKE :string ORDER BY t1.canon DESC, t1.symbol ASC;";
+            $sql = 'SELECT t1.canon, t1.symbol FROM ' .
+                "{$this->storeName} AS t1, {$this->storeName} AS t2 " .
+                'WHERE t1.canon = t2.canon AND t2.symbol LIKE :string ' .
+                'ORDER BY t1.canon DESC, t1.symbol ASC;';
+            // TODO ??? $sql = "SELECT symbol FROM {$this->storeName} " .
+            // 'WHERE symbol LIKE :string ORDER BY symbol DESC';
             $statement = $this->dbHandle->prepare($sql);
             $statement->bindValue(':string', "%$string%", \PDO::PARAM_STR);
             $statement->execute();
             $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
             $output = array();
-            $output[] = "<pre>"; // TODO
             foreach ($result as $row) {
                 $output[] = $row['symbol'];
             }
-            $output[] = "</pre>";
         } catch (\PDOException $e) {
             $this->error("Search for '$string' failed", $e);
         }
@@ -476,7 +486,7 @@ class Store
             $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
             $output = array();
             foreach ($results as $row) {
-                $output[] = $row['symbol'];
+                $output[] = $row['canon'];
             }
         } catch (\PDOException $e) {
             $this->error("Database failure to get canons from store", $e);
@@ -496,7 +506,11 @@ class Store
         }
 
         try {
-            $statement = $this->dbHandle->prepare("DROP TABLE $this->storeName;");
+            $sql = 'DROP TABLE IF EXISTS ' . $this->storeName . ';';
+            if ($this->dbType == 'sqlite') {
+                $sql .= 'DROP INDEX IF EXISTS ' . $this->storeName . '_idx;';
+            }
+            $statement = $this->dbHandle->prepare($sql);
             $statement->execute();
         } catch (\PDOException $e) {
             $this->error("Database failure to delete store", $e);
@@ -527,25 +541,29 @@ class Store
     }
 
     /**
-     * Mainly for diagnostics, but can be used to back up or move stores
-     *  Output the whole sameAs table.
-     *  First line is headers.
-     *  Subsequent lines are each entry.
-     *  Represented as an array of one string per line.
+     * Export the contents of a MySQL database to file. Mainly for diagnostics,
+     * but can also be used (with care) for backup/restore.
      *
-     *  A dump that has been saved to file can be re-asserted using restoreStore.
-     *
-     * @return string[] The array of strings
+     * @param string $file The file name to which the data is written (optional)
+     * @throws \Exception if the database is not MySQL
      */
-    public function dumpStore()
+    public function exportToFile($file = null)
     {
-        $file = "sameAsLite_backup_{$this->storeName}.tsv";
+        if ($this->dbType == 'sqlite') {
+            throw new \Exception('This function is only supported for MySQL databases');
+        }
+
         // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
         }
 
+        if ($file == null) {
+            $file = "sameAsLite_backup_{$this->storeName}.tsv";
+        }
+
         try {
+            // TODO: this is MySQL specific
             $sql = "SELECT canon, symbol FROM $this->storeName INTO OUTFILE '$file' FIELDS TERMINATED BY '\t';";
             $statement = $this->dbHandle->prepare($sql);
             $statement->execute();
@@ -555,54 +573,20 @@ class Store
     }
 
     /**
-     * Mainly for diagnostics, but can be used to back up or move stores
-     *  Output the whole sameAs table.
-     *  First line is headers.
-     *  Subsequent lines are each entry.
-     *  Represented as an array of one string per line.
-     *
-     *  A dump that has been saved to file can be re-asserted using restoreStore.
-     *
-     * @return string[] The array of strings
-     */
-    public function dumpStore2()
-    {
-        // skip if we've already connected
-        if ($this->dbHandle == null) {
-            $this->connect();
-        }
-
-        try {
-            // TODO Can be done for mySQL using SELECT ... INTO OUTFILE
-            $statement = $this->dbHandle->prepare(
-                "SELECT canon, symbol FROM $this->storeName ORDER BY canon ASC, symbol ASC"
-            );
-            $statement->execute();
-            $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
-
-            $output = array();
-            $output[] = "<pre>";
-            $output[] = "Canon\tSymbol";
-            foreach ($results as $row) {
-                $output[] = "{$row['canon']}\t{$row['symbol']}";
-            }
-        } catch (\PDOException $e) {
-            $this->error("Unable to dump store", $e);
-        }
-        $output[] = "</pre>";
-        return $output;
-    }
-
-    /**
-     * Takes the output of dumpStore and adds it into this store
+     * Takes the output of exportToFile and loads into a MySQL based Store
      *
      * Overwrites any existing values, leaving the others intact.
      * Assumes the source data is valid.
      *
      * @param string $file The file name of the source data to be asserted
+     * @throws \Exception if the database is not MySQL
      */
-    public function restoreStore($file)
+    public function loadFromFile($file)
     {
+        if ($this->dbType == 'sqlite') {
+            throw new \Exception('This function is only supported for MySQL databases');
+        }
+
         // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
@@ -618,6 +602,35 @@ class Store
     }
 
     /**
+     * Mainly for diagnostics, returns all canon,symbol records from the store
+     *
+     * @return string[] The array of strings
+     */
+    public function dumpStore()
+    {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
+        try {
+            $statement = $this->dbHandle->prepare(
+                "SELECT canon, symbol FROM $this->storeName ORDER BY canon ASC, symbol ASC"
+            );
+            $statement->execute();
+            $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+            $output = array();
+            foreach ($results as $row) {
+                $output[] = array($row['canon'], $row['symbol']);
+            }
+        } catch (\PDOException $e) {
+            $this->error("Unable to dump store", $e);
+        }
+        return $output;
+    }
+
+    /**
      * Takes the output of dumpStore and adds it into this store
      *
      * Overwrites any existing values, leaving the others intact.
@@ -625,8 +638,11 @@ class Store
      *
      * @param string $file The file name of the source data to be asserted
      */
-    public function restoreStore2($file)
+    public function restoreStore($file)
     {
+
+// TODO - decide if this function is required. maybe for sqlite?
+
         // skip if we've already connected
         if ($this->dbHandle == null) {
             $this->connect();
@@ -637,13 +653,9 @@ class Store
             $this->error("Failed to open file '$file'");
         }
 
-        // lose the heading line
-        array_shift($data);
-
         try {
             // assert each row
             foreach ($data as $line) {
-                $line = trim($line);
                 $bits = explode("\t", $line);
                 $this->assertPair($bits[0], $bits[1]);
             }
@@ -660,6 +672,8 @@ class Store
      * problematic at the limit.
      * In fact will simply throw an SQL error if there is no symbol column.
      *
+     * TODO - is this function even neccessary?
+     * TODO - think this should return a structured array containing the data
      * @return string[] A header line followed by statistics on each store
      */
     public function listStores()
@@ -686,7 +700,7 @@ class Store
             $output[] = "<pre>\n";
             $output[] = "Symbols\tBundles\tStore";
             foreach ($rows as $row) {
-                $store = $row['name']; // TODO This doesn't work for mySQL - it's Array ( [Tables_in_testdb] => webdemo )
+                $store = $row['name']; // TODO This doesn't work for mySQL, it's Array ([Tables_in_testdb] => webdemo)
                 $statement = $this->dbHandle->prepare("SELECT COUNT(DISTINCT symbol) FROM $this->storeName;");
                 $statement->execute();
                 $count = $statement->fetch(\PDO::FETCH_NUM);
@@ -705,6 +719,7 @@ class Store
     /**
      * Provide basic statistics on the store - number of symbols and number of bundles
      *
+     * TODO - think this should return a structured array containing the data
      * @return string[] The array wih the results in
      */
     public function statistics()
@@ -754,6 +769,7 @@ class Store
      *    Bundles without a canon
      *    Bundles with more than one canon
      *
+     * TODO - think this should return a structured array containing the data
      * @return string[] The array wih the results in
      */
     public function analyse()
