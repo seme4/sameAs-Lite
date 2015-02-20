@@ -1,11 +1,11 @@
+{# Template for a generic page #}
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    {% block head %}
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
 
     <title>SameAs Lite{{titleHTML}}</title>
 
@@ -18,7 +18,7 @@
       <script src="http://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="http://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-
+    {% endblock %}
   </head>
 
   <body>
@@ -34,23 +34,26 @@
             <span class="icon-bar"></span>
           </button>
           <a class="navbar-brand" href="{{path}}/">SameAs <sup>LITE</sup></a>
+          {{titleSupplementary}}
         </div>
         <div class="navbar-collapse collapse navbar-right">
           <ul class="nav navbar-nav">
             {% block menu %}
             <li><a href="{{path}}/about">About</a></li>
-            <li><a href="{{path}}/api">API</a></li>
+            <li><a href="{{path}}/{{apiPath}}">API</a></li>
+            {% if datasets|length > 0 %}
             <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Datasets <b class="caret"></b></a>
+              <a href="{{path}}/datasets" class="dropdown-toggle" data-toggle="dropdown">Datasets <b class="caret"></b></a>
               <ul class="dropdown-menu">
-                <li><a href="{{path}}/datasets/one">Dataset 1</a></li>
-                <li><a href="{{path}}/datasets/two">Dataset 2</a></li>
-                <li><a href="{{path}}/datasets/three">Dataset 3</a></li>
+                {% for d in datasets %}
+                <li><a href="{{path}}/datasets/{{d.slug}}">{{d.shortName}}</a></li>
+                {% endfor %}
               </ul>
             </li>
+            {% endif %}
             <li><a href="{{path}}/contact">Contact</a></li>
+            {% endblock %}
           </ul>
-          {% endblock %}
         </div><!--/.nav-collapse -->
       </div>
     </div>
@@ -64,9 +67,9 @@
 
     <main id="content">
       <div class="container">
-
+{% block body %}
 {{body}}
-
+{% endblock %}
       </div>
     </main><! --/content -->
 
@@ -86,13 +89,7 @@
     <!-- JavaScript -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
-
-    <!--script src="assets/js/retina-1.1.0.js"></script>
-    <script src="assets/js/jquery.hoverdir.js"></script>
-    <script src="assets/js/jquery.hoverex.min.js"></script>
-    <script src="assets/js/jquery.prettyPhoto.js"></script>
-    <script src="assets/js/jquery.isotope.min.js"></script>
-    <script src="assets/js/custom.js"></script-->
+    {{javascript}}
 
   </body>
 </html>

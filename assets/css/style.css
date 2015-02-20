@@ -6,9 +6,9 @@
 /**
   color scheme
 
-  #34495e "wet asphalt" nav bar background
-  #3498db "peter river" header background
-  #2ecc71 "emerald"     green
+  #384452               nav bar background
+  #3498db "peter river" header background, links
+  #27ae60 "nephritis"   green (variables)
 */
 
 /* fonts */
@@ -28,7 +28,8 @@ pre.white { background: transparent; border: 0; padding: 0; margin: 20px 0; }
 .navbar-brand { font-family: 'Raleway', sans-serif; font-weight: 900; color: white }
 .navbar-header .navbar-brand { color: white; }
 .navbar-header .navbar-brand:hover { color: #3498db; }
-.navbar-brand sup { font-weight: normal; font-size: 12px; top: -0.9em; }
+.navbar-header .navbar-brand sup { font-weight: normal; font-size: 12px; top: -0.9em; }
+.navbar-header .navbar-brand.supplementary { margin-left: 0; padding: 15px 0; }
 
 .navbar-default { background-color: #384452; border-color: transparent; }
 .navbar-default .navbar-nav > li > a { color: white; font-weight: 700; font-size: 12px; text-transform: uppercase; }
@@ -52,7 +53,7 @@ header { background: #3498db; padding: 80px 0 20px 0; color: white; }
 header h1 + p { margin: -10px 0 5px 0; }
 header p a { color: white; padding: 0 5px; }
 header p a:first-child { padding-left: 0; }
-header p a:hover { color: #34495e; text-decoration: none; }
+header p a:hover { color: #384452; text-decoration: none; }
 
 /* footer */
 footer { position: absolute; bottom: 0; width: 100%; height: 100px; padding: 40px 0; background: #222; color: #aaa; }
@@ -72,6 +73,12 @@ div.alt-formats a:hover { background: #3498db; }
 
 /* API pages */
 .panel-api .panel-heading { cursor: pointer; }
-.panel-api .panel-heading .method { min-width: 50px; float: left; margin-right: 20px; }
-.panel-api .panel-heading b span { color: #c0392b; padding: 0 2px; }
+.panel-api .panel-heading .method { min-width: 75px; float: left; }
+.panel-api .panel-heading b span { color: #27ae60; padding: 0 1px; }
+.panel-api tt span { color: #27ae60; }
+.panel-api .panel-heading .glyphicon-lock { float: right; top: 3px; right: 6px; color: #444; }
+.panel-api .form-group { margin: 0; }
+.panel-api input[type="text"] { max-width: 25%; margin: 0 5px 5px 0; float: left; }
+.panel-api input[type="submit"] { width: auto; float: left; }
+.panel-api textarea { margin-bottom: 5px; min-height: 100px; }
 ul li span.label { position: absolute; margin: 2px 0 0 10px; }

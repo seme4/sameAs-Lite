@@ -87,7 +87,7 @@ class StoreTest extends \PHPUnit_Framework_TestCase
     public function testAnEmptyStoreCanBeDumped()
     {
         $s = new Store(self::DSN, self::STORE_NAME);
-        $expected = array("Bundle\tFlags\tSymbol");
+        $expected = array();
         $result = $s->dumpStore();
         $this->assertEquals($expected, $result);
     }
