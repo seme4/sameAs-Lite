@@ -26,41 +26,9 @@ if (class_exists('Squiz_Sniffs_Commenting_FunctionCommentSniff', true) === false
  * @category  PHP
  * @package   PHP_CodeSniffer
  * @author    Ian Millard <ian@ianmillard.com>
- * @copyright 2014. All rights reserved.
  */
-class CodeStandard_Sniffs_Commenting_FunctionCommentSniff
+class CodeStandard_Sniffs_Commenting_FunctionCommentSniff extends Squiz_Sniffs_Commenting_FunctionCommentSniff
 {
-    /**
-     * Returns an array of tokens this test wants to listen for.
-     *
-     * @return array
-     */
-    public function register()
-    {
-        return array(T_FUNCTION);
-    }//end register()
-
-    /**
-     * Processes this test, when one of its tokens is encountered.
-     *
-     * @param PHP_CodeSniffer_File $phpcsFile The file being scanned.
-     * @param int                  $stackPtr  The position of the current token
-     *                                        in the stack passed in $tokens.
-     *
-     * @return void
-     */
-    public function process(PHP_CodeSniffer_File $phpcsFile, $stackPtr)
-    {
-        $tokens = $phpcsFile->getTokens();
-        $find   = PHP_CodeSniffer_Tokens::$methodPrefixes;
-        $find[] = T_WHITESPACE;
-
-        $commentEnd = $phpcsFile->findPrevious($find, ($stackPtr - 1), null, true);
-        $commentStart = $tokens[$commentEnd]['comment_opener'];
-
-        $this->processReturn($phpcsFile, $stackPtr, $commentStart);
-
-    }//end process()
 
     /**
      * Process the return comment of this function comment.
@@ -120,7 +88,6 @@ class CodeStandard_Sniffs_Commenting_FunctionCommentSniff
                 }
             }
         }
-
 
         if ($isSpecialMethod === false && $methodName !== $className) {
             if ($return !== null) {
@@ -217,7 +184,6 @@ class CodeStandard_Sniffs_Commenting_FunctionCommentSniff
         }//end if
 
     }//end processReturn()
-
 
 }//end class
 
