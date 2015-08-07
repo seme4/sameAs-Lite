@@ -34,10 +34,10 @@
     <exclude name="Squiz.Commenting.FileComment.SpacingAfterOpen"/>
     <exclude name="Squiz.Commenting.FileComment.IncorrectAuthor"/>
     <exclude name="Squiz.Commenting.FileComment.IncorrectCopyright"/>
-    <exclude name="Squiz.Commenting.FileComment.@authorTagOrder"/>
-    <exclude name="Squiz.Commenting.FileComment.@copyrightTagOrder"/>
-    <exclude name="Squiz.Commenting.FileComment.@subpackageTagOrder"/>
-    <exclude name="Squiz.Commenting.FileComment.Missing@subpackageTag"/>
+    <exclude name="Squiz.Commenting.FileComment.AuthorTagOrder"/>
+    <exclude name="Squiz.Commenting.FileComment.CopyrightTagOrder"/>
+    <exclude name="Squiz.Commenting.FileComment.SubpackageTagOrder"/>
+    <exclude name="Squiz.Commenting.FileComment.MissingSubpackageTag"/>
 
     <exclude name="Squiz.Commenting.PostStatementComment.Found"/>
 
