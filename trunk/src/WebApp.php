@@ -506,7 +506,7 @@ class WebApp
         }
 
         // missing or invalid credentials
-        if (!$authorized && (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
+        if (!$authorized) { // && (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
             header('WWW-Authenticate: Basic realm="SameAs Lite"');
             header('HTTP\ 1.0 401 Unauthorized');
             $this->outputError(
@@ -683,9 +683,8 @@ class WebApp
      */
     public function homepage()
     {
-        $this->app->view()->set('titleHTML', ' ');
-        $this->app->view()->set('titleHeader', 'Welcome');
-        $this->outputHTML('This is the homepage...</p><p>TODO: list the available stores!');
+        // Mirror list stores for now
+        $this->listStores();
     }
 
     /**
@@ -693,14 +692,23 @@ class WebApp
      *
      * @param string $store The URL slug identifying the store
      */
-    public function storeHomepage($store)
+    public function storeHomepage($storeSlug)
     {
-        $this->app->view()->set('titleHTML', $this->storeOptions[$store]['shortName']);
-        $this->app->view()->set('titleHeader', $this->storeOptions[$store]['fullName']);
-        $this->outputHTML(
-            'This is the homepage for an individual dataset...</p>' .
-            '<p>TODO: list statistics? description? license? search box?</p>'
-        );
+        $soptions = $this->storeOptions[$storeSlug];
+        $store = $this->stores[$storeSlug];
+
+        // Get the store's statistics
+        $stats = $store->statistics();
+
+
+        $viewData = array_merge($soptions, [
+            'titleHTML' => $soptions['shortName'],
+            'titleHeader' => $soptions['fullName'],
+            'statistics' => $stats,
+            'apiPath' => "datasets/$storeSlug/api"
+        ]);
+
+        $this->app->render('storeHomepage.twig', $viewData);
     }
 
     /**
@@ -1015,7 +1023,12 @@ class WebApp
     public function querySymbol($store, $symbol)
     {
         $result = $this->stores[$store]->querySymbol($symbol);
-        $this->outputHTML($result);
+
+    // TODO - give detailed info about the symbol
+
+        $dummy = $this->app->view()->fetch('snippet-bundle.twig');
+
+        $this->outputHTML('<pre>' . htmlentities(print_r($result, true)) . '</pre>' . $dummy);
     }
 
     /**
@@ -1055,8 +1068,22 @@ class WebApp
      */
     public function listStores()
     {
-        // TODO
-        $this->outputHTML('TODO');
+        $soptions = $this->storeOptions;
+
+        $ul = [];
+        foreach($soptions as $so){
+            $ul[] = '<a class="list-group-item" href="/datasets/' . $so['slug'] . '">
+                    <p class="h3">' . $so['shortName'] . '</p>
+                    <p style="text-indent: 1em;">' . $so['fullName'] . '</p>
+                    </a>';
+        }
+
+        $ht = "<div class='list-group'>" . implode("", $ul) . "</div>";
+
+
+        $this->app->view()->set('titleHTML', ' ');
+        $this->app->view()->set('titleHeader', 'Datasets');
+        $this->outputHTML('<div class="h2">Currently available datasets</div></p>' . $ht);
     }
 
     /**
@@ -1121,7 +1148,7 @@ class WebApp
     protected function outputSuccess($msg)
     {
         $this->app->contentType($this->mimeBest);
-        switch($this->mimeBest) {
+        switch ($this->mimeBest) {
             case 'text/plain':
                 print $msg;
                 break;
@@ -1150,8 +1177,7 @@ class WebApp
     protected function outputList(array $list = array())
     {
         $this->app->contentType($this->mimeBest);
-        switch($this->mimeBest) {
-
+        switch ($this->mimeBest) {
             case 'text/plain':
                 print join("\n", $list);
                 break;
@@ -1188,22 +1214,29 @@ class WebApp
      */
     protected function outputTable(array $data, array $headers)
     {
+        $this->app->contentType($this->mimeBest);
 
-        switch($this->mimeBest) {
+        switch ($this->mimeBest) {
             case 'text/csv':
-                // TODO - why is there no native array to csv function?!
-                // TODO - this is not safe (no escaping)
-                print join(',', $headers) . "\n";
-                foreach ($data as $row) {
-                    print join(',', $row) . "\n";
+                $out = fopen('php://output', 'w');
+
+                fputcsv($out, $headers);
+                foreach($data as $i){
+                    fputcsv($out, $i);
                 }
+
+                fclose($out);
                 break;
 
             case 'text/tab-separated-values':
-                print join("\t", $headers) . "\n";
-                foreach ($data as $row) {
-                    print join("\t", $row) . "\n";
+                $out = fopen('php://output', 'w');
+
+                fputcsv($out, $headers, "\t");
+                foreach($data as $i){
+                    fputcsv($out, $i, "\t");
                 }
+                
+                fclose($out);
                 break;
 
             case 'application/json':
@@ -1237,6 +1270,7 @@ class WebApp
                 break;
 
             default:
+                $this->app->contentType('text/html');
                 throw new \Exception('Could not render tabular output as ' . $this->mimeBest);
         }
     }

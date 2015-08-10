@@ -59,8 +59,11 @@ $app->addDataset(
         'slug'      => 'VIAF',
         'shortName' => 'VIAF',
         'fullName'  => 'Virtual International Authority File',
-        'contact' => 'Joe Bloggs',
-        'email'   => 'Joe.Bloggs@acme.org'
+        'contact' => [
+            'name' => 'Joe Bloggs',
+            'email' => 'Joe.Bloggs@acme.org',
+            'telephone' => '0123456789'
+        ]
     )
 );
 
@@ -76,8 +79,12 @@ $app->addDataset(
         'slug'      => 'test',
         'shortName' => 'Test Store',
         'fullName'  => 'Test store used for SameAs Lite development',
-        'contact' => 'Joe Bloggs',
-        'email'   => 'Joe.Bloggs@acme.org'
+        'description' => 'There is lots of great info in here about the things you can do. Learn about places, cheese and crips and how these all relate!',
+        'contact' => [
+            'name' => 'Joe Bloggs',
+            'email' => 'Joe.Bloggs@acme.org',
+            'telephone' => '0123456789'
+        ]
     )
 );
 
