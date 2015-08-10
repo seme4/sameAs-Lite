@@ -300,14 +300,14 @@ class Store
 
         try {
 /*
-            $statement = $this->dbHandle->prepare(
+    $statement = $this->dbHandle->prepare(
                 "SELECT canon FROM $this->storeName WHERE canon = :symbol1 AND symbol = :symbol2 LIMIT 1;"
             );
             $statement->execute(array(':symbol1' => $symbol1, ':symbol2' => $symbol2));
             $r = $statement->fetch(\PDO::FETCH_NUM);
             //if ($r[0] === 1) { echo "foo\n"; print_r($r); exit; return;};
             if ($r[0] === 1) return;
-*/
+    */
             // Are the symbols already in the store?
             $canon1 = $this->queryGetCanon($symbol1);
             $canon2 = $this->queryGetCanon($symbol2);
@@ -738,7 +738,7 @@ class Store
             $this->connect();
         }
 
-        $output = array();
+        /*$output = array();
         $output[] = "Statistics for sameAs store $this->storeName:";
         try {
             // get number of symbols
@@ -759,7 +759,32 @@ class Store
         } catch (\PDOException $e) {
             $this->error("Database failure to get statistics for store", $e);
         }
-        return $output;
+        return $output;*/
+
+
+        // Convert the function to structured data
+        $stats = [];
+        try {
+            // get number of symbols
+            $statement = $this->dbHandle->prepare(
+                "SELECT COUNT(DISTINCT symbol) FROM $this->storeName ;"
+            );
+            $statement->execute();
+            $symbols = $statement->fetch(\PDO::FETCH_NUM);
+            $stats["symbols"] = $symbols[0];
+
+            // get number of bundles
+            $statement = $this->dbHandle->prepare(
+                "SELECT COUNT(DISTINCT canon) FROM $this->storeName ;"
+            );
+            $statement->execute();
+            $bundles = $statement->fetch(\PDO::FETCH_NUM);
+            $stats["bundles"] = $bundles[0];
+        } catch (\PDOException $e) {
+            $this->error("Database failure to get statistics for store", $e);
+        }
+
+        return $stats;
     }
 
     /**
