@@ -738,9 +738,9 @@ class WebApp
     /**
      * Describes a URL route
      *
-     * @param array       $info  The routeInfo for the route being described
-     * @param string|null $store Optional specific store slug
-     * @return string The HTML blob desbribing this route
+     * @param array        $info    The routeInfo for the route being described
+     * @param string|null  $store   Optional specific store slug
+     * @return string               The HTML blob desbribing this route
      */
     protected function renderRoute(array $info, $store = null)
     {
@@ -782,7 +782,7 @@ class WebApp
         if ($method == 'GET' && $numVariables == 0) {
             // GET request without any variables - straight link (ie not submission via the form)
             $tryNow = '<p class=\"form-control-static\">';
-            $tryNow .= '<a href="' . $endpointURL . '" class="btn btn-'.$map[$method].'">' . $method . '</a>';
+            $tryNow .= '<button type="submit" class="btn btn-'.$map[$method].'">' . $method . '</button>';
             $tryNow .= '</p>';
         } else {
             // we need a form, either to allow input of variables or to spoof HTTP request type
@@ -1235,7 +1235,7 @@ class WebApp
                 foreach($data as $i){
                     fputcsv($out, $i, "\t");
                 }
-                
+
                 fclose($out);
                 break;
 
