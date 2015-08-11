@@ -404,6 +404,8 @@ class Store
      *        It could delete all the symbols in the bundle
      *        It *must* do something, otherwise the DB becomes inconsistent, with symbols that don't have canons
      *
+     *        I feel restricting the removal of cannons unless it is the only symbol in the bundle? This would make the most sense
+     *
      * @param string $symbol The symbol to be deleted.
      */
     public function removeSymbol($symbol)

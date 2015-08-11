@@ -5,13 +5,27 @@
 
 $(document).ready(function() {
 
-    // Fetch from sessionStorage
-    var panelId = sessionStorage.getItem("lastApiPanel"),
-        panel = (panelId)?$("#" + panelId):null;
-    if(panel && panel.collapse){
-        panel.collapse();
-        panel.get(0).scrollIntoView();
+    // Loads and opens the panel stored in sessionStorage
+    function loadFromStorage(){
+        // Fetch from sessionStorage
+        var panelId = sessionStorage.getItem("lastApiPanel"),
+            panel = (panelId)?$("#" + panelId):null;
+        if(panel && panel.collapse){
+            panel.collapse();
+            panel.get(0).scrollIntoView();
+        }
     }
+
+    loadFromStorage();
+
+    // Saves the given panelId to sessionStorage
+    function saveToStorage(panelId){
+        if("sessionStorage" in window){
+            sessionStorage.setItem("lastApiPanel", panelId);
+        }
+    }
+
+
 
     $('form.api').submit(function(e) {
         var t = $(this),
@@ -39,9 +53,13 @@ $(document).ready(function() {
 
         // Set the sessionStorage value for this action (IE8+)
         var panelId = t.closest(".collapse").attr("id");
-        if("sessionStorage" in window){
-            sessionStorage.setItem("lastApiPanel", panelId);
-        }
+        saveToStorage(panelId);
+    });
+
+    $(".get-btn").click(function(e){
+        // Set the sessionStorage value for this action (IE8+)
+        var panelId = $(this).closest(".collapse").attr("id");
+        saveToStorage(panelId);
     });
 
 

@@ -657,6 +657,7 @@ class WebApp
         }
 
         $this->app->contentType('text/html');
+        $app->response->setStatus($status);
         $this->app->view()->set('titleHTML', ' - ' . strip_tags($title));
         $this->app->view()->set('titleHeader', 'Error ' . $status);
         $this->app->view()->set('title', $extendedTitle);
@@ -782,7 +783,7 @@ class WebApp
         if ($method == 'GET' && $numVariables == 0) {
             // GET request without any variables - straight link (ie not submission via the form)
             $tryNow = '<p class=\"form-control-static\">';
-            $tryNow .= '<button type="submit" class="btn btn-'.$map[$method].'">' . $method . '</button>';
+            $tryNow .= '<a class="get-btn btn btn-'.$map[$method].'" href="' . $endpointURL . '">' . $method . '</a>';
             $tryNow .= '</p>';
         } else {
             // we need a form, either to allow input of variables or to spoof HTTP request type
@@ -1022,6 +1023,11 @@ class WebApp
      */
     public function querySymbol($store, $symbol)
     {
+        $shortName = $this->storeOptions[$store]['shortName'];
+        $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
+        $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
+
+
         $result = $this->stores[$store]->querySymbol($symbol);
 
     // TODO - give detailed info about the symbol
@@ -1042,7 +1048,7 @@ class WebApp
      */
     public function removeSymbol($store, $symbol)
     {
-        $this->stores[$store]->removeSymbol($symbol);
+        $result = $this->stores[$store]->removeSymbol($symbol);
         $this->outputSuccess($result);
     }
 
@@ -1056,12 +1062,16 @@ class WebApp
      */
     public function statistics($store)
     {
+        $shortName = $this->storeOptions[$store]['shortName'];
+        $this->app->view()->set('titleHTML', ' - Statistics ' . $shortName);
+        $this->app->view()->set('titleHeader', 'Statistics ' . $shortName);
+
         $result = $this->stores[$store]->statistics();
-        $this->outputHTML($result);
+        $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
     }
 
     /**
-     * Actions the HTTP GET service from /list
+     * Actions the HTTP GET service from /datasets
      *
      * Simply passes the request on to the listStores sameAsLite Class method.
      * Outputs the results in the format requested
@@ -1096,8 +1106,9 @@ class WebApp
      */
     public function analyse($store)
     {
-        $this->app->view()->set('titleHTML', ' - Analyse ' . $this->storeOptions[$store]['shortName']);
-        $this->app->view()->set('titleHeader', 'Analyse ' . $this->storeOptions[$store]['shortName']);
+        $shortName = $this->storeOptions[$store]['shortName'];
+        $this->app->view()->set('titleHTML', ' - Analyse ' . $shortName);
+        $this->app->view()->set('titleHeader', 'Analyse ' . $shortName);
 
         $result = $this->stores[$store]->analyse();
         $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
