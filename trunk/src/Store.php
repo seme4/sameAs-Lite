@@ -728,8 +728,7 @@ class Store
     /**
      * Provide basic statistics on the store - number of symbols and number of bundles
      *
-     * TODO - think this should return a structured array containing the data
-     * @return string[] The array wih the results in
+     * @return mixed[] An associative array wih the statistics in
      */
     public function statistics()
     {
@@ -737,30 +736,6 @@ class Store
         if ($this->dbHandle == null) {
             $this->connect();
         }
-
-        /*$output = array();
-        $output[] = "Statistics for sameAs store $this->storeName:";
-        try {
-            // get number of symbols
-            $statement = $this->dbHandle->prepare(
-                "SELECT COUNT(DISTINCT symbol) FROM $this->storeName ;"
-            );
-            $statement->execute();
-            $symbols = $statement->fetch(\PDO::FETCH_NUM);
-            $output[] = $symbols[0]."\tsymbols";
-
-            // get number of bundles
-            $statement = $this->dbHandle->prepare(
-                "SELECT COUNT(DISTINCT canon) FROM $this->storeName ;"
-            );
-            $statement->execute();
-            $bundles = $statement->fetch(\PDO::FETCH_NUM);
-            $output[] = $bundles[0]."\tbundles";
-        } catch (\PDOException $e) {
-            $this->error("Database failure to get statistics for store", $e);
-        }
-        return $output;*/
-
 
         // Convert the function to structured data
         $stats = [];
@@ -787,6 +762,255 @@ class Store
         return $stats;
     }
 
+
+
+
+
+    /**
+     * Provide detailed analysis of the store
+     *
+     *    Number of symbols
+     *    Number of bundles
+     *    Average and median symbols per bundle
+     *    Table of count of bundles for each bundle size
+     *
+     *    Number of http, https and non-http(s) symbols
+     *
+     *    URI(s) per domain - for http(s) symbols
+     *
+     *    List of singleton bundle symbols
+     *    Bundles without a canon
+     *    Bundles with more than one canon
+     *
+     * @return string[] The array wih the results in
+     */
+    public function analyse()
+    {
+        // skip if we've already connected
+        if ($this->dbHandle == null) {
+            $this->connect();
+        }
+
+        $output = [];
+
+        $output["meta"] = [
+            'store_name'     => $this->storeName,
+            'database_name'  => $this->dbName
+        ];
+
+        try {
+            // Just get the whole store into an array to work on
+            $statement = $this->dbHandle->prepare(
+                "SELECT * FROM $this->storeName ORDER BY canon ASC, symbol ASC;"
+            );
+            $statement->execute();
+            $store = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+            $output['rows'] = count($store);
+
+            if (count($store) === 0) {
+                return $output; // Return here as the store is empty
+            };
+
+            $nSymbols = 0; // Symbols in the store
+            $nBundles = 0; // Bundles in the store
+            $bundleSizes = array(); // An array of canon => bundle size
+            $httpSymbols = array(); // Array of symbols that have http:// at the start
+            $httpsSymbols = array(); // Array of symbols that have https:// at the start
+            $plainSymbols = array(); // Array of symbols that have neither http:// nor https:// at the start
+            $httpDomains = array(); // Array of http domains, with symbol counts in
+            $httpTLDDomains = array(); // Array of http TLD domains, with symbol counts in
+            $http2LDDomains = array(); // Array of http second level+TLD domains, with symbol counts in
+            $httpsDomains = array(); // Array of https domains, with symbol counts in
+            $httpsTLDDomains = array(); // Array of https TLD domains, with symbol counts in
+            $https2LDDomains = array(); // Array of https second level+TLD domains, with symbol counts in
+            foreach ($store as $row) {
+                $s = $row['symbol'];
+                $b = $row['canon'];
+                $nSymbols++;
+                
+                if(isset($bundleSizes[$b])){
+                    $bundleSizes[$b]++;
+                }else{
+                    $bundleSizes[$b] = 0;
+                }
+                
+                // TODO, convert to parse_url?
+                if (substr($s, 0, 7) == 'http://') {
+                    // http:// URI
+                    $httpSymbols[] = $s;
+                    // Get and record the domain name
+                    preg_match('@^(?:http://)?([^/]+)@i', $s, $matchesD);
+                    $httpDomains[] = $matchesD[1];
+                    // Get and record the last two bits of the domain name
+                    preg_match('/([^.]+)\.([^.]+)$/', $matchesD[1], $matches2D);
+                    $http2LDDomains[] = $matches2D[0];
+                    // Record the TLD itself
+                    $httpTLDDomains[] = $matches2D[2];
+                } elseif (substr($s, 0, 8) == 'https://') {
+                    // https:// URI
+                    $httpsSymbols[] = $s;
+                    // Get and record the domain name
+                    preg_match('@^(?:https://)?([^/]+)@i', $s, $matchesD);
+                    $httpsTLDDomains[] = $matchesD[1];
+                    // Get and record the last two bits of the domain name
+                    preg_match('/[^.]+\.[^.]+$/', $matchesD[1], $matches2D);
+                    $https2LDDomains[] = $matches2D[0];
+                    // Record the TLD itself
+                    $httpsTLDDomains[] = $matches2D[2];
+                } else {
+                    // Not an http(s) symbol
+                    $plainSymbols[] = $s;
+                }
+            }
+            $nBundles = count($bundleSizes);
+
+
+
+            // Calculate the bundle averages
+            $sortedBundleSizes = $bundleSizes;
+            sort($sortedBundleSizes);
+            if($nBundles % 2 == 0){
+                $middle = floor($nBundles / 2) - 1;
+            }else{
+                $middle = floor($nBundles / 2);
+            }
+            $bundleMedian = $sortedBundleSizes[$middle];
+
+            $values = array_count_values($bundleSizes);
+            $mode = array_search(max($values), $values);
+
+
+            $output['basic'] = [
+                'symbols'                     => $nSymbols,
+                'bundles'                     => $nBundles,
+                'average_symbols_per_bundle'  => ($nSymbols/$nBundles),
+                'median_bundle_size'          => $bundleMedian,
+                'mode_bundle_size'            => $mode,
+            ];
+
+
+
+            $bundleSizeCount = [];
+            // Table of count of bundles for each bundle size
+            foreach (array_count_values($bundleSizes) as $size => $count) {
+                $bundleSizeCount[] = [
+                    'size'  => $size,
+                    'count' => $count
+                ];
+            }
+            $output['bundle_size_count'] = $bundleSizeCount;
+
+            $output['symbols_type'] = [
+                'HTTP_symbols'  => count($httpSymbols),
+                'HTTPS_symbols' => count($httpsSymbols),
+                'plain_symbols' => count($plainSymbols)
+            ];
+
+
+            $httpUris = [
+                'domain'    => [],
+                'base+TLD'  => [],
+                'TLD'       => []
+            ];
+
+            foreach(array_count_values($httpDomains) as $domain => $size){
+                $httpUris['domain'][] = [
+                    'size'   => $size,
+                    'domain' => $domain
+                ];
+            }
+
+            foreach(array_count_values($http2LDDomains) as $domain => $size){
+                $httpUris['base+TLD'][] = [
+                    'size'   => $size,
+                    'domain' => $domain
+                ];
+            }
+
+            foreach(array_count_values($httpTLDDomains) as $domain => $size){
+                $httpUris['TLD'][] = [
+                    'size'   => $size,
+                    'domain' => $domain
+                ];
+            }
+
+            $httpsUris = [
+                'domain'    => [],
+                'base+TLD'  => [],
+                'TLD'       => []
+            ];
+
+
+            foreach(array_count_values($httpsDomains) as $domain => $size){
+                $httpsUris['domain'][] = [
+                    'size'   => $size,
+                    'domain' => $domain
+                ];
+            }
+
+            foreach(array_count_values($https2LDDomains) as $domain => $size){
+                $httpsUris['base+TLD'][] = [
+                    'size'   => $size,
+                    'domain' => $domain
+                ];
+            }
+
+            foreach(array_count_values($httpsTLDDomains) as $domain => $size){
+                $httpsUris['TLD'][] = [
+                    'size'   => $size,
+                    'domain' => $domain
+                ];
+            }
+
+
+            $output['URIs_per_domain'] = [
+                'http'  => $httpUris,
+                'https' => $httpsUris
+            ];
+
+
+            $output['warnings'] = [
+                'singleton_bundle_symbols' => array_keys($bundleSizes, 1)
+            ];
+
+
+
+            $canonsWithoutSymbols = [];
+
+            // List of canons that are not symbols
+            $sql = "SELECT DISTINCT canon FROM $this->storeName WHERE canon != symbol ORDER BY canon ASC;";
+            $statement = $this->dbHandle->prepare($sql);
+            $statement->execute();
+            $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+            foreach ($result as $row) {
+                $canonsWithoutSymbols[] = $row['canon'];
+            }
+
+            $output['errors'] = [
+                'canons_without_symbols' => $canonsWithoutSymbols
+            ];
+
+
+        } catch (\PDOException $e) {
+            $this->error("Database failure to get some analysis data for store", $e);
+        }
+
+        return $output;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * Provide detailed analysis of the store
      *
@@ -806,7 +1030,7 @@ class Store
      * TODO - think this should return a structured array containing the data
      * @return string[] The array wih the results in
      */
-    public function analyse()
+    public function analyse_backup()
     {
         // skip if we've already connected
         if ($this->dbHandle == null) {
@@ -845,7 +1069,14 @@ class Store
                 $s = $row['symbol'];
                 $b = $row['canon'];
                 $nSymbols++;
-                $bundleSizes[$b]++;
+                
+                if(isset($bundleSizes[$b])){
+                    $bundleSizes[$b]++;
+                }else{
+                    $bundleSizes[$b] = 0;
+                }
+                
+                // TODO, convert to parse_url?
                 if (substr($s, 0, 7) == 'http://') {
                     // http:// URI
                     $httpSymbols[] = $s;

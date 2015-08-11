@@ -702,7 +702,7 @@ class WebApp
 
 
         $viewData = array_merge($soptions, [
-            'titleHTML' => $soptions['shortName'],
+            'titleHTML' => " - " . $soptions['shortName'],
             'titleHeader' => $soptions['fullName'],
             'statistics' => $stats,
             'apiPath' => "datasets/$storeSlug/api"
@@ -1096,8 +1096,11 @@ class WebApp
      */
     public function analyse($store)
     {
+        $this->app->view()->set('titleHTML', ' - Analyse ' . $this->storeOptions[$store]['shortName']);
+        $this->app->view()->set('titleHeader', 'Analyse ' . $this->storeOptions[$store]['shortName']);
+
         $result = $this->stores[$store]->analyse();
-        $this->outputHTML($result);
+        $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
     }
 
     /**

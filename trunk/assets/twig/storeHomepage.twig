@@ -21,9 +21,11 @@
 
 				var search = function(){
 					var input = $("#store-search"),
-						url = urlBase + input.val();
-
-					window.location = url;
+						val = input.val().trim(),
+						url = urlBase + val;
+					if(val !== ""){
+						window.location = url;
+					}
 				};
 
 				$("#store-search_button").on("click", function(e){
