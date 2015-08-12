@@ -47,13 +47,20 @@ $app = new \SameAsLite\WebApp(array(
 // details (incl dbase connection info) to the data passed to addDataset and
 // get that method to instantiate the \SameAsLite\Store object?
 
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+error_reporting(-1);
+
+
 $app->addDataset(
-    new \SameAsLite\Store(
-        'mysql:host=127.0.0.1;port=3306;charset=utf8',
+    new \SameAsLite\Store\MySQLStore(
         'webdemo',
         'testuser',
         'testpass',
-        'testdb'
+        'testdb',
+        '127.0.0.1',
+        '3306',
+        'utf8'
     ),
     array(
         'slug'      => 'VIAF',
@@ -67,13 +74,16 @@ $app->addDataset(
     )
 );
 
+
 $app->addDataset(
-    new \SameAsLite\Store(
-        'mysql:host=127.0.0.1;port=3306;charset=utf8',
+    new \SameAsLite\Store\MySQLStore(
         'table1',
         'testuser',
         'testpass',
-        'testdb'
+        'testdb',
+        '127.0.0.1',
+        '3306',
+        'utf8'
     ),
     array(
         'slug'      => 'test',

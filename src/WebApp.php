@@ -114,12 +114,12 @@ class WebApp
     /**
      * Add a dataset to this web application
      *
-     * @param \SameAsLite\Store $store   The underlying Store containing the dataset
-     * @param array             $options Array of configration options describing the dataset
+     * @param \SameAsLite\StoreInterface  $store     A class implimenting StoreInterface to contain the data
+     * @param array                       $options   Array of configration options describing the dataset
      *
      * @throws \Exception if there are problems with arguments
      */
-    public function addDataset(\SameAsLite\Store $store, array $options)
+    public function addDataset(\SameAsLite\StoreInterface $store, array $options)
     {
 
         if (!isset($options['shortName'])) {
@@ -145,6 +145,9 @@ class WebApp
                 'You have already added a store with $options["slug"] value of ' . $options['slug']
             );
         }
+
+        // Connect to the DB
+        $store->connect();
 
         $this->stores[$options['slug']] = $store;
         $this->storeOptions[$options['slug']] = $options;
@@ -307,7 +310,7 @@ class WebApp
             '/datasets/:store/search/:string',
             'search',
             'Search',
-            'Find symols which contain/match the search string/pattern'
+            'Find symbols which contain/match the search string/pattern'
         );
 
         // Single symbol stuff
@@ -657,7 +660,7 @@ class WebApp
         }
 
         $this->app->contentType('text/html');
-        $app->response->setStatus($status);
+        $this->app->response->setStatus($status);
         $this->app->view()->set('titleHTML', ' - ' . strip_tags($title));
         $this->app->view()->set('titleHeader', 'Error ' . $status);
         $this->app->view()->set('title', $extendedTitle);
@@ -727,10 +730,9 @@ class WebApp
 
         // iterate over all routes
         foreach ($this->routeInfo as $info) {
-            if ($info['hidden']) {
-                continue;
+            if (!isset($info['hidden']) || !$info['hidden']) {
+                $output .= $this->renderRoute($info, $store);
             }
-            $output .= $this->renderRoute($info, $store);
         }
 
         $this->outputHTML($output);
@@ -906,7 +908,7 @@ class WebApp
     {
         $this->app->view()->set('titleHTML', 'Canons');
         $this->app->view()->set('titleHeader', 'All Canons in this dataset');
-        $result = $this->stores[$store]->allCanons();
+        $result = $this->stores[$store]->getAllCanons();
         $this->outputList($result);
     }
 
@@ -939,7 +941,7 @@ class WebApp
         $this->app->view()->set('titleHTML', 'Canon query');
         $this->app->view()->set('titleHeader', 'Canon for &ldquo;' . $symbol . '&rdquo;');
         $result = $this->stores[$store]->getCanon($symbol);
-        $this->outputList($result);
+        $this->outputList([$result]);
     }
 
     /**
@@ -954,7 +956,7 @@ class WebApp
     {
         $this->app->view()->set('titleHTML', 'All pairs');
         $this->app->view()->set('titleHeader', 'Contents of the store:');
-        $result = $this->stores[$store]->dumpStore();
+        $result = $this->stores[$store]->dumpPairs();
         $this->outputTable(
             $result,
             array('canon', 'symbol')
@@ -1008,6 +1010,9 @@ class WebApp
      */
     public function search($store, $string)
     {
+        $this->app->view()->set('titleHTML', ' - Search: "' . $string . '"');
+        $this->app->view()->set('titleHeader', 'Search: "' . $string . '"');
+
         $result = $this->stores[$store]->search($string);
         $this->outputList($result);
     }
