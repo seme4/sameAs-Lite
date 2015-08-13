@@ -724,10 +724,6 @@ class WebApp
     public function api($store = null)
     {
 
-        $this->app->view()->set('titleHTML', ' - API');
-        $this->app->view()->set('titleHeader', 'API overview');
-
-
         $routes = [];
 
         // iterate over all routes
@@ -743,6 +739,8 @@ class WebApp
         );
 
        $this->app->render('api-index.twig', [
+            'titleHTML' => ' - API',
+            'titleHeader' => 'API overview',
             'routes' => $routes
         ]);
     }
@@ -767,6 +765,12 @@ class WebApp
             'POST' => 'success'
         );
 
+        if($method == 'GET'){
+            $formMethod = 'GET';
+        }else{
+            $formMethod = 'POST';
+        }
+
         // reverse formats
         $formats = join(', ', array_reverse(explode(',', $info['mimeTypes'])));
 
@@ -778,7 +782,7 @@ class WebApp
         }
 
         // apply HTML formatting to variables
-        $endpointHtml = preg_replace('@(\{[^}]*})@', '<span>\1</span>', $endpointURL);
+        $endpointHtml = preg_replace('@(\{[^}]*})@', '<span class="api-parameter">\1</span>', $endpointURL);
 
         preg_match_all('@<span>{(.*?)}</span>@', $endpointHtml, $inputs);
         $parameters = $inputs[1];
@@ -798,129 +802,22 @@ class WebApp
 
 
         return [
-            'id' => $id,
-            'method' => $method,
-            'methodClass' => $map[$method],
-            'formats' => $formats,
-            'summary' => $info['summary'],
-            'details' => $info['details'],
-            'authRequired' => !!$info['authRequired'],
-            'commandLine' => $cmdLine,
-            'endpointURL' => $endpointURL,
-            'endpointHTML' => $endpointHtml,
-            'parameters' => $parameters
+            'id'            => $id,
+            'method'        => $method,
+            'methodClass'   => $map[$method],
+            'formMethod'    => $formMethod,
+            'formats'       => $formats,
+            'summary'       => $info['summary'],
+            'details'       => $info['details'],
+            'authRequired'  => !!$info['authRequired'],
+            'commandLine'   => $cmdLine,
+            'endpointURL'   => $endpointURL,
+            'endpointHTML'  => $endpointHtml,
+            'parameters'    => $parameters
         ];
     }
 
-
-
-    protected function renderRoute_backup(array $info, $store = null)
-    {
-
-        $rootURI = $this->app->request()->getRootUri();
-        $host = $this->app->request()->getUrl();
-        $method = $info['httpMethod'];
-        $map = array(
-            'GET' => 'info',
-            'DELETE' => 'danger',
-            'PUT' => 'warning',
-            'POST' => 'success'
-        );
-
-        // reverse formats
-        $formats = join(', ', array_reverse(explode(',', $info['mimeTypes'])));
-
-        // ensure all variables are in {foo} format, rather than :foo
-        $endpointURL = $rootURI . $info['urlPath'];
-        $endpointURL = preg_replace('@:([^/]*)@', '{\1}', $endpointURL);
-        if ($store != null) {
-            $endpointURL = str_replace('{store}', $store, $endpointURL);
-        }
-
-        // apply HTML formatting to variables
-        $endpointHtml = preg_replace('@(\{[^}]*})@', '<span>\1</span>', $endpointURL);
-        $numVariables = substr_count($endpointHtml, '<span>');
-        $id = crc32($method . $info['urlPath']);
-
-        // auth required?
-        $lock = ($info['authRequired']) ? ' <span class="glyphicon glyphicon-lock"></span>' : '';
-        $authString = ($info['authRequired']) ? ' --user username:password' : '';
-
-        // example command line invocation
-        $cmdLine = "curl -X $method $authString $host$endpointHtml";
-
-        // sort the "try now" facility
-        $tryNow = '';
-        if ($method == 'GET' && $numVariables == 0) {
-            // GET request without any variables - straight link (ie not submission via the form)
-            $tryNow = '<p class=\"form-control-static\">';
-            $tryNow .= '<a class="get-btn btn btn-'.$map[$method].'" href="' . $endpointURL . '">' . $method . '</a>';
-            $tryNow .= '</p>';
-        } else {
-            // we need a form, either to allow input of variables or to spoof HTTP request type
-            preg_match_all('@<span>{(.*?)}</span>@', $endpointHtml, $inputs);
-            $tryNow .= '<input type="hidden" name="_METHOD" value="' . $method . '"/>';
-            foreach ($inputs[1] as $i) {
-                $tryNow .= '<input class="form-control" type="text" name="' . $i . '" placeholder="' . $i . '" />';
-            }
-
-            if ($numVariables == 0 && ($method == 'PUT' || $method == 'POST')) {
-                $tryNow .= '<textarea class="form-control" name="body" placeholder="Request body..."></textarea>';
-                $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHtml";
-            }
-
-            $tryNow .= '<input class="form-control btn btn-'.$map[$method].'" type="submit" value="'.$method.'">';
-        }
-
-        $this->app->view()->set(
-            'javascript',
-            '<script src="'. $this->app->request()->getRootUri() . '/assets/js/api.js"></script>'
-        );
-
-        return "
-<div class=\"panel panel-default panel-api\">
-  <div class=\"panel-heading\" data-toggle=\"collapse\" data-target=\"#panel-$id\" \">
-    <div class=\"method\"><label class=\"label label-{$map[$method]}\">$method</label>$lock</div>
-    <b>$endpointHtml</b><span class=\"pull-right\">{$info['summary']}</span>
-  </div>
-  <div id=\"panel-$id\" class=\"panel-collapse collapse\">
-    <div class=\"panel-body\">
-      <form class=\"api form-horizontal\" role=\"form\" method=\""
-        . ($method == 'GET' ? 'GET' : 'POST')
-        . "\" data-url=\"$endpointURL\">
-        <div class=\"form-group\">
-          <label class=\"col-sm-2 control-label\">Description</label>
-          <div class=\"col-sm-10\">
-            <p class=\"form-control-static\">{$info['details']}</p>
-          </div>
-        </div>
-
-        <div class=\"form-group\">
-          <label class=\"col-sm-2 control-label\">Available formats</label>
-          <div class=\"col-sm-10\">
-            <p class=\"form-control-static\">$formats</p>
-          </div>
-        </div>
-
-        <div class=\"form-group\">
-          <label class=\"col-sm-2 control-label\">Example invocation</label>
-          <div class=\"col-sm-10\">
-            <p class=\"form-control-static\"><tt>$cmdLine</tt></p>
-          </div>
-        </div>
-
-        <div class=\"form-group\">
-          <label class=\"col-sm-2 control-label\">Try it now</label>
-          <div class=\"col-sm-10\">
-            $tryNow
-          </div>
-        </div>
-
-      </form>
-    </div>
-  </div>
-</div>";
-    }
+    
 
     /**
      * Actions the HTTP DELETE service from /admin/delete
