@@ -1,4 +1,8 @@
+{% extends "page.twig" %}
 
+
+
+{% block body %}
         <div class="alt-formats">
           <a href="" class="label">JSON</a>
           <a href="" class="label">TTL</a>
@@ -6,13 +10,28 @@
           <a href="" class="label">XML</a>
         </div>
 
-        <h2>Equivalent Symbols</h2>
-        <h3>for &ldquo;<a href="http://dbpedia.org/resource/London">http://viaf.org/viaf/5698068</a>&rdquo;</h3>
-        <p>Found 5 equivalent symbols &ndash;</p>
-        <ul>
-          <li><a href="http://dbpedia.org/resource/August_Wilhelm_Zumpt">http://dbpedia.org/resource/August_Wilhelm_Zumpt</a> <span class="label label-success">Preferred</span></li>
-          <li><a href="http://d-nb.info/gnd/117022454">http://d-nb.info/gnd/117022454</a></li>
-          <li><a href="http://viaf.org/viaf/100026079">http://viaf.org/viaf/100026079</a></li>
-          <li><a href="http://viaf.org/viaf/5698068">http://viaf.org/viaf/5698068</a></li>
-          <li><a href="http://www.idref.fr/079100600/id">http://www.idref.fr/079100600/id</a></li>
-        </ul>
+        <h2>
+          Equivalent Symbols
+          <small style="display: block; text-indent: 1em;">
+            for &ldquo;{{ symbol }}&rdquo;
+            {% if canon == symbol %}
+              <span class="label label-success">Canonical</span>
+            {% endif %}
+          </small>
+        </h2>
+
+
+        {% if equiv_symbols|length > 0 %}
+          <p>Found {{ equiv_symbols|length }} equivalent symbols &ndash;</p>
+
+          <ul>
+            {% for sym in equiv_symbols %}
+            <li>
+              {{ sym }}
+              {% if canon == sym %}
+                <span class="label label-success">Canonical</span>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        {% endif %}
+{% endblock %}

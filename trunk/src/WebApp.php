@@ -1033,13 +1033,29 @@ class WebApp
         $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
 
 
-        $result = $this->stores[$store]->querySymbol($symbol);
+        $results = $this->stores[$store]->querySymbol($symbol);
 
-    // TODO - give detailed info about the symbol
+        if(count($results) > 0){
 
-        $dummy = $this->app->view()->fetch('snippet-bundle.twig');
+            $canon = $this->stores[$store]->getCanon($symbol);
 
-        $this->outputHTML('<pre>' . htmlentities(print_r($result, true)) . '</pre>' . $dummy);
+            // Remove the queried symbol from the results
+            $results = array_diff($results, [ $symbol ]);
+
+            // Linkify the results
+            foreach ($results as &$result) {
+                $result = $this->linkify($result);
+            }
+
+
+            $this->app->render('snippet-bundle.twig', [
+                'symbol' => $symbol,
+                'equiv_symbols' => $results,
+                'canon' => $canon
+            ]);
+        }else{
+            $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store");
+        }
     }
 
     /**
