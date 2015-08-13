@@ -74,7 +74,7 @@ div.alt-formats a:hover { background: #3498db; }
 /* API pages */
 .panel-api .panel-heading { cursor: pointer; }
 .panel-api .panel-heading .method { min-width: 75px; float: left; }
-.panel-api .panel-heading b span { color: #27ae60; padding: 0 1px; }
+.panel-api .api-parameter { color: #27ae60; padding: 0 1px; }
 .panel-api tt span { color: #27ae60; }
 .panel-api .panel-heading .glyphicon-lock { float: right; top: 3px; right: 6px; color: #444; }
 .panel-api .form-group { margin: 0; }
