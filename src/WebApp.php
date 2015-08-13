@@ -420,7 +420,8 @@ class WebApp
             'details',
             'authRequired',
             'mimeTypes',
-            'hidden'
+            'hidden',
+            'route' // The slim route object..?
         );
     }
 
@@ -726,16 +727,24 @@ class WebApp
         $this->app->view()->set('titleHTML', ' - API');
         $this->app->view()->set('titleHeader', 'API overview');
 
-        $output = '<p>TODO Preamble to go here?</p>';
+
+        $routes = [];
 
         // iterate over all routes
         foreach ($this->routeInfo as $info) {
             if (!isset($info['hidden']) || !$info['hidden']) {
-                $output .= $this->renderRoute($info, $store);
+                $routes[] = $this->renderRoute($info, $store);
             }
         }
 
-        $this->outputHTML($output);
+        $this->app->view()->set(
+            'javascript',
+            '<script src="'. $this->app->request()->getRootUri() . '/assets/js/api.js"></script>'
+        );
+
+       $this->app->render('api-index.twig', [
+            'routes' => $routes
+        ]);
     }
 
     /**
@@ -743,9 +752,69 @@ class WebApp
      *
      * @param array        $info    The routeInfo for the route being described
      * @param string|null  $store   Optional specific store slug
-     * @return string               The HTML blob desbribing this route
+     * @return array                Array describing this route for the template
      */
     protected function renderRoute(array $info, $store = null)
+    {
+
+        $rootURI = $this->app->request()->getRootUri();
+        $host = $this->app->request()->getUrl();
+        $method = $info['httpMethod'];
+        $map = array(
+            'GET' => 'info',
+            'DELETE' => 'danger',
+            'PUT' => 'warning',
+            'POST' => 'success'
+        );
+
+        // reverse formats
+        $formats = join(', ', array_reverse(explode(',', $info['mimeTypes'])));
+
+        // ensure all variables are in {foo} format, rather than :foo
+        $endpointURL = $rootURI . $info['urlPath'];
+        $endpointURL = preg_replace('@:([^/]*)@', '{\1}', $endpointURL);
+        if ($store != null) {
+            $endpointURL = str_replace('{store}', $store, $endpointURL);
+        }
+
+        // apply HTML formatting to variables
+        $endpointHtml = preg_replace('@(\{[^}]*})@', '<span>\1</span>', $endpointURL);
+
+        preg_match_all('@<span>{(.*?)}</span>@', $endpointHtml, $inputs);
+        $parameters = $inputs[1];
+
+        $id = crc32($method . $info['urlPath']);
+
+
+        // auth required?
+        $authString = ($info['authRequired']) ? ' --user username:password' : '';
+
+        if (count($parameters) == 0 && ($method == 'PUT' || $method == 'POST')) {
+            // Upload file command line string
+            $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHtml";
+        }else{
+            $cmdLine = "curl -X $method $authString $host$endpointHtml";
+        }
+
+
+        return [
+            'id' => $id,
+            'method' => $method,
+            'methodClass' => $map[$method],
+            'formats' => $formats,
+            'summary' => $info['summary'],
+            'details' => $info['details'],
+            'authRequired' => !!$info['authRequired'],
+            'commandLine' => $cmdLine,
+            'endpointURL' => $endpointURL,
+            'endpointHTML' => $endpointHtml,
+            'parameters' => $parameters
+        ];
+    }
+
+
+
+    protected function renderRoute_backup(array $info, $store = null)
     {
 
         $rootURI = $this->app->request()->getRootUri();
@@ -1028,33 +1097,42 @@ class WebApp
      */
     public function querySymbol($store, $symbol)
     {
-        $shortName = $this->storeOptions[$store]['shortName'];
-        $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
-        $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
-
-
-        $results = $this->stores[$store]->querySymbol($symbol);
-
-        if(count($results) > 0){
-
-            $canon = $this->stores[$store]->getCanon($symbol);
-
-            // Remove the queried symbol from the results
+        $accept = $this->app->request->get('accept');
+        if($accept != null && $accept !== 'text/html'){
+            $results = $this->stores[$store]->querySymbol($symbol);
             $results = array_diff($results, [ $symbol ]);
 
-            // Linkify the results
-            foreach ($results as &$result) {
-                $result = $this->linkify($result);
-            }
-
-
-            $this->app->render('snippet-bundle.twig', [
-                'symbol' => $symbol,
-                'equiv_symbols' => $results,
-                'canon' => $canon
-            ]);
+            $this->mimeBest = $accept;
+            $this->outputList($results);
         }else{
-            $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store");
+            $shortName = $this->storeOptions[$store]['shortName'];
+            $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
+            $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
+
+
+            $results = $this->stores[$store]->querySymbol($symbol);
+
+            if(count($results) > 0){
+
+                $canon = $this->stores[$store]->getCanon($symbol);
+
+                // Remove the queried symbol from the results
+                $results = array_diff($results, [ $symbol ]);
+
+                // Linkify the results
+                foreach ($results as &$result) {
+                    $result = $this->linkify($result);
+                }
+
+
+                $this->app->render('snippet-bundle.twig', [
+                    'symbol' => $symbol,
+                    'equiv_symbols' => $results,
+                    'canon' => $canon
+                ]);
+            }else{
+                $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store");
+            }
         }
     }
 

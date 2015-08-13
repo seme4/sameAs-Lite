@@ -1,0 +1,87 @@
+{% extends "page.twig" %}
+
+
+
+{% block body %}
+
+<p>TODO Preamble to go here?</p>
+
+{% for route in routes %}
+
+	<div class="panel panel-default panel-api">
+
+		<div class="panel-heading" data-toggle="collapse" data-target="#panel-{{ route.id }}">
+			<div class="method">
+				<label class="label label-{{ route.methodClass }}">{{ route.method }}</label>
+				{% if route.authRequired %}
+					<span class="glyphicon glyphicon-lock"></span>
+				{% endif %}
+			</div>
+			<strong>{{ route.endpointHTML }}</strong>
+			<span class="pull-right">{{ route.summary }}</span>
+		</div>
+
+		<div id="panel-{{ route.id }}" class="panel-collapse collapse">
+			<div class="panel-body">
+
+				<form class="api form-horizontal" role="form" method="{{ route.formMethod }}" data-url="{{ route.endpointURL }}">
+
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Description</label>
+						<div class="col-sm-10">
+							<p class="form-control-static">{{ route.details }}</p>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Available formats</label>
+						<div class="col-sm-10">
+							<p class="form-control-static">{{ route.formats }}</p>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Example invocation</label>
+						<div class="col-sm-10">
+							<p class="form-control-static"><tt>{{ route.commandLine }}</tt></p>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Try it now</label>
+						<div class="col-sm-10">
+							{# The try it now code #}
+							{# First, if it is a get request with no url parameters, just display a link #}
+							{% if route.method|upper == "GET" and route.parameters|length == 0 %}
+								<p class="form-control-static">
+									<a class="btn btn-{{ route.methodClass }} get-btn" href="{{ route.endpointURL }}">{{ route.method }}</a>
+								</p>
+							{% else %}
+								{# Most routes need method spoofing. See: http://docs.slimframework.com/routing/put/#method-override #}
+								<input type="hidden" name="_METHOD" value="{{ route.method }}">
+
+								{% for param in route.parameters %}
+									<input class="form-control" type="text" name="{{ param }}" placeholder="{{ param }}">
+								{% endfor %}
+
+								{% if (route.method|upper == "PUT" or route.method|upper == "POST") and route.parameters|length == 0 %}
+									<textarea class="form-control" name="body" placeholder="Request body..."></textarea>
+								{% endif %}
+
+								<input class="form-control btn btn-{{ route.methodClass }}" type="submit" value="{{ route.method }}">
+							{% endif %}
+						</div>
+					</div>
+
+				</form>
+			</div>
+		</div>
+	</div>
+{% endfor %}
+
+
+
+
+
+
+{% endblock %}
