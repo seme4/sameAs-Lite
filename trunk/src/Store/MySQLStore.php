@@ -35,6 +35,9 @@
 
 namespace SameAsLite\Store;
 
+/**
+ * Store for MySQL databases
+ */
 class MySQLStore extends \SameAsLite\Store\SQLStore {
 
 
@@ -48,32 +51,58 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
     protected $dbName;
 
 
+    // TODO
+    //public static function getFactorySettings(){return [];}
 
-    /**
-     * This is the constructor for a SameAs Lite store, validates and saves
+
+
+
+
+
+    /*
+     * Cnstructor for a SameAs Lite MySQL store, validates and saves
      * settings. Once a Store object is created, call the connect() function to
      * establish connection to the underlying database.
      *
-     * @param string $name     Name of this store, will also be used as the database table name
-     * @param string $user     Database username
-     * @param string $pass     Database password
-     * @param string $dbName   Name of Database schema to use (Defaults to 'SameAsLite')
-     * @param string $host     Host of the MySQL Server (Defaults to 'localhost')
-     * @param int    $port     The port to use to connect (optional)
-     * @param string $charset  The Character set to use
+     * @param string $username     Database username
+     * @param string $password     Database password
+     * @param string $dbName       Name of Database schema to use (Defaults to 'SameAsLite')
+     * @param string $host         Host of the MySQL Server (Defaults to 'localhost')
+     * @param int    $port         The port to use to connect (optional)
+     * @param string $charset      The Character set to use
      *
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
-    public function __construct($name, $user, $pass, $dbName = 'SameAsLite', $host = 'localhost', $port = null, $charset = null){
+    // TINHD
+
+    /**
+     * Constructor takes the options for the MySQL store:
+     * username, password dbName = 'SameAsLite', host = 'localhost', [port [,charset]]
+     *
+     * @throws \InvalidArgumentException If any parameters are deemed invalid
+     */
+    public function __construct($name, array $options = array()){
+        $defaults = [
+            'dbName' => 'SameAsLite',
+            'host'   => 'localhost'
+        ];
+        $o = array_merge($defaults, $options);
+
+        if(!isset($o['username']) || !isset($o['password'])){
+            throw new \InvalidArgumentException(
+                'No username or password given'
+            );
+        }
+
 
         // Construct dsn string
-        $dsn = "mysql:host=$host";
-        if(isset($port)){
-            $dsn .= ";port=$port";
+        $dsn = 'mysql:host=' . $o['host'];
+        if(isset($o['port'])){
+            $dsn .= ';port=' . $o['port'];
         }
-        $dsn .= "dbname=$dbName";
-        if(isset($charset)){
-            $dsn .= "charset=$charset";
+        $dsn .= ';dbname=' . $o['dbName'];
+        if(isset($o['charset'])){
+            $dsn .= ';charset=' . $o['charset'];
         }
 
 
@@ -87,12 +116,21 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
         // save config
         $this->dsn = $dsn;
         $this->storeName = $name;
-        $this->dbUser = $user;
-        $this->dbPass = $pass;
-        $this->dbName = $dbName;
+        $this->dbUser = $o['username'];
+        $this->dbPass = $o['password'];
+        $this->dbName = $o['dbName'];
     }
 
 
+
+
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \Exception When database cannot be connected to
+     */
     public function connect(){
         parent::connect();
 
@@ -114,6 +152,13 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
     }
 
 
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \Exception When store cannot be created
+     */
     public function init(){
         // Attempt to create the tables in the given DB     
 
@@ -132,20 +177,32 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
         }
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function isInit(){
         $sql = "SHOW TABLES LIKE '{$this->getTableName()}'";
-        $results = $this->pdoObject->query($sql);
-        return ($results->rowCount() > 0);
+        $a = $this->pdoObject->query($sql)->fetchAll();
+        return count($a) > 0;
     }
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function deleteStore(){
         $sql = "DROP TABLE IF EXISTS `{$this->getTableName()}`";
         $this->pdoObject->exec($sql);
     }
 
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \Exception When store cannot be empty
+     */
     public function emptyStore(){
         try{
             $sql = "TRUNCATE `{$this->getTableName()}`";

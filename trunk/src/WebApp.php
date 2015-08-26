@@ -41,6 +41,9 @@ namespace SameAsLite;
 class WebApp
 {
 
+    /** @var array $appOptions The options passed into the app on construction */
+    protected $appOptions;
+
     /** @var \SameAsLite\Store $stores The underlying \SameAsLite\Store(s). */
     protected $stores = array();
 
@@ -104,6 +107,32 @@ class WebApp
         $this->app->notFound(array($this, 'outputError404'));
         $this->app->error(array($this, 'outputException'));
         set_exception_handler(array($this, 'outputException'));
+
+        // Hook to set the api path
+        $this->app->hook('slim.before.dispatch', function(){
+            // fix api pages such that if viewing a particular store
+            // then the store name is automatically injected for you
+            $params = $this->app->router()->getCurrentRoute()->getParams();
+            if (isset($params['store'])) {
+                $apiPath = "datasets/{$params['store']}/api";
+            } else {
+                $apiPath = 'api';
+            }
+
+            $this->app->view()->set('apiPath', $apiPath);
+        });
+
+
+        $this->appOptions = $options;
+
+        // This takes the options that should be passed to the view directly 
+
+        /*
+        Thinking about this, so for now not used
+        $viewOptions = array_intersect_key($options, array_flip([
+            'footerText'
+        ]));
+        */
 
         // apply options
         foreach ($options as $k => $v) {
@@ -207,6 +236,39 @@ class WebApp
             'application/json,text/html',
             true
         );
+
+        $this->registerURL(
+            'GET',
+            '/about',
+            'aboutPage',
+            'About sameAsLite',
+            'Renders the about page',
+            false,
+            'text/html',
+            true
+        );
+        $this->registerURL(
+            'GET',
+            '/contact',
+            'contactPage',
+            'Contact page',
+            'Renders the contact page',
+            false,
+            'text/html',
+            true
+        );
+        $this->registerURL(
+            'GET',
+            '/license',
+            'licensePage',
+            'License page',
+            'Renders the SameAsLite license',
+            false,
+            'text/html',
+            true
+        );
+
+
 
         // dataset admin actions
         $this->registerURL(
@@ -421,7 +483,7 @@ class WebApp
             'authRequired',
             'mimeTypes',
             'hidden',
-            'route' // The slim route object..?
+            'route' // The slim route object
         );
     }
 
@@ -662,13 +724,14 @@ class WebApp
 
         $this->app->contentType('text/html');
         $this->app->response->setStatus($status);
-        $this->app->view()->set('titleHTML', ' - ' . strip_tags($title));
-        $this->app->view()->set('titleHeader', 'Error ' . $status);
-        $this->app->view()->set('title', $extendedTitle);
-        $this->app->view()->set('summary', $summary);
-        $this->app->view()->set('details', $extendedDetails);
-        print $this->app->view()->fetch('error.twig');
-        die;
+
+        $this->app->render('error.twig', [
+            'titleHTML'    => ' - ' . strip_tags($title),
+            'titleHeader'  => 'Error ' . $status,
+            'title'        => $extendedTitle,
+            'summary'      => $summary,
+            'details'      => $extendedDetails
+        ]);
     }
 
     /**
@@ -695,7 +758,7 @@ class WebApp
     /**
      * Store homepage
      *
-     * @param string $store The URL slug identifying the store
+     * @param string $storeSlug The URL slug identifying the store
      */
     public function storeHomepage($storeSlug)
     {
@@ -713,7 +776,43 @@ class WebApp
             'apiPath' => "datasets/$storeSlug/api"
         ]);
 
-        $this->app->render('storeHomepage.twig', $viewData);
+        $this->app->render('homepage-store.twig', $viewData);
+    }
+
+    /**
+     * Render the about page
+     */
+    public function aboutPage(){
+
+        $this->app->render('page-about.twig', [
+            'titleHTML'    => ' - About SameAsLite',
+            'titleHeader'  => 'About SameAsLite',
+            'storeOptions' => $this->storeOptions
+
+        ]);
+    }
+
+    /**
+     * Render the contact page
+     */
+    public function contactPage(){
+
+        $this->app->render('page-contact.twig', [
+            'titleHTML'    => ' - Contact',
+            'titleHeader'  => 'Contact',
+            'storeOptions' => $this->storeOptions
+        ]);
+    }
+
+    /**
+     * Render license used by SameAsLite
+     */
+    public function licensePage(){
+
+        $this->app->render('page-license.twig', [
+            'titleHTML'    => ' - SameAsLite License',
+            'titleHeader'  => 'SameAsLite License'
+        ]);
     }
 
     /**
@@ -729,7 +828,7 @@ class WebApp
         // iterate over all routes
         foreach ($this->routeInfo as $info) {
             if (!isset($info['hidden']) || !$info['hidden']) {
-                $routes[] = $this->renderRoute($info, $store);
+                $routes[] = $this->getRouteInfoForTemplate($info, $store);
             }
         }
 
@@ -746,13 +845,13 @@ class WebApp
     }
 
     /**
-     * Describes a URL route
+     * Returns the information needed to render a route in api-index.twig
      *
      * @param array        $info    The routeInfo for the route being described
      * @param string|null  $store   Optional specific store slug
      * @return array                Array describing this route for the template
      */
-    protected function renderRoute(array $info, $store = null)
+    protected function getRouteInfoForTemplate(array $info, $store = null)
     {
 
         $rootURI = $this->app->request()->getRootUri();
@@ -782,10 +881,11 @@ class WebApp
         }
 
         // apply HTML formatting to variables
-        $endpointHtml = preg_replace('@(\{[^}]*})@', '<span class="api-parameter">\1</span>', $endpointURL);
+        $endpointHTML = preg_replace('@(\{[^}]*})@', '<span class="api-parameter">\1</span>', $endpointURL);
 
-        preg_match_all('@<span>{(.*?)}</span>@', $endpointHtml, $inputs);
+        preg_match_all('@<span class="api-parameter">{(.*?)}</span>@', $endpointHTML, $inputs);
         $parameters = $inputs[1];
+        #echo "<pre>" . print_r($inputs, true) . "</pre>";
 
         $id = crc32($method . $info['urlPath']);
 
@@ -795,9 +895,9 @@ class WebApp
 
         if (count($parameters) == 0 && ($method == 'PUT' || $method == 'POST')) {
             // Upload file command line string
-            $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHtml";
+            $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHTML";
         }else{
-            $cmdLine = "curl -X $method $authString $host$endpointHtml";
+            $cmdLine = "curl -X $method $authString $host$endpointHTML";
         }
 
 
@@ -812,12 +912,12 @@ class WebApp
             'authRequired'  => !!$info['authRequired'],
             'commandLine'   => $cmdLine,
             'endpointURL'   => $endpointURL,
-            'endpointHTML'  => $endpointHtml,
+            'endpointHTML'  => $endpointHTML,
             'parameters'    => $parameters
         ];
     }
 
-    
+
 
     /**
      * Actions the HTTP DELETE service from /admin/delete
@@ -941,7 +1041,9 @@ class WebApp
     {
         // TODO - if the input is very large, this will probably blow up available memory?
         // $before = $this->stores[$store]->statistics();
-        $this->stores[$store]->assertPairs(explode("\n", $this->app->request->getBody()));
+
+        $this->stores[$store]->assertTSV($this->app->request->getBody());
+
         // $after = $this->stores[$store]->statistics();
         // TODO array_merge(array('Before:'), $before, array('After:'), $after));
         $this->outputSuccess('Pairs asserted');
@@ -1028,7 +1130,7 @@ class WebApp
                     'canon' => $canon
                 ]);
             }else{
-                $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store");
+                $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store", 404);
             }
         }
     }
@@ -1074,22 +1176,12 @@ class WebApp
      */
     public function listStores()
     {
-        $soptions = $this->storeOptions;
-
-        $ul = [];
-        foreach($soptions as $so){
-            $ul[] = '<a class="list-group-item" href="/datasets/' . $so['slug'] . '">
-                    <p class="h3">' . $so['shortName'] . '</p>
-                    <p style="text-indent: 1em;">' . $so['fullName'] . '</p>
-                    </a>';
-        }
-
-        $ht = "<div class='list-group'>" . implode("", $ul) . "</div>";
-
-
-        $this->app->view()->set('titleHTML', ' ');
-        $this->app->view()->set('titleHeader', 'Datasets');
-        $this->outputHTML('<div class="h2">Currently available datasets</div></p>' . $ht);
+        
+        $this->app->render('page-storeList.twig', [
+            'titleHTML' => ' ',
+            'titleHeader' => 'Datasets', 
+            'stores' => $this->storeOptions
+        ]);
     }
 
     /**
@@ -1113,9 +1205,10 @@ class WebApp
     /**
      * Output an HTML page
      *
-     * @param mixed $body The information to be displayed
+     * @param mixed $body    The information to be displayed
+     * @param int   $status  The HTTP status to return with the HTML
      */
-    protected function outputHTML($body)
+    protected function outputHTML($body, $status = null)
     {
         // set default template values if not present
         $defaults = array(
@@ -1128,14 +1221,6 @@ class WebApp
             }
         }
 
-        // fix api pages such that if viewing a particular store
-        // then the store name is automatically injected for you
-        $params = $this->app->router()->getCurrentRoute()->getParams();
-        if (isset($params['store'])) {
-            $this->app->view()->set('apiPath', "datasets/{$params['store']}/api");
-        } else {
-            $this->app->view()->set('apiPath', 'api');
-        }
 
 
         // fold arrays into PRE blocks
@@ -1143,9 +1228,12 @@ class WebApp
             $body = '<pre>' . join("\n", $body) . "</pre>\n";
         }
 
-        $this->app->view()->set('body', $body);
-        print $this->app->view()->fetch('page.twig');
-        die;
+        if(isset($status)){
+            $this->app->response->setStatus($status);
+        }
+        $this->app->render('page.twig', [
+            'body'    => $body
+        ]);
     }
 
     /**
@@ -1186,9 +1274,13 @@ class WebApp
      */
     protected function outputList(array $list = array())
     {
+        $list = array_values($list); // Convert into numeric array
+
         $this->app->contentType($this->mimeBest);
         switch ($this->mimeBest) {
             case 'text/plain':
+            case 'text/csv':
+            case 'text/tab-separated-values':
                 print join("\n", $list);
                 break;
 
@@ -1197,16 +1289,10 @@ class WebApp
                 break;
 
             case 'text/html':
-                if (count($list) == 0) {
-                    $op = "<p>No items found</p>\n";
-                } else {
-                    $op = "<ul>\n";
-                    foreach ($list as $item) {
-                        $op .= '        <li>' . $this->linkify($item) . "</li>\n";
-                    }
-                    $op .= "      </ul>\n";
-                }
-                $this->outputHTML($op);
+                $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
+                $this->app->render('page-list.twig', [
+                    'list' => $list
+                ]);
                 break;
 
             default:
@@ -1258,25 +1344,13 @@ class WebApp
                 break;
 
             case 'text/html':
-                $op  = '<table class="table">';
-                $op .= '  <thead>';
-                $op .= '    <tr>';
-                foreach ($headers as $h) {
-                    $op .= '      <th>' . $h . '</th>';
+                foreach ($data as &$d) {
+                    $d = array_map([ $this, 'linkify' ], $d);
                 }
-                $op .= '    </tr>';
-                $op .= '  </thead>';
-                $op .= '  <tbody>';
-                foreach ($data as $row) {
-                    $op .= '    <tr>';
-                    foreach ($row as $value) {
-                        $op .= '      <td>' . $this->linkify($value) . '</td>';
-                    }
-                    $op .= '    </tr>';
-                }
-                $op .= '  </tbody>';
-                $op .= '</table>';
-                $this->outputHTML($op);
+                $this->app->render('page-table.twig', [
+                    'headers' => $headers,
+                    "data"    => $data
+                ]);
                 break;
 
             default:
