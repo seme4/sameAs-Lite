@@ -1042,7 +1042,7 @@ class WebApp
         // TODO - if the input is very large, this will probably blow up available memory?
         // $before = $this->stores[$store]->statistics();
 
-        $this->stores[$store]->assertTSV($this->app->request->getBody());
+        $this->stores[$store]->assertTSV($this->app->request->post('body'));
 
         // $after = $this->stores[$store]->statistics();
         // TODO array_merge(array('Before:'), $before, array('After:'), $after));
