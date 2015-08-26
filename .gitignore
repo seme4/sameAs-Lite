@@ -1,0 +1,13 @@
+# Auto-generated directories
+dev-tools/phpdoc-tmp/
+docs/
+vendor/
+
+
+# Auto-generated files
+composer.lock
+test.sqlite
+
+# No not track composer binary
+composer.phar
+
