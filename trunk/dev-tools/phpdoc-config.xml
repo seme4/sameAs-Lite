@@ -18,6 +18,7 @@
   <files>
     <file>../index.php</file>
     <directory>../src/</directory>
-    <directory>../vendor/slim/slim/Slim/</directory>
+    <directory>../tests/phpUnit/</directory>
+   <!-- <directory>../vendor/slim/slim/Slim/</directory>-->
   </files>
 </phpdoc>
