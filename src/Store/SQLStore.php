@@ -35,65 +35,115 @@
 
 namespace SameAsLite\Store;
 
+/**
+ * Abstract class that impliments functions common to SQL Databases
+ */
 abstract class SQLStore implements \SameAsLite\StoreInterface {
 
-    /** @var PDO $pdoObject The PDO obecjt for the SQL database **/
+    /** @var \PDO $pdoObject The PDO object for the SQL database */
     protected $pdoObject;
 
-    /** @var string $dsn The PDO connection string **/
+    /** @var string $dsn The PDO connection string */
     protected $dsn;
 
-    /** @var $storeName The name of this store, also the name of the SQL table **/
+    /** @var string $storeName The name of this store, also the name of the SQL table */
     protected $storeName;
+
+
+    /*
+     * Get the settings this Store takes for the factory class
+     * Expected in this form:
+     * ```
+     * Array (
+     *   [dsn_prefix] => <string>,
+     *   [params] => [
+     *         <array of strings with the varable names that the __construct function takes
+     *               excluding 'name'>
+     *   ]
+     * )
+     *
+     * @return mixed[] Array of settings
+     */
+
+    //abstract public static function getFactorySettings();
 
 
 
     /**
-     * Simple implimentation of connect
-     * Does not create tables, just a connection to the database via PDO
+     * {@inheritDoc}
+     *
+     * @throws \Exception If unable to connect to the store
      */
     public function connect(){
+        /*
+         * Simple implimentation of connect
+         * Does not create tables, just a connection to the database via PDO
+         */
+
         // skip if we've already connected
         if ($this->pdoObject != null) {
             return null;
         }
 
+        
+        $user = (isset($this->dbUser))?$this->dbUser:null;
+        $pass = (isset($this->dbPass))?$this->dbPass:null;
+
         try {
-            $this->pdoObject = new \PDO($this->dsn, $this->dbUser, $this->dbPass, [
+            $this->pdoObject = new \PDO($this->dsn, $user, $pass, [
                 \PDO::ATTR_PERSISTENT => true // Establish a persistant connection to avoid overhead of reopening one on each script run
             ]);
         } catch (\PDOException $e) {
             throw new \Exception(
-                'Unable to to connect to ' . $this->dbType . ' // ' .
+                'Unable to to connect to MySQL // ' .
                 $e->getMessage()
             );
         }
     }
 
+
     /**
-     * We are connected if the pdoObject is a PDO object
+     * {@inheritDoc}
      */
     public function isConnected(){
+        // We are connected if the pdoObject is a PDO object
         return (@get_class($this->pdoObject) === "PDO");
     }
 
+
     /**
-     * Just set the PDO to null to disconnect
+     * {@inheritDoc}
      */
     public function disconnect(){
+        // Just set the PDO to null to disconnect
         $pdoObject = null;
     }
 
     /**
      * Return $storeName
+     *
+     * @return string The name of the store
      */
     public function getStoreName(){
         return $this->storeName;
     }
 
     /**
+     * Returns the PDO object for this store
+     * Should be used for testing only
+     *
+     * @return \PDO The PDO object used in this store
+     */
+    public function getPDOObject(){
+        return $this->pdoObject;
+    }
+
+    /**
      * Gets the name of the sql table used for this store
-     * Default implimentation also happens to be $storeName
+     * Default implementation uses $this->storeName as the table name
+     * @see self::$storeName
+     * 
+     * @return string The name of the SQL table for this store
      */
     public function getTableName(){
         return $this->storeName;
@@ -101,7 +151,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
 
 
     /**
-     * Most implimentations of database functions call another function that can be overridden
+     * Most implementations of database functions call another function that can be overridden
      * These functions should return the SQL string to be executed with the given symbols replacing the terms
      */
     public function querySymbol($symbol){
@@ -124,7 +174,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     }
 
     /**
-     * Gets the SQL query string for the relivent function
+     * Gets the SQL query string that when run returns the expected result of { @link querySymbol() }
+     * @see querySymbol()
      *
      * @param string $symbolId The string to be placed where the symbol would go in the query
      *
@@ -140,6 +191,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function search($string){
 
         try{
@@ -160,7 +214,14 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     }
 
 
-
+    /**
+     * Gets the SQL query string that when run returns the expected result of { @link search() }
+     * @see search()
+     *
+     * @param string $string The string to be placed where the symbol would go in the query
+     *
+     * @return string The SQL string for the query
+     */
     protected function getSearchString($string){
         $tn = $this->getTableName();
         return "SELECT `t1`.`canon`, `t1`.`symbol`
@@ -172,6 +233,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function assertPair($symbol1, $symbol2){
         try {
             // Are the symbols already in the store?
@@ -219,6 +283,10 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     }
 
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function assertPairs(array $data){
         foreach($data as $pair){
             $this->assertPair($pair[0], $pair[1]);
@@ -228,17 +296,22 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
 
 
 
-
+    /**
+     * {@inheritDoc}
+     */
     public function assertTSV($tsv){
-        $data = str_getcsv($CsvString, "\n"); //parse the rows 
+        $data = str_getcsv($tsv, "\n"); //parse the rows 
         foreach($data as &$row){
             $row = str_getcsv($row, "\t"); //parse the items in rows 
         }
 
-        return assertPairs($data);
+        return $this->assertPairs($data);
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function removeSymbol($symbol){
 
         $canon = $this->getCanon($symbol);
@@ -259,11 +332,25 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     }
 
 
+
+
+    /**
+     * Gets the SQL query string that when run removes the symbol given in { @link removeSymbol() }
+     * @see removeSymbol()
+     *
+     * @param string $symbolId The string to be placed where the symbol would go in the query
+     *
+     * @return string The SQL string for the query
+     */
     protected function getRemoveSymbolString($symbolId){
         return "DELETE FROM {$this->getTableName()} WHERE symbol = {$symbolId}";
     }
 
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function setCanon($symbol, $restrict = false){
 
         // Do we have it?
@@ -285,11 +372,25 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         }
     }
 
+
+    /**
+     * Gets the SQL query string that when run updates the all the symbols with $canonId to $symbolId { @link setCanon() }
+     * @see setCanon()
+     *
+     * @param string $symbolId The string to be placed where the new symbol would go in the query
+     * @param string $canonId  The string to be placed where the current canon would go in the query
+     *
+     * @return string The SQL string for the query
+     */
     protected function getSetCanonString($symbolId, $canonId){
         return "UPDATE {$this->getTableName()} SET canon = {$symbolId} WHERE canon = {$canonId}";
     }
 
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function getCanon($symbol){
         try {
             $sql = $this->getCanonString(':symbol');
@@ -303,11 +404,23 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         }
     }
 
+    /**
+     * Gets the SQL query string that when run returns the expected result of { @link getCanon() }
+     * @see getCanon()
+     *
+     * @param string $symbolId The string to be placed where the symbol would go in the query
+     *
+     * @return string The SQL string for the query
+     */
     protected function getCanonString($symbolId){
         return "SELECT canon FROM {$this->getTableName()} WHERE symbol = {$symbolId} LIMIT 1";
     }
 
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function getAllCanons(){
 
         try {
@@ -326,12 +439,22 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         return $output;
     }
 
-    public function getAllCanonsString(){
+
+    /**
+     * Gets the SQL query string that when run returns the expected result of { @link getAllCanons() }
+     * @see getAllCanons()
+     *
+     * @return string The SQL string for the query
+     */
+    protected function getAllCanonsString(){
         return "SELECT DISTINCT canon FROM $this->storeName ORDER BY symbol ASC";
     }
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function dumpPairs(){
 
         try {
@@ -350,15 +473,24 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         return $output;
     }
 
+
+    /**
+     * Gets the SQL query string that when run returns the expected result of { @link dumpPairs() }
+     * @see dumpPairs()
+     *
+     * @return string The SQL string for the query
+     */
     protected function getDumpPairsString(){
         return "SELECT canon, symbol FROM {$this->getTableName()} ORDER BY canon ASC, symbol ASC";
     }
 
 
+
     /**
-     * Uses temporary files to get the TSV output string
+     * {@inheritDoc}
      */
     public function dumpTSV(){
+        // Uses temporary files to get the TSV output string
         $pairs = $this->dumpPairs();
 
         /* Adapted from http://stackoverflow.com/a/16353448 */
@@ -369,7 +501,6 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         
         foreach($pairs as $pair){
             fputcsv($fp, $pair, "\t");
-            fwrite($fp, "\n");
         }
 
         // ... rewind the "file" so we can read what we just wrote...
@@ -386,6 +517,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function statistics(){
 
         $stats = [];
@@ -410,9 +544,19 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         return $stats;
     }
 
+    /**
+     * Returns the SQL that gets the number of symbols in the store
+     *
+     * @return string The SQL that will return the number of symbols in the store
+     */
     protected function getStatisticsSymbolNumberString(){
         return "SELECT COUNT(DISTINCT symbol) FROM {$this->getTableName()}";
     }
+    /**
+     * Returns the SQL that gets the number of canons in the store
+     *
+     * @return string The SQL that will return the number of canons in the store
+     */
     protected function getStatisticsCanonNumberString(){
         return "SELECT COUNT(DISTINCT canon) FROM {$this->getTableName()}";
     }
@@ -421,6 +565,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function analyse(){
 
         $output = [];
@@ -466,7 +613,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
                     $bundleSizes[$b] = 0;
                 }
                 
-                // TODO, convert to parse_url?
+                // TODO convert to parse_url?
                 if (substr($s, 0, 7) == 'http://') {
                     // http:// URI
                     $httpSymbols[] = $s;
@@ -488,7 +635,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
                     preg_match('/[^.]+\.[^.]+$/', $matchesD[1], $matches2D);
                     $https2LDDomains[] = $matches2D[0];
                     // Record the TLD itself
-                    $httpsTLDDomains[] = $matches2D[2];
+                    $httpsTLDDomains[] = isset($matches2D[2])?$matches2D[2]:0;
                 } else {
                     // Not an http(s) symbol
                     $plainSymbols[] = $s;
@@ -631,10 +778,21 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         return $output;
     }
 
-
+    /**
+     * Gets the SQL query string that when run returns all rows the database
+     * @see analyse()
+     *
+     * @return string The SQL string for the query
+     */
     protected function getAnalyseAllRowsString(){
         return "SELECT * FROM {$this->getTableName()} ORDER BY canon ASC, symbol ASC";
     }
+    /**
+     * Gets the SQL query string that when run returns unqiue rows where the canon does not have a symbol
+     * @see analyse()
+     *
+     * @return string The SQL string for the query
+     */
     protected function getAnalyseCanonsNotSymbolsString(){
         return "SELECT DISTINCT canon FROM {$this->getTableName()} WHERE canon != symbol ORDER BY canon ASC";
     }
@@ -655,7 +813,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      * @throws \Exception A generic exception is thrown, containing useful
      * details and the desired error message.
      */
-    private function error($message, \Exception $e = null)
+    protected function error($message, \Exception $e = null)
     {
         $additional = ($e == null) ? '' : ' // ' . $e->getMessage();
         throw new \Exception(get_class() . " (store '{$this->storeName}'): " . $message . $additional);

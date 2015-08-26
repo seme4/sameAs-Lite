@@ -35,8 +35,22 @@
 
 namespace SameAsLite;
 
-/* TODO extends Traversable */
+
+/**
+ * Interface that must be implimented for all SameAsLite Stores
+ */
 interface StoreInterface {
+
+/* TODO extends Traversable? */
+
+
+	/**
+	 * Constructor for an SQL store
+	 *
+	 * @param string $name   The name of the store
+	 * @param array  $options Array of options to pass on to the store
+	 */
+	public function __construct($name, array $options = array());
 
 
 
@@ -46,6 +60,8 @@ interface StoreInterface {
 	public function connect();
 
 	/**
+	 * Returns whether the store has been connected to 
+	 *
 	 * @return bool Whether the store has been connected to
 	 */
 	public function isConnected();
@@ -63,6 +79,8 @@ interface StoreInterface {
 	public function init();
 
 	/**
+	 * Returns whether or not the store has been initialised
+	 *
 	 * @return bool Whether the store has been initialised
 	 */
 	public function isInit();
@@ -76,6 +94,7 @@ interface StoreInterface {
 
     /**
      * Get the name of the store
+     *
      * @return string The name of this store
      */
     public function getStoreName();
@@ -106,7 +125,7 @@ interface StoreInterface {
      *
      * @param string $string The string to be looked up
      *
-     * @return string[] An array of the symbols, which is enpty if none were found.
+     * @return string[] An array of the symbols, which is empty if none were found.
      */
     public function search($string);
 
@@ -116,13 +135,13 @@ interface StoreInterface {
      * Put a possibly new pair into the store
      *
      * Needs to cope with a number of situations:
-     *        Both symbols were already in the store
+     *        - Both symbols were already in the store
      *          - do nothing
-     *        The first symbol was not in the store
+     *        - The first symbol was not in the store
      *          - add it to the bundle of the second symbol
-     *        The second symbol was not in the store
+     *        - The second symbol was not in the store
      *          - add it to the bundle of the first symbol
-     *        Both symbols were in different bundles
+     *        - Both symbols were in different bundles
      *          - add the symbols from the bundle of the second symbol to the
      *            first bundle, none of them as canons
      *            (leaving the canons situation as it is in bundle 1)
@@ -131,7 +150,7 @@ interface StoreInterface {
      * @param string $symbol2 The second symbol
      *
      * @return bool True on success
-     * @throws Exception On failure
+     * @throws \Exception On failure
      */
     public function assertPair($symbol1, $symbol2);
 
@@ -139,12 +158,12 @@ interface StoreInterface {
 
 
     /**
-     * Take a array of pairs (also and array) and assert those symbols to the store
+     * Take a array of pairs (also an array) and assert those symbols to the store
      *
-     * @param array $data The 2D array of pairs to be asserted
+     * @param string[][] $data The 2D array of pairs to be asserted
      *
      * @return bool True on success
-     * @throws Exception On FIRST pair to fail to be asserted
+     * @throws \Exception On FIRST pair to fail to be asserted
      */
     public function assertPairs(array $data);
 
@@ -155,9 +174,11 @@ interface StoreInterface {
      * Take a string in TSV (Tab-separated values) representing pairs of symbols and assert them to the store
      *
      * EG: 
-     * 'test1<TAB>test2<NEWLINE>test3<TAB>test4'
+     * ```
+     * test1<TAB>test2<NEWLINE>test3<TAB>test4
+     * ```
      *
-     * @param array $tsv The TSV data, as a string
+     * @param string $tsv The TSV data, as a string
      *
      * @return bool True on success
      * @throws Exception On FIRST pair to fail to be asserted
@@ -168,7 +189,7 @@ interface StoreInterface {
 	
 	/**
      * Remove a symbol from this store.
-     * If the symbol is the bundle's canon then do not remove it unless it is also the only symbol in the bundle.s
+     * If the symbol is the bundle's canon then do not remove it unless it is also the only symbol in the bundle.
      *
      * @param string $symbol The symbol to be deleted.
      */
@@ -219,7 +240,7 @@ interface StoreInterface {
     /**
      * Get all pairs (a 2 item array) from the store and return them as an array
 	 *
-	 * @return array The 2D array of pairs in the form [ canon, symbol ]
+	 * @return string[][] The 2D array of pairs in the form [ canon, symbol ]
 	 */
     public function dumpPairs();
 
@@ -235,11 +256,13 @@ interface StoreInterface {
      * Provide basic statistics on the store - number of symbols and number of bundles
 	 *
 	 * Should contain:
-	 ** Array
+	 * ```
+	 * Array
 	 *	(
 	 *	    [symbols] => <int>
 	 *	    [bundles] => <int>
 	 *	)
+	 * ```
      *
      * @return mixed[] An associative array wih the statistics in
      */
@@ -266,7 +289,8 @@ interface StoreInterface {
 	 *
 	 *
 	 * EXAMPLE OUTPUT:
-	 *	Array
+	 *	```
+	 * Array
 	 *	(
 	 *	    [meta] => Array
 	 *	        (
@@ -426,6 +450,7 @@ interface StoreInterface {
 	 *	        )
 	 *
 	 *	)
+	 * ```
 	 *
 	 *
      *

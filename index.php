@@ -38,6 +38,13 @@ require_once 'vendor/autoload.php';
 // initialise the web application
 $app = new \SameAsLite\WebApp(array(
     'footerText' => 'This data is released under a CC0 License. Do with it as you will ;)',
+
+    'about' => 'This is a test about section for seme4',
+    'contact' => [
+        'name' => 'Steven Martin',
+        'email' => 'steve.martin@example.com',
+        'telephone' => '0123456789'
+    ]
 ));
 
 // TODO - think about abstraction of dbase connection, store and dataset. it
@@ -47,20 +54,22 @@ $app = new \SameAsLite\WebApp(array(
 // details (incl dbase connection info) to the data passed to addDataset and
 // get that method to instantiate the \SameAsLite\Store object?
 
-ini_set('display_errors',1);
-ini_set('display_startup_errors',1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(-1);
 
 
 $app->addDataset(
     new \SameAsLite\Store\MySQLStore(
         'webdemo',
-        'testuser',
-        'testpass',
-        'testdb',
-        '127.0.0.1',
-        '3306',
-        'utf8'
+        [
+            'username' => 'testuser',
+            'password' => 'testpass',
+            'dbName' => 'testdb',
+            'host' => '127.0.0.1',
+            'post' => '3306',
+            'charset' => 'utf8'
+        ]
     ),
     array(
         'slug'      => 'VIAF',
@@ -78,12 +87,14 @@ $app->addDataset(
 $app->addDataset(
     new \SameAsLite\Store\MySQLStore(
         'table1',
-        'testuser',
-        'testpass',
-        'testdb',
-        '127.0.0.1',
-        '3306',
-        'utf8'
+        [
+            'username' => 'testuser',
+            'password' => 'testpass',
+            'dbName' => 'testdb',
+            'host' => '127.0.0.1',
+            'post' => '3306',
+            'charset' => 'utf8'
+        ]
     ),
     array(
         'slug'      => 'test',

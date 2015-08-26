@@ -35,33 +35,47 @@
 
 namespace SameAsLite\Store;
 
-class MySQLStore extends \SameAsLite\Store\SQLStore {
+/**
+ * Store for SQLite databases
+ */
+class SQLiteStore extends \SameAsLite\Store\SQLStore {
 
 
-    /** @var $$dbLocation The location of the database, or false if in memory **/
+    /** @var $dbLocation The location of the database, or false if in memory */
     protected $dbLocation;
 
 
+    // TODO
+    //public static function getFactorySettings(){return [];}
 
-    /**
-     * This is the constructor for a SameAs Lite store, validates and saves
+
+
+    /*
+     * This is the constructor for a SameAs Lite SQLite store, validates and saves
      * settings. Once a Store object is created, call the connect() function to
      * establish connection to the underlying database.
      *
-     * @param string $name      Name of this store, will also be used as the database table name
      * @param string $location  Location of the database file, if not supplied the database will be loaded into memory
      *
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
-    public function __construct($name, $location = null){
+    // TIHNS
+
+    /**
+     * Constructor takes the options for the SQLite store:
+     * location  - The location of the DB file or null if stored in memory (optional)
+     *
+     * @throws \InvalidArgumentException If any parameters are deemed invalid
+     */
+    public function __construct($name, array $options = array()){
 
         // Construct dsn string
         $dsn = 'sqlite:';
-        if(isset($location)){
-            $dsn .= realpath($location);
+        if(isset($options['location'])){
+            $dsn .= realpath($options['location']);
         }else{
             $dsn .= ':memory:';
-            $location = false;
+            $options['location'] = false;
         }
 
 
@@ -75,24 +89,18 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
         // save config
         $this->dsn = $dsn;
         $this->storeName = $name;
-        $this->dbLocation = $location;
+        $this->dbLocation = $options['location'];
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function connect(){
         parent::connect();
 
         // For debugging and sanity, make PDO report any problems, not fail silently
         $this->pdoObject->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-        try {
-            $this->pdoObject->exec('USE ' . $this->dbName);
-        } catch (\PDOException $e) {
-            throw new \Exception(
-                'Failed to access database named ' . $this->dbName . ' // ' .
-                $e->getMessage()
-            );
-        }
 
         if(!$this->isInit()){
             $this->init(); // Init the database if required
@@ -100,6 +108,12 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
     }
 
 
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \Exception When store cannot be created
+     */
     public function init(){
         // Attempt to create the tables in the given DB     
 
@@ -108,7 +122,7 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
             $sql = "CREATE TABLE IF NOT EXISTS {$this->getTableName()}
                 (canon TEXT, symbol TEXT PRIMARY KEY)
                 WITHOUT ROWID;
-                CREATE INDEX IF NOT EXISTS ' . $this->storeName . '_idx'
+                CREATE INDEX IF NOT EXISTS {$this->getTableName()}_idx
                 ON {$this->getTableName()} (canon);";
 
             $this->pdoObject->exec($sql);
@@ -120,20 +134,33 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
         }
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function isInit(){
         $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='{$this->getTableName()}'";
-        $results = $this->pdoObject->query($sql);
-        return ($results->rowCount() > 0);
+        $a = $this->pdoObject->query($sql)->fetchAll();
+        return count($a) > 0;
     }
 
 
 
+    /**
+     * {@inheritDoc}
+     */
     public function deleteStore(){
-        $sql = "DROP TABLE IF EXISTS `{$this->getTableName()}`; DROP INDEX IF EXISTS `{$this->getTableName()}_idx`;";
+        $sql = "DROP INDEX IF EXISTS `{$this->getTableName()}_idx`";
+        $this->pdoObject->exec($sql);
+        $sql = "DROP TABLE IF EXISTS `{$this->getTableName()}`";
         $this->pdoObject->exec($sql);
     }
 
 
+
+    /**
+     * {@inheritDoc}
+     */
     public function emptyStore(){
         try{
             $sql = "DELETE FROM `{$this->getTableName()}`";
@@ -141,6 +168,11 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
         } catch (\PDOException $e) {
             $this->error("Database failure to empty store", $e);
         }
+        /*
+        Just recreate table instead?
+        $this->deleteStore();
+        $this->init();
+        */
     }
 
 }
