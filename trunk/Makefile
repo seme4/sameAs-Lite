@@ -39,7 +39,7 @@ docs:
 
 clean-docs:
 	# remove class documentation
-	rm -rf docs/ dev-tools/phpdoc-tmp/
+	rm -rf docs/ dev-tools/phpdoc-tmp/ /tmp/phpdoc-twig-cache
 
 clean-dist: clean-docs
 	# remove everything we installed
