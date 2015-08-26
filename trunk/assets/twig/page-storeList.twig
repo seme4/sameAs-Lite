@@ -1,0 +1,19 @@
+{% extends "page.twig" %}
+
+
+
+{% block body %}
+
+	<h2>Currently available datasets</h2>
+
+	<div class="list-group">
+		{% for store in stores %}
+			<a class="list-group-item" href="/datasets/{{ store.slug }}">
+                <p class="h3">{{ store.shortName }}</p>
+                <p style="text-indent: 1em;">{{ store.fullName }}</p>
+            </a>
+
+		{% endfor %}
+	</div>
+
+{% endblock %}
