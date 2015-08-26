@@ -1,0 +1,19 @@
+{% extends "page.twig" %}
+
+
+
+{% block body %}
+
+
+{% if list|length > 0 %}
+	<ul>
+		{% for item in list %}
+			<li>{{ item }}</li>
+		{% endfor %}
+	</ul>
+{% else %}
+	<p>No items found</p>
+{% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "page.twig" %}
+
+
+
+{% block body %}
+
+
+	{% if contact %}
+		<div style="margin-bottom: 50px">
+			<h2 class="h3">For general enquires please contact</h2>
+
+				<strong>{{ contact.name }}</strong>
+				<ul class="list-unstyled">
+					{% for label, value in contact %}
+						{% if label != "name" %}
+							{% if label == "email" %}
+									<li>{{ label|capitalize }}: <a href="mailto:{{ value }}">{{ value }}</a></li>
+							{% else %}
+								<li>{{ label|capitalize }}: {{ value }}</li>
+							{% endif %}
+						{% endif %}
+					{% endfor %}
+				</ul>
+
+		</div>
+	{% endif %}
+
+
+
+	<div>
+		<h2 class="h3">For queries about individual datasets</h2>
+		<ul class="list-group">
+			{% for store in storeOptions %}
+				<li class="list-group-item">
+					<h3 class="h4"><a href="/datasets/{{ store.slug }}">{{ store.fullName }}</a></h3>
+					<strong>{{ store.contact.name }}</strong>
+					<ul class="list-unstyled">
+						{% for label, value in store.contact %}
+							{% if label != "name" %}
+								{% if label == "email" %}
+										<li>{{ label|capitalize }}: <a href="mailto:{{ value }}">{{ value }}</a></li>
+								{% else %}
+									<li>{{ label|capitalize }}: {{ value }}</li>
+								{% endif %}
+							{% endif %}
+						{% endfor %}
+					</ul>
+				</li>
+			{% endfor %}
+		</ul>
+	</div>
+
+
+		<p class="small text-right">
+			SameAsLite developed and realeased by <a href="http://www.seme4.com">Seme4</a> under the <a href='/license'>MIT Licence</a>
+		</p>
+
+
+{% endblock %}
