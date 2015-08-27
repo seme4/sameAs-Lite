@@ -347,6 +347,46 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
+    public function removeSymbols(array $symbols){
+        foreach($symbols as $symbol){
+            $this->removeSymbol($symbol);
+        }
+        return true;
+    }
+
+
+
+    /**
+     * {@inheritDoc}
+     */
+    public function removeBundle($symbol){
+        // Get the symbol's canon
+        $canon = $this->getCanon($symbol);
+        if(!isset($canon) || !$canon){
+            return;
+        }
+
+        // Run SQL query
+        $sql = $this->getRemoveBundleString(':canon');
+        $statement = $this->pdoObject->prepare($sql);
+        $statement->execute([ ':canon' => $canon ]);
+    }
+
+    /**
+     * Gets the SQL query string that when run removes the a bundle given by the canon collected in { @link removeBundle() }
+     * @see removeBundle()
+     *
+     * @param string $canonId The string to be placed where the canon would go in the query
+     *
+     * @return string The SQL string for the query
+     */
+    public function getRemoveBundleString($canonId){
+        return "DELETE FROM {$this->getTableName()} WHERE canon = {$canonId}";
+    }
+
 
     /**
      * {@inheritDoc}

@@ -181,20 +181,39 @@ interface StoreInterface {
      * @param string $tsv The TSV data, as a string
      *
      * @return bool True on success
-     * @throws Exception On FIRST pair to fail to be asserted
+     * @throws \Exception On FIRST pair to fail to be asserted
      */
     public function assertTSV($tsv);
 
 
 	
-	/**
+    /**
      * Remove a symbol from this store.
      * If the symbol is the bundle's canon then do not remove it unless it is also the only symbol in the bundle.
      *
      * @param string $symbol The symbol to be deleted.
+     * @throws \Exception if the symbol could not be removed or it is a canon in a non-singleton bundle
      */
     public function removeSymbol($symbol);
 
+    /**
+     * Remove an array of Symbols from the store
+     * If you wish to remove a whole bundle from a given symbol the use {@link removeBundle()}
+	 *
+	 * @param string[] $symbols The symbols to be removed
+	 *
+	 * @return bool True on success
+	 * @throws \Exception On FIRST pair to fail to be removed
+	 */
+    public function removeSymbols(array $symbols);
+
+    /**
+     * Remove a bundle and ALL of it's symbols from the store
+     * The canon will also be removed
+     *
+     * @param string $symbol The symbol that's bundle should be removed. Does not have to be the canon
+     */
+    public function removeBundle($symbol);
 
 
     /**
