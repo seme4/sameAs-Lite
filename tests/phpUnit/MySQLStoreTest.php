@@ -56,16 +56,16 @@ class MySQLStoreTest extends SQLStoreTest
      * {@inheritDoc}
      */
 	protected static function getConfig(){
-		if (array_key_exists('USERNAME', $GLOBALS)) {
-		    $this->username = $GLOBALS['USERNAME'];
+		if (array_key_exists('MYSQL_USERNAME', $GLOBALS)) {
+		    $this->username = $GLOBALS['MYSQL_USERNAME'];
 		}
 
-		if (array_key_exists('PASSWORD', $GLOBALS)) {
-		    $this->password = $GLOBALS['PASSWORD'];
+		if (array_key_exists('MYSQL_PASSWORD', $GLOBALS)) {
+		    $this->password = $GLOBALS['MYSQL_PASSWORD'];
 		}
 
-		if (array_key_exists('DB_NAME', $GLOBALS)) {
-		    $this->dbName = $GLOBALS['DB_NAME'];
+		if (array_key_exists('MYSQL_DB_NAME', $GLOBALS)) {
+		    $this->dbName = $GLOBALS['MYSQL_DB_NAME'];
 		}
 
 		parent::getConfig();

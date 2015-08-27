@@ -50,8 +50,8 @@ class SQLiteStoreTest extends SQLStoreTest
      * {@inheritDoc}
      */
 	protected static function getConfig(){
-		if (array_key_exists('LOCATION', $GLOBALS)) {
-		    $this->location = $GLOBALS['LOCATION'];
+		if (array_key_exists('SQLITE_LOCATION', $GLOBALS)) {
+		    $this->location = $GLOBALS['SQLITE_LOCATION'];
 		}
 
 		parent::getConfig();
