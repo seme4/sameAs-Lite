@@ -95,7 +95,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
             ]);
         } catch (\PDOException $e) {
             throw new \Exception(
-                'Unable to to connect to MySQL // ' .
+                'Unable to to connect to Database // ' .
                 $e->getMessage()
             );
         }

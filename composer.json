@@ -18,6 +18,8 @@
         "ext-mbstring": "*",
         "ext-pcre": "*",
         "ext-pdo": "*",
+        "ext-mysql" : "*",
+        "ext-pdo_sqlite" : "*",
         "ptlis/conneg": "*",
         "slim/slim": "*",
         "slim/views": "*",
