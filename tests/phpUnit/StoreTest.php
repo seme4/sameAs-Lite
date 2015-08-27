@@ -322,6 +322,36 @@ abstract class StoreTest extends \PHPUnit_Framework_TestCase
 
 
 	/**
+	 * Store will remove multiple symbols correctly
+	 *
+	 * @covers \SameAsLite\StoreInterface::removeSymbols
+	 */
+	public function testCanRemoveSymbols(){
+		$symbols = ['aaa', 'aa', 'pizza'];
+		$this->store->removeSymbols($symbols);
+
+		foreach ($symbols as $symbol) {
+			$this->assertFalse($this->isSymbolInStore($symbol));
+		}
+	}
+
+	/**
+	 * Store will remove a bundle correctly, without using the canon as the symbol
+	 *
+	 * @covers \SameAsLite\StoreInterface::removeBundle
+	 */
+	public function testCanRemoveBundle(){
+		$symbol = 'aaa';
+		$bundle = ['a', 'aa', 'aaa'];
+		$this->store->removeBundle($symbol);
+
+		foreach ($bundle as $symbol) {
+			$this->assertFalse($this->isSymbolInStore($symbol));
+		}
+	}
+
+
+	/**
 	 * Store will set the canon correctly
 	 *
 	 * @covers \SameAsLite\StoreInterface::setCanon
