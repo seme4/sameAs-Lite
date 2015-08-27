@@ -1,28 +1,37 @@
-# SameAs Lite
+# sameAs Lite
 
-SameAs Lite is a refactored, open source, version of the software that powers [SameAs.org](http://sameas.org).
+sameAs Lite is a refactored, open source version of software to provide sameAs&reg; services such as those that power [sameAs.org](http://sameas.org/).
 
-Linked data is a way of joining and relating information in a machine readable way, on of the priciples of linked data is that all things are represented by a URI, whether it be a person, book, place, department, etc [[1]](http://www.w3.org/DesignIssues/LinkedData.html).
-However this means that many URIs can represent the same thing. SameAs allows users to search for a linked data URI and other URIs that are equivilent will be returned.
+The sameAs services are motivated by the [Semantic Web](https://en.wikipedia.org/wiki/Semantic_Web) and especially [Linked Data](http://linkeddata.org/), although they have wider uses.
+Linked Data is a way of joining and relating information in a machine readable way.
+One of the principles of Linked Data is that all things can be referred to by a ID; these things may be things such as a person or book, where we are used to having identifiers, or more abstract concepts such as anger, expertise, last week, sub-Saharan Africa or a Charm Quark. [[1]](http://www.w3.org/DesignIssues/LinkedData.html).
+Since anyone can publish Linked Data about anything, without universal agreement on identifiers for everything (which will clearly never happen), different sources may use many different IDs that identify the same thing.
+sameAs allows users to search for a Linked Data UR,I and other IDs that are equivalent will be returned.
 
-SameAs Lite aims to provide a libary that makes it easy to link and search for URIs that represent the thing.
+It should be noted that this identifer management challenge is actually much wider than just Linked Data, and that the sameAs Lite software makes no assumptions or requirements that the identifiers being managed are Linked Data IDs.
+Consequently we will refer to IDs, rather than IDs, throughout the documentation.
+Linked Data and Semantic Web users should simply consider IDs to be IDs.
 
 
 
 ## Concepts
-Equivalent URIs are conceptually stored in a bundle. A bundle is a set of URIs referring to resources which are considered to be equivalent, in a given context. A URI can exist in at most one bundle within a linked data set exposed by a sameAs Lite instance.
+Equivalent IDs are conceptually stored in a bundle.
+A bundle is a set of IDs referring to resources which are considered to be equivalent, in the context of this store.
+An ID can exist in at most one bundle within a set exposed by a sameAs Lite instance.
 
-One URI in each bundle is nominated to be a canonical identifier, or canon, for that bundle. The canon represents a preferred URI for the set of duplicates.
+One ID in each bundle is nominated to be a canonical identifier, or canon, for that bundle.
+The canon represents a preferred ID for the set of duplicates.
 
-An application that wishes to use data from multiple sources as if they were a single resource can process results by looking up URIs within sameAs Lite and replacing these with their canons on the fly. This reduces the multiplicity of identifiers to a single definitive URI.
+An application that wishes to use data from multiple sources as if they were a single resource can process results by looking up IDs within sameAs Lite and replacing these with their canons on the fly. This reduces the multiplicity of identifiers to a single definitive ID.
 
 
 ## Deploying SameAs Lite
-SameAs Lite comes with two methods of Storage: SQLite and MySQL. SameAs Lite can be easily extended to use different storage methods as well (see Extending).
+SameAs Lite comes with two methods of Storage: SQLite and MySQL.
+SameAs Lite can be easily extended to use different storage methods as well (see Extending).
 These examples will use MySQL as a storage method.
 
 ### Create the Database
-The SQL stores only use 1 table (per Store) to store the URIs. This means that SameAs Lite can be used in an existing Database/Schema, or in a new one all together.
+The SQL stores only use 1 table (per Store) to store the IDs. This means that SameAs Lite can be used in an existing Database/Schema, or in a new one all together.
 
 It is recommended you give SameAs Lite it's own user and grant it CREATE and DROP permissions on the Schema so that it can create and delete the store(s) as required. 
 SameAs Lite will not interfere with any other tables or the Schema itself.
