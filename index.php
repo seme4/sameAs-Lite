@@ -67,7 +67,7 @@ $app->addDataset(
             'password' => 'testpass',
             'dbName' => 'testdb',
             'host' => '127.0.0.1',
-            'post' => '3306',
+            'port' => '3306',
             'charset' => 'utf8'
         ]
     ),
@@ -92,7 +92,7 @@ $app->addDataset(
             'password' => 'testpass',
             'dbName' => 'testdb',
             'host' => '127.0.0.1',
-            'post' => '3306',
+            'port' => '3306',
             'charset' => 'utf8'
         ]
     ),
