@@ -214,7 +214,9 @@ class WebApp
             '/datasets',
             'listStores',
             'Lists available datasets',
-            'Returns the available datasets hosted by this service'
+            'Returns the available datasets hosted by this service',
+            false,
+            'application/json,text/html,text/csv'
         );
         $this->registerURL(
             'GET',
@@ -1176,12 +1178,53 @@ class WebApp
      */
     public function listStores()
     {
+        $this->app->contentType($this->mimeBest);
+
+        switch($this->mimeBest){
+            case 'text/csv' : 
+                $out = fopen('php://output', 'w');
+                $url = $this->app->request->getUrl();
+
+                fputcsv($out, ['name', 'url']);
+                foreach($this->storeOptions as $i){
+                    $o = [
+                        $i['shortName'],
+                        $url . '/datasets/' . $i['slug']
+                    ];
+                    fputcsv($out, $o);
+                }
+            break;
+
+            case 'application/json' :
+                $out = [];
+                $url = $this->app->request->getUrl();
+
+                foreach($this->storeOptions as $i){
+                    $out[] = [
+                        'name' => $i['shortName'],
+                        'url' => $url . '/datasets/' . $i['slug']
+                    ];
+                }
+
+                echo json_encode($out);
+            break;
+
+
+            case 'text/html' : 
+                $this->app->render('page-storeList.twig', [
+                    'titleHTML' => ' ',
+                    'titleHeader' => 'Datasets', 
+                    'stores' => $this->storeOptions
+                ]);
+            break;
+
+            default : 
+                $this->outputError(400, "Cannot return in format requested");
+            break;
+
+        }
         
-        $this->app->render('page-storeList.twig', [
-            'titleHTML' => ' ',
-            'titleHeader' => 'Datasets', 
-            'stores' => $this->storeOptions
-        ]);
+        
     }
 
     /**
