@@ -64,7 +64,7 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
      * {@inheritDoc}
      */
     public static function setDefaultOptions(array $options){
-        static::$defaultOptions = $options;
+        self::$defaultOptions = $options;
     }
 
 
@@ -91,15 +91,15 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
     public function __construct($name, array $options = array()){
+        // Merge arrays to get user defined defaults
+        $o = array_merge(self::$defaultOptions, $options);
+
         // Merge arrays to get class defaults
         $defaults = [
             'dbName' => 'SameAsLite',
             'host'   => 'localhost'
         ];
-        $o = array_merge($defaults, $options);
-
-        // Merge arrays to get user defined defaults
-        $o = array_merge(self::$defaultOptions, $o);
+        $o = array_merge($defaults, $o);
 
         if(!isset($o['username']) || !isset($o['password'])){
             throw new \InvalidArgumentException(

@@ -58,7 +58,7 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
      * {@inheritDoc}
      */
     public static function setDefaultOptions(array $options){
-        static::$defaultOptions = $options;
+        self::$defaultOptions = $options;
     }
 
 
