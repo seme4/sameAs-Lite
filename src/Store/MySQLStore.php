@@ -51,7 +51,7 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
     protected $dbName;
 
     /** @var array $defaultOptions The default options for a store */
-    protected static $defaultOptions;
+    protected static $defaultOptions = [];
 
 
     // TODO
@@ -91,8 +91,10 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
     public function __construct($name, array $options = array()){
-        // Merge arrays to get user defined defaults
-        $o = array_merge(self::$defaultOptions, $options);
+        if(is_array(self::$defaultOptions)){
+            // Merge arrays to get user defined defaults
+            $o = array_merge(self::$defaultOptions, $options);
+        }
 
         // Merge arrays to get class defaults
         $defaults = [
