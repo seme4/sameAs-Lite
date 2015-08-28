@@ -53,6 +53,15 @@ interface StoreInterface {
 	public function __construct($name, array $options = array());
 
 
+	/**
+	 * Sets the default options for a store
+	 * This can help prevent duplicate code when instantating multiple Stores
+	 *
+	 * @param array $options The default options to be passed into the store
+	 */
+	public static function setDefaultOptions(array $options);
+
+
 
 	/**
 	* Establish a connection to the store (setup on each script run)

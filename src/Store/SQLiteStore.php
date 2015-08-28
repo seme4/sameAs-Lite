@@ -44,10 +44,22 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     /** @var $dbLocation The location of the database, or false if in memory */
     protected $dbLocation;
 
+    /** @var array $defaultOptions The default options for a store */
+    protected static $defaultOptions;
+
 
     // TODO
     //public static function getFactorySettings(){return [];}
 
+
+
+
+    /**
+     * {@inheritDoc}
+     */
+    public static function setDefaultOptions(array $options){
+        static::$defaultOptions = $options;
+    }
 
 
     /*
@@ -68,6 +80,8 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
     public function __construct($name, array $options = array()){
+        // Merge arrays to get defaults
+        $options = array_merge(self::$defaultOptions, $options);
 
         // Construct dsn string
         $dsn = 'sqlite:';

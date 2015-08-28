@@ -59,16 +59,20 @@ ini_set('display_startup_errors', 1);
 error_reporting(-1);
 
 
+// Add default options to the MySQLStore
+\SameAsLite\Store\MySQLStore::setDefaultOptions([
+    'host' => '127.0.0.1',
+    'port' => '3306',
+    'charset' => 'utf8',
+    'dbName' => 'testdb'
+]);
+
 $app->addDataset(
     new \SameAsLite\Store\MySQLStore(
         'webdemo',
-        [
+        [ // Using the default settings for some areas
             'username' => 'testuser',
-            'password' => 'testpass',
-            'dbName' => 'testdb',
-            'host' => '127.0.0.1',
-            'port' => '3306',
-            'charset' => 'utf8'
+            'password' => 'testpass'
         ]
     ),
     array(
@@ -87,7 +91,7 @@ $app->addDataset(
 $app->addDataset(
     new \SameAsLite\Store\MySQLStore(
         'table1',
-        [
+        [ // Inputting all settings manually
             'username' => 'testuser',
             'password' => 'testpass',
             'dbName' => 'testdb',
