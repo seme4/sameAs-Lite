@@ -45,7 +45,7 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     protected $dbLocation;
 
     /** @var array $defaultOptions The default options for a store */
-    protected static $defaultOptions;
+    protected static $defaultOptions = [];
 
 
     // TODO
@@ -80,8 +80,10 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
     public function __construct($name, array $options = array()){
-        // Merge arrays to get defaults
-        $options = array_merge(self::$defaultOptions, $options);
+        if(is_array(self::$defaultOptions)){
+            // Merge arrays to get user defaults
+            $options = array_merge(self::$defaultOptions, $options);
+        }
 
         // Construct dsn string
         $dsn = 'sqlite:';
