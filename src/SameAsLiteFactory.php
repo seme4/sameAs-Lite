@@ -35,6 +35,9 @@
 
 namespace SameAsLite;
 
+/**
+ * Class to create Stores and WebApps using PHP ini files for configuration
+ */
 class SameAsLiteFactory {
 
 	/** @var string[] $storeTypes Array of availble store types */
@@ -51,7 +54,7 @@ class SameAsLiteFactory {
 	/**
 	 * Construct a sameAs Lite Stores from a php ini file
 	 *
-	 * @var string $file String to the location of the ini file
+	 * @param string $file String to the location of the ini file
 	 *
 	 * @return \SameAsLite\StoreInterface[] Array of Stores
 	 * @throws \InvalidArgumentException When the options are invalid
@@ -64,7 +67,7 @@ class SameAsLiteFactory {
 	 * Construct the sameAs Lite stores from the given array of options
 	 * Will also register all defaults given in the config under the [defaults] heading
 	 *
-	 * @var array $config Array of config for the Store
+	 * @param array $config Array of config for the Store
 	 *
 	 * @return \SameAsLite\StoreInterface[] Array of Stores
 	 * @throws \InvalidArgumentException When the options are invalid
@@ -114,7 +117,7 @@ class SameAsLiteFactory {
 	/**
 	 * Construct a WebApp from a php ini file
 	 *
-	 * @var string $file The location of the ini file
+	 * @param string $file The location of the ini file
 	 *
 	 * @return \SameAsLite\WebApp The created WebApp
 	 * @throws \InvalidArgumentException When the options are invalid
@@ -127,7 +130,7 @@ class SameAsLiteFactory {
 	 * Construct a sameAs Lite WebApp from the given array of options
 	 * Does NOT run the WebApp
 	 *
-	 * @var array $config Array of config for WebApp and associcated Stores
+	 * @param array $config Array of config for WebApp and associcated Stores
 	 *
 	 * @return \SameAsLite\WebApp The created WebApp
 	 * @throws \InvalidArgumentException When the options are invalid
