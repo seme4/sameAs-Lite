@@ -47,6 +47,11 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     /** @var array $defaultOptions The default options for a store */
     protected static $defaultOptions = [];
 
+    /** @var string[] $availableOptions The options available for this store */
+    protected static $availableOptions = [
+        'location'
+    ];
+
 
     // TODO
     //public static function getFactorySettings(){return [];}
@@ -60,6 +65,14 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     public static function setDefaultOptions(array $options){
         self::$defaultOptions = $options;
     }
+
+
+    /**
+     * {@inheritDoc}
+     */
+     public static function getAvailableOptions(){
+        return self::$availableOptions;
+     }
 
 
     /*
@@ -87,13 +100,12 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
 
         // Construct dsn string
         $dsn = 'sqlite:';
-        if(isset($options['location'])){
-            $dsn .= realpath($options['location']);
+        if(isset($options['location']) && !!$options['location']){
+            $dsn .= $options['location'];
         }else{
             $dsn .= ':memory:';
             $options['location'] = false;
         }
-
 
         // ensure store name is sensible
         if (preg_match('/[^a-zA-Z0-9_]/', $name)) {

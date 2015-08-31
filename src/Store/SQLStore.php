@@ -86,8 +86,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
         }
 
         
-        $user = (isset($this->dbUser))?$this->dbUser:null;
-        $pass = (isset($this->dbPass))?$this->dbPass:null;
+        $user = (isset($this->dbUser))? $this->dbUser : null;
+        $pass = (isset($this->dbPass))? $this->dbPass : null;
 
         try {
             $this->pdoObject = new \PDO($this->dsn, $user, $pass, [

@@ -53,6 +53,15 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
     /** @var array $defaultOptions The default options for a store */
     protected static $defaultOptions = [];
 
+    /** @var string[] $availableOptions The options available for this store */
+    protected static $availableOptions = [
+        'username',
+        'password',
+        'dbName',
+        'host',
+        'port',
+        'charset'
+    ];
 
     // TODO
     //public static function getFactorySettings(){return [];}
@@ -66,6 +75,13 @@ class MySQLStore extends \SameAsLite\Store\SQLStore {
     public static function setDefaultOptions(array $options){
         self::$defaultOptions = $options;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+     public static function getAvailableOptions(){
+        return self::$availableOptions;
+     }
 
 
     /*

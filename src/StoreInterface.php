@@ -62,6 +62,13 @@ interface StoreInterface {
 	public static function setDefaultOptions(array $options);
 
 
+	/**
+	 * Gets an array of strings of the options accepted by this store
+	 *
+	 * @return string[] Options this store can take
+	 */
+	public static function getAvailableOptions();
+
 
 	/**
 	* Establish a connection to the store (setup on each script run)
