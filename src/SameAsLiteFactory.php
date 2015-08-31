@@ -72,8 +72,14 @@ class SameAsLiteFactory {
 	public static function createStoresFromArray(array $config){
 		// Check for defaults
 		if(isset($config['defaults'])){
-			foreach($config['defaults'] as $storeName => $defs){
-				$class = self::STORE_NAMESPACE . $storeName;
+			foreach($config['defaults'] as $storeType => $defs){
+
+				if(strpos($storeType, '\\') === false){
+					// There is no namespace, use the default one
+					$class = self::STORE_NAMESPACE . $storeType;
+				}else{
+					$class = $storeType;
+				}
 				$class::setDefaultOptions($defs);
 			}
 		}
@@ -86,7 +92,11 @@ class SameAsLiteFactory {
 			$type = $options['type'];
 			unset($options['type']);
 
-			$class = self::STORE_NAMESPACE . $type;
+			if(strpos($type, '\\') === false){
+				$class = self::STORE_NAMESPACE . $type;
+			}else{
+				$class = $type;
+			}
 
 			// Whitelist to get the options that the store takes
 			$o = array_intersect_key($options, array_flip($class::getAvailableOptions()));
