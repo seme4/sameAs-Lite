@@ -3,7 +3,7 @@
 /**
  * SameAs Lite Web Application
  *
- * Configure and launch the SameAs Lite RESTful Web Application.
+ * Example for creating a sameAs Lite Web Application manually, using php structures
  *
  * @package   SameAsLite
  * @author    Seme4 Ltd <sameAs@seme4.com>
@@ -33,9 +33,9 @@
  * IN THE SOFTWARE.
  */
 
-require_once 'vendor/autoload.php';
+require_once '../vendor/autoload.php';
 
-// initialise the web application
+// Initialise the web application
 $app = new \SameAsLite\WebApp(array(
     'footerText' => 'This data is released under a CC0 License. Do with it as you will ;)',
 
@@ -46,17 +46,6 @@ $app = new \SameAsLite\WebApp(array(
         'telephone' => '0123456789'
     ]
 ));
-
-// TODO - think about abstraction of dbase connection, store and dataset. it
-// might make more sense to initialise one PDO object and hand this to the
-// various \SameAsLits\Store(s) which want to use it? otherwise we're
-// duplicating the dbase information for each dataset. alternatively, add all
-// details (incl dbase connection info) to the data passed to addDataset and
-// get that method to instantiate the \SameAsLite\Store object?
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(-1);
 
 
 // Add default options to the MySQLStore
@@ -69,6 +58,7 @@ error_reporting(-1);
 
 
 
+// Add the data sets
 $app->addDataset(
     new \SameAsLite\Store\MySQLStore(
         'webdemo',
