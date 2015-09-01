@@ -8,6 +8,8 @@ vendor/
 composer.lock
 test.sqlite
 
-# No not track composer binary
+# Do not track composer binary
 composer.phar
 
+# Do not track the default database
+sameaslite-store.db
