@@ -117,7 +117,7 @@ Finally, run the app using `run()`.
 $app->run();
 ```
 
-A full example can be found in index.php
+A full example can be found in [examples/manual.php](examples/manual.php)
 
 ## Extending
 It is possible to create new Stores to work with sameAs Lite.
