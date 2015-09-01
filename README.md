@@ -28,7 +28,9 @@ An application that wishes to use data from multiple sources as if they were a s
 ## Deploying sameAs Lite
 sameAs Lite can be deployed on any machine that supports PHP 5.4 or greater (and will need the `ctype` package installed).
 
-TODO: If you want to use sameAs Lite as a web service (recommended) you will need (Apache? - Version?);
+If you want to use sameAs Lite as a web service (recommended) you will need to install a web server.
+A .htaccess file for [Apache](http://httpd.apache.org) is included in the repository, and means that the application can be simply dropped into an Apache environment and will work.
+If you use nginx or another web server, more configuration may be required, see the [Slim documentation](http://docs.slimframework.com/routing/rewrite/) for more information.
 
 At the moment it has only be tested on Unix-like machines (Linux and Macs).
 
@@ -36,9 +38,9 @@ sameAs Lite comes with two methods of Storage: SQLite and MySQL.
 It can be easily extended to use different storage methods as well (see Extending).
 These examples will use MySQL as a storage method.
 
-###Getting Started
+### Getting Started
 
-### Download and install dependencies
+#### Download and install dependencies
 Download the repository using your usual method (see for example [Fork A Repository](https://help.github.com/articles/fork-a-repo/)).
 
 If you are going to use sameAs Lite as a web service, this will be in your web space.
@@ -47,7 +49,7 @@ Open the command line at the local copy and `make install`.
 
 sameAs Lite uses [Composer](https://getcomposer.org) for dependency management, so you will need to install it, if you don't have it.
 
-### Create the Database
+#### Create the Database
 
 The SQL stores only use 1 table (per Store) to store the IDs.
 This means that sameAs Lite can be used in an existing Database/Schema, or in a new one altogether.
@@ -55,8 +57,8 @@ This means that sameAs Lite can be used in an existing Database/Schema, or in a 
 It is recommended you give sameAs Lite its own user and grant it CREATE and DROP permissions on the Schema so that it can create and delete the store(s) as required. 
 sameAs Lite will not interfere with any other tables or the Schema itself.
 
-### Creating Stores
-All Stores bundled with sameAs Lite are in the *\sameAsLite\Store* namespace and all take a _name_ for the store and an array of _options_.
+#### Creating Stores
+All Stores bundled with sameAs Lite are in the *\SameAsLite\Store* namespace and all take a _name_ for the store and an array of _options_.
 For MySQL these options are:
 ```php
 [
@@ -73,7 +75,7 @@ TODO: Needs some more help here, so that it works better out of the box (such as
 
 For other Store options please see the documentation.
 
-#### Using Stores
+### Using Stores
 `$store->assertPair('crisps', 'potato chips');` Create a relationship
 
 `$store->querySymbol('crisps');` Looks up all equivilent symbols. Returns `['crisps', 'potato chips']`
@@ -91,7 +93,7 @@ These stores can be used by themselves and accessed directly.
 However sameAs Lite also comes with a WebApp that can be used to provide a RESTful API and HTML interface to interact with the store.
 The WebApp uses [Slim](http://slimframework.com) for routing.
 
-To use the WebApp create a new *\sameAsLite\WebApp* object, passing in an array of options.
+To use the WebApp create a new *\SameAsLite\WebApp* object, passing in an array of options.
 ```php
 "Options described here"
 ```
@@ -110,9 +112,9 @@ A full example can be found in index.php
 
 ## Extending
 It is possible to create new Stores to work with sameAs Lite.
-The Store class must implement *\sameAsLite\StoreInterface*, the functions that must be implemented are described in the docs.
+The Store class must implement *\SameAsLite\StoreInterface*, the functions that must be implemented are described in the docs.
 
-For creating SQL based stores, an abstract class *\sameAsLite\Store\SQLStore* is provided, this implements most functionality common to SQL databases.
+For creating SQL based stores, an abstract class *\SameAsLite\Store\SQLStore* is provided, this implements most functionality common to SQL databases.
 Some functions (such as `__construct`, `init` and `deleteStore`) need to be implemented.
 
 
