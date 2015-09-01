@@ -54,7 +54,7 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 
 1. Edit `config.ini` to have the information for the stores you are using. Do not change the 'type' or 'location' settings, and add these to any new stores you create.
 
-2. The default username and password for the restricted areas is 'webdemo'. To change this run `htpasswd -c auth.htpasswd username` to change this. To add extra users run `htpasswd auth.htpasswd username`.
+2. The default username and password for the restricted areas is 'webdemo'. To change this run `htpasswd -c auth.htpasswd username`. To add extra users run `htpasswd auth.htpasswd username`.
 
 3. Add pairs to the stores using the web interface. Navigate to `/api` to do this.
 
