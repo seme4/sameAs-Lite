@@ -25,3 +25,13 @@ Options -Indexes
   Order Allow,Deny
   Deny from all
 </Files>
+
+<Files config.ini>
+  Order Allow,Deny
+  Deny from all
+</Files>
+
+<Files sameaslite-store.db>
+  Order Allow,Deny
+  Deny from all
+</Files>
