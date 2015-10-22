@@ -35,6 +35,8 @@
 
 namespace SameAsLite;
 
+use ptlis\ConNeg\Negotiation;
+
 /**
  * Provides a RESTful web interface for a SameAs Lite Store.
  */
@@ -109,7 +111,7 @@ class WebApp
         set_exception_handler(array($this, 'outputException'));
 
         // Hook to set the api path
-        $this->app->hook('slim.before.dispatch', function(){
+        $this->app->hook('slim.before.dispatch', function () {
             // fix api pages such that if viewing a particular store
             // then the store name is automatically injected for you
             $params = $this->app->router()->getCurrentRoute()->getParams();
@@ -125,13 +127,13 @@ class WebApp
 
         $this->appOptions = $options;
 
-        // This takes the options that should be passed to the view directly 
+        // This takes the options that should be passed to the view directly
 
         /*
-        Thinking about this, so for now not used
-        $viewOptions = array_intersect_key($options, array_flip([
+            Thinking about this, so for now not used
+            $viewOptions = array_intersect_key($options, array_flip([
             'footerText'
-        ]));
+            ]));
         */
 
         // apply options
@@ -143,8 +145,8 @@ class WebApp
     /**
      * Add a dataset to this web application
      *
-     * @param \SameAsLite\StoreInterface  $store     A class implimenting StoreInterface to contain the data
-     * @param array                       $options   Array of configration options describing the dataset
+     * @param \SameAsLite\StoreInterface $store   A class implimenting StoreInterface to contain the data
+     * @param array                      $options Array of configration options describing the dataset
      *
      * @throws \Exception if there are problems with arguments
      */
@@ -605,11 +607,16 @@ class WebApp
 
         // perform MIME-type matching on the requested and available formats
         // note that if there are no q-values, the *LAST* type "wins"
-        $conneg = new \ptlis\ConNeg\Negotiate();
+
+// bugfix 1: change conneg class from Negotiate to Negotation
+        // $conneg = new \ptlis\ConNeg\Negotiate();
+        $conneg = new \ptlis\ConNeg\Negotiation();
         $best = $conneg->mimeBest($_SERVER['HTTP_ACCEPT'], $acceptableMime);
 
+// bugfix 2: $best is a string, not an object
         // if the quality is zero, no matches between request and available
-        if ($best->getQualityFactor()->getFactor() == 0) {
+        // if ($best->getQualityFactor()->getFactor() == 0) {
+        if (!$best) { // TODO: need to verify that this is the expected return if there are no matches
             $this->outputError(
                 406,
                 'Not Acceptable',
@@ -619,11 +626,16 @@ class WebApp
         }
 
         // store best match
-        $this->mimeBest = $best->getType();
+// bugfix 3: $best is a string, not an object
+        // $this->mimeBest = $best->getType();
+        $this->mimeBest = $best;
 
         // store alternative MIME types
         foreach ($conneg->mimeAll('*/*', $acceptableMime) as $type) {
-            $type = $type->getAppType()->getType();
+// bugfix 4
+            // $type = $type->getAppType()->getType();
+            $type = $type->getClientPreference();
+
             if ($type != $this->mimeBest) {
                 $this->mimeAlternatives[] = $type;
             }
@@ -784,7 +796,8 @@ class WebApp
     /**
      * Render the about page
      */
-    public function aboutPage(){
+    public function aboutPage()
+    {
 
         $this->app->render('page-about.twig', [
             'titleHTML'    => ' - About SameAsLite',
@@ -797,7 +810,8 @@ class WebApp
     /**
      * Render the contact page
      */
-    public function contactPage(){
+    public function contactPage()
+    {
 
         $this->app->render('page-contact.twig', [
             'titleHTML'    => ' - Contact',
@@ -809,7 +823,8 @@ class WebApp
     /**
      * Render license used by SameAsLite
      */
-    public function licensePage(){
+    public function licensePage()
+    {
 
         $this->app->render('page-license.twig', [
             'titleHTML'    => ' - SameAsLite License',
@@ -839,7 +854,7 @@ class WebApp
             '<script src="'. $this->app->request()->getRootUri() . '/assets/js/api.js"></script>'
         );
 
-       $this->app->render('api-index.twig', [
+        $this->app->render('api-index.twig', [
             'titleHTML' => ' - API',
             'titleHeader' => 'API overview',
             'routes' => $routes
@@ -849,8 +864,8 @@ class WebApp
     /**
      * Returns the information needed to render a route in api-index.twig
      *
-     * @param array        $info    The routeInfo for the route being described
-     * @param string|null  $store   Optional specific store slug
+     * @param array       $info  The routeInfo for the route being described
+     * @param string|null $store Optional specific store slug
      * @return array                Array describing this route for the template
      */
     protected function getRouteInfoForTemplate(array $info, $store = null)
@@ -866,9 +881,9 @@ class WebApp
             'POST' => 'success'
         );
 
-        if($method == 'GET'){
+        if ($method == 'GET') {
             $formMethod = 'GET';
-        }else{
+        } else {
             $formMethod = 'POST';
         }
 
@@ -887,7 +902,7 @@ class WebApp
 
         preg_match_all('@<span class="api-parameter">{(.*?)}</span>@', $endpointHTML, $inputs);
         $parameters = $inputs[1];
-        #echo "<pre>" . print_r($inputs, true) . "</pre>";
+        // echo "<pre>" . print_r($inputs, true) . "</pre>";
 
         $id = crc32($method . $info['urlPath']);
 
@@ -898,7 +913,7 @@ class WebApp
         if (count($parameters) == 0 && ($method == 'PUT' || $method == 'POST')) {
             // Upload file command line string
             $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHTML";
-        }else{
+        } else {
             $cmdLine = "curl -X $method $authString $host$endpointHTML";
         }
 
@@ -1099,13 +1114,13 @@ class WebApp
     public function querySymbol($store, $symbol)
     {
         $accept = $this->app->request->get('accept');
-        if($accept != null && $accept !== 'text/html'){
+        if ($accept != null && $accept !== 'text/html') {
             $results = $this->stores[$store]->querySymbol($symbol);
             $results = array_diff($results, [ $symbol ]);
 
             $this->mimeBest = $accept;
             $this->outputList($results);
-        }else{
+        } else {
             $shortName = $this->storeOptions[$store]['shortName'];
             $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
             $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
@@ -1113,8 +1128,7 @@ class WebApp
 
             $results = $this->stores[$store]->querySymbol($symbol);
 
-            if(count($results) > 0){
-
+            if (count($results) > 0) {
                 $canon = $this->stores[$store]->getCanon($symbol);
 
                 // Remove the queried symbol from the results
@@ -1131,7 +1145,7 @@ class WebApp
                     'equiv_symbols' => $results,
                     'canon' => $canon
                 ]);
-            }else{
+            } else {
                 $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store", 404);
             }
         }
@@ -1180,26 +1194,26 @@ class WebApp
     {
         $this->app->contentType($this->mimeBest);
 
-        switch($this->mimeBest){
-            case 'text/csv' : 
+        switch ($this->mimeBest) {
+            case 'text/csv':
                 $out = fopen('php://output', 'w');
                 $url = $this->app->request->getUrl();
 
                 fputcsv($out, ['name', 'url']);
-                foreach($this->storeOptions as $i){
+                foreach ($this->storeOptions as $i) {
                     $o = [
                         $i['shortName'],
                         $url . '/datasets/' . $i['slug']
                     ];
                     fputcsv($out, $o);
                 }
-            break;
+                break;
 
-            case 'application/json' :
+            case 'application/json':
                 $out = [];
                 $url = $this->app->request->getUrl();
 
-                foreach($this->storeOptions as $i){
+                foreach ($this->storeOptions as $i) {
                     $out[] = [
                         'name' => $i['shortName'],
                         'url' => $url . '/datasets/' . $i['slug']
@@ -1207,20 +1221,20 @@ class WebApp
                 }
 
                 echo json_encode($out);
-            break;
+                break;
 
 
-            case 'text/html' : 
+            case 'text/html':
                 $this->app->render('page-storeList.twig', [
                     'titleHTML' => ' ',
-                    'titleHeader' => 'Datasets', 
+                    'titleHeader' => 'Datasets',
                     'stores' => $this->storeOptions
                 ]);
-            break;
+                break;
 
-            default : 
+            default:
                 $this->outputError(400, "Cannot return in format requested");
-            break;
+                break;
 
         }
         
@@ -1248,8 +1262,8 @@ class WebApp
     /**
      * Output an HTML page
      *
-     * @param mixed $body    The information to be displayed
-     * @param int   $status  The HTTP status to return with the HTML
+     * @param mixed   $body   The information to be displayed
+     * @param integer $status The HTTP status to return with the HTML
      */
     protected function outputHTML($body, $status = null)
     {
@@ -1271,7 +1285,7 @@ class WebApp
             $body = '<pre>' . join("\n", $body) . "</pre>\n";
         }
 
-        if(isset($status)){
+        if (isset($status)) {
             $this->app->response->setStatus($status);
         }
         $this->app->render('page.twig', [
@@ -1360,7 +1374,7 @@ class WebApp
                 $out = fopen('php://output', 'w');
 
                 fputcsv($out, $headers);
-                foreach($data as $i){
+                foreach ($data as $i) {
                     fputcsv($out, $i);
                 }
 
@@ -1371,7 +1385,7 @@ class WebApp
                 $out = fopen('php://output', 'w');
 
                 fputcsv($out, $headers, "\t");
-                foreach($data as $i){
+                foreach ($data as $i) {
                     fputcsv($out, $i, "\t");
                 }
 

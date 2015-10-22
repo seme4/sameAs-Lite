@@ -42,50 +42,51 @@ require_once 'SQLStoreTest.php';
 class SQLiteStoreTest extends SQLStoreTest
 {
 
-	/** @var string $location The location of the SQLite database, or null to use :memory: */
-	private $location = null;
+    /** @var string $location The location of the SQLite database, or null to use :memory: */
+    private $location = null;
 
 
-	/**
+    /**
      * {@inheritDoc}
      */
-	protected static function getConfig(){
-		if (array_key_exists('SQLITE_LOCATION', $GLOBALS)) {
-		    $this->location = $GLOBALS['SQLITE_LOCATION'];
-		}
+    protected static function getConfig()
+    {
+        if (array_key_exists('SQLITE_LOCATION', $GLOBALS)) {
+            $this->location = $GLOBALS['SQLITE_LOCATION'];
+        }
 
-		parent::getConfig();
-	}
+        parent::getConfig();
+    }
 
-	/**
-	 * Creates the store
-	 * without using the Store functions
-	 */
-	protected function createStore(){
-		$this->store = new \SameAsLite\Store\SQLiteStore($this->storeName, [ 'location' => $this->location ]);
-		$this->store->connect();
-		$this->store->init();
+    /**
+     * Creates the store
+     * without using the Store functions
+     */
+    protected function createStore()
+    {
+        $this->store = new \SameAsLite\Store\SQLiteStore($this->storeName, [ 'location' => $this->location ]);
+        $this->store->connect();
+        $this->store->init();
 
-		$this->pdo = $this->store->getPDOObject();
-	}
+        $this->pdo = $this->store->getPDOObject();
+    }
 
-	/**
-	 * Deletes the store
-	 * without using the Store functions
-	 */
-	protected function deleteStore(){
-		$table = $this->store->getTableName();
+    /**
+     * Deletes the store
+     * without using the Store functions
+     */
+    protected function deleteStore()
+    {
+        $table = $this->store->getTableName();
 
-		$sql = "DROP INDEX IF EXISTS `{$table}_idx`";
+        $sql = "DROP INDEX IF EXISTS `{$table}_idx`";
         $this->pdo->exec($sql);
         $sql = "DROP TABLE IF EXISTS `$table`";
         $this->pdo->exec($sql);
 
-		$this->store->disconnect();
+        $this->store->disconnect();
 
-		$this->pdo = null;
-		unset($this->store);
-	}
-
-
+        $this->pdo = null;
+        unset($this->store);
+    }
 }

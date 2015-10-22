@@ -23,7 +23,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *es
+ * es
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,126 +38,129 @@ namespace SameAsLite;
 /**
  * Class to create Stores and WebApps using PHP ini files for configuration
  */
-class SameAsLiteFactory {
+class SameAsLiteFactory
+{
 
-	/** @var string[] $storeTypes Array of availble store types */
-	private static $storeTypes;
+    /** @var string[] $storeTypes Array of availble store types */
+    private static $storeTypes;
 
-	CONST INTERFACE_NAME = '\SameAsLite\StoreInterface';
+    const INTERFACE_NAME = '\SameAsLite\StoreInterface';
 
-	CONST STORE_NAMESPACE = 'SameAsLite\Store\\';
-
-
-	// Private constructor so objects cannot be created
-	private function __construct(){}
-
-	/**
-	 * Construct a sameAs Lite Stores from a php ini file
-	 *
-	 * @param string $file String to the location of the ini file
-	 *
-	 * @return \SameAsLite\StoreInterface[] Array of Stores
-	 * @throws \InvalidArgumentException When the options are invalid
-	 */
-	public static function createStores($file){
-		return self::createStoresFromArray(parse_ini_file($file, true));
-	}
-
-	/**
-	 * Construct the sameAs Lite stores from the given array of options
-	 * Will also register all defaults given in the config under the [defaults] heading
-	 *
-	 * @param array $config Array of config for the Store
-	 *
-	 * @return \SameAsLite\StoreInterface[] Array of Stores
-	 * @throws \InvalidArgumentException When the options are invalid
-	 */
-	public static function createStoresFromArray(array $config){
-		// Check for defaults
-		if(isset($config['defaults'])){
-			foreach($config['defaults'] as $storeType => $defs){
-
-				if(strpos($storeType, '\\') === false){
-					// There is no namespace, use the default one
-					$class = self::STORE_NAMESPACE . $storeType;
-				}else{
-					$class = $storeType;
-				}
-				$class::setDefaultOptions($defs);
-			}
-		}
-		unset($config['defaults']);
+    const STORE_NAMESPACE = 'SameAsLite\Store\\';
 
 
-		$stores = [];
+    // Private constructor so objects cannot be created
+    private function __construct()
+    {
+    }
 
-		foreach ($config as $name => $options) {
-			$type = $options['type'];
-			unset($options['type']);
+    /**
+     * Construct a sameAs Lite Stores from a php ini file
+     *
+     * @param string $file String to the location of the ini file
+     *
+     * @return \SameAsLite\StoreInterface[] Array of Stores
+     * @throws \InvalidArgumentException When the options are invalid
+     */
+    public static function createStores($file)
+    {
+        return self::createStoresFromArray(parse_ini_file($file, true));
+    }
 
-			if(strpos($type, '\\') === false){
-				$class = self::STORE_NAMESPACE . $type;
-			}else{
-				$class = $type;
-			}
-
-			// Whitelist to get the options that the store takes
-			$o = array_intersect_key($options, array_flip($class::getAvailableOptions()));
-
-			// Create the store
-			$store = new $class($name, $o);
-			$stores[] = $store;
-		}
-
-		return $stores;
-	}
-
-
-
-	/**
-	 * Construct a WebApp from a php ini file
-	 *
-	 * @param string $file The location of the ini file
-	 *
-	 * @return \SameAsLite\WebApp The created WebApp
-	 * @throws \InvalidArgumentException When the options are invalid
-	 */
-	public static function createWebApp($file){
-		return self::createWebAppFromArray(parse_ini_file($file, true));
-	}
-
-	/**
-	 * Construct a sameAs Lite WebApp from the given array of options
-	 * Does NOT run the WebApp
-	 *
-	 * @param array $config Array of config for WebApp and associcated Stores
-	 *
-	 * @return \SameAsLite\WebApp The created WebApp
-	 * @throws \InvalidArgumentException When the options are invalid
-	 */
-	public static function createWebAppFromArray(array $config){
-		if(!isset($config['webapp'])){
-			throw new \InvalidArgumentException('No WebApp Config found, must be under catagory "webapp"');
-		}
-
-		$appcfg = $config['webapp'];
-		unset($config['webapp']);
-
-		// Pass the object on to create the store
-		$stores = self::createStoresFromArray($config);
-
-		$app = new \SameAsLite\WebApp($appcfg);
-
-		foreach($stores as $store){
-			$name = $store->getStoreName();
-			$o = array_diff_key($config[$name], array_flip($store::getAvailableOptions()));
-
-			$app->addDataset($store, $o);
-		}
-
-		return $app;
-	}
+    /**
+     * Construct the sameAs Lite stores from the given array of options
+     * Will also register all defaults given in the config under the [defaults] heading
+     *
+     * @param array $config Array of config for the Store
+     *
+     * @return \SameAsLite\StoreInterface[] Array of Stores
+     * @throws \InvalidArgumentException When the options are invalid
+     */
+    public static function createStoresFromArray(array $config)
+    {
+        // Check for defaults
+        if (isset($config['defaults'])) {
+            foreach ($config['defaults'] as $storeType => $defs) {
+                if (strpos($storeType, '\\') === false) {
+                    // There is no namespace, use the default one
+                    $class = self::STORE_NAMESPACE . $storeType;
+                } else {
+                    $class = $storeType;
+                }
+                $class::setDefaultOptions($defs);
+            }
+        }
+        unset($config['defaults']);
 
 
+        $stores = [];
+
+        foreach ($config as $name => $options) {
+            $type = $options['type'];
+            unset($options['type']);
+
+            if (strpos($type, '\\') === false) {
+                $class = self::STORE_NAMESPACE . $type;
+            } else {
+                $class = $type;
+            }
+
+            // Whitelist to get the options that the store takes
+            $o = array_intersect_key($options, array_flip($class::getAvailableOptions()));
+
+            // Create the store
+            $store = new $class($name, $o);
+            $stores[] = $store;
+        }
+
+        return $stores;
+    }
+
+
+
+    /**
+     * Construct a WebApp from a php ini file
+     *
+     * @param string $file The location of the ini file
+     *
+     * @return \SameAsLite\WebApp The created WebApp
+     * @throws \InvalidArgumentException When the options are invalid
+     */
+    public static function createWebApp($file)
+    {
+        return self::createWebAppFromArray(parse_ini_file($file, true));
+    }
+
+    /**
+     * Construct a sameAs Lite WebApp from the given array of options
+     * Does NOT run the WebApp
+     *
+     * @param array $config Array of config for WebApp and associcated Stores
+     *
+     * @return \SameAsLite\WebApp The created WebApp
+     * @throws \InvalidArgumentException When the options are invalid
+     */
+    public static function createWebAppFromArray(array $config)
+    {
+        if (!isset($config['webapp'])) {
+            throw new \InvalidArgumentException('No WebApp Config found, must be under catagory "webapp"');
+        }
+
+        $appcfg = $config['webapp'];
+        unset($config['webapp']);
+
+        // Pass the object on to create the store
+        $stores = self::createStoresFromArray($config);
+
+        $app = new \SameAsLite\WebApp($appcfg);
+
+        foreach ($stores as $store) {
+            $name = $store->getStoreName();
+            $o = array_diff_key($config[$name], array_flip($store::getAvailableOptions()));
+
+            $app->addDataset($store, $o);
+        }
+
+        return $app;
+    }
 }
-

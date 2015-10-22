@@ -42,62 +42,63 @@ require_once 'SQLStoreTest.php';
 class MySQLStoreTest extends SQLStoreTest
 {
 
-	/** @var string $username The username to use for testing the Store, can be overriden in the xml config */
-	protected $username = 'testuser';
+    /** @var string $username The username to use for testing the Store, can be overriden in the xml config */
+    protected $username = 'testuser';
 
-	/** @var string $password The password to use for testing the Store, can be overriden in the xml config */
-	protected $password = 'testpass';
+    /** @var string $password The password to use for testing the Store, can be overriden in the xml config */
+    protected $password = 'testpass';
 
-	/** @var string $dbName The database name to use for testing the Store, can be overriden in the xml config */
-	protected $dbName  = 'testdb';
+    /** @var string $dbName The database name to use for testing the Store, can be overriden in the xml config */
+    protected $dbName  = 'testdb';
 
 
     /**
      * {@inheritDoc}
      */
-	protected static function getConfig(){
-		if (array_key_exists('MYSQL_USERNAME', $GLOBALS)) {
-		    $this->username = $GLOBALS['MYSQL_USERNAME'];
-		}
+    protected static function getConfig()
+    {
+        if (array_key_exists('MYSQL_USERNAME', $GLOBALS)) {
+            $this->username = $GLOBALS['MYSQL_USERNAME'];
+        }
 
-		if (array_key_exists('MYSQL_PASSWORD', $GLOBALS)) {
-		    $this->password = $GLOBALS['MYSQL_PASSWORD'];
-		}
+        if (array_key_exists('MYSQL_PASSWORD', $GLOBALS)) {
+            $this->password = $GLOBALS['MYSQL_PASSWORD'];
+        }
 
-		if (array_key_exists('MYSQL_DB_NAME', $GLOBALS)) {
-		    $this->dbName = $GLOBALS['MYSQL_DB_NAME'];
-		}
+        if (array_key_exists('MYSQL_DB_NAME', $GLOBALS)) {
+            $this->dbName = $GLOBALS['MYSQL_DB_NAME'];
+        }
 
-		parent::getConfig();
-	}
+        parent::getConfig();
+    }
 
-	/**
-	 * Creates the store
-	 * without using the Store functions
-	 */
-	protected function createStore(){
-		$this->store = new \SameAsLite\Store\MySQLStore($this->storeName, [ 'username' => $this->username, 'password' => $this->password, 'dbName' => $this->dbName ]);
-		$this->store->connect();
-		$this->store->init();
+    /**
+     * Creates the store
+     * without using the Store functions
+     */
+    protected function createStore()
+    {
+        $this->store = new \SameAsLite\Store\MySQLStore($this->storeName, [ 'username' => $this->username, 'password' => $this->password, 'dbName' => $this->dbName ]);
+        $this->store->connect();
+        $this->store->init();
 
-		$this->pdo = $this->store->getPDOObject();
-	}
+        $this->pdo = $this->store->getPDOObject();
+    }
 
-	/**
-	 * Deletes the store
-	 * without using the Store functions
-	 */
-	protected function deleteStore(){
-		$table = $this->store->getTableName();
+    /**
+     * Deletes the store
+     * without using the Store functions
+     */
+    protected function deleteStore()
+    {
+        $table = $this->store->getTableName();
 
         $sql = "DROP TABLE IF EXISTS `$table`";
         $this->pdo->exec($sql);
 
-		$this->store->disconnect();
+        $this->store->disconnect();
 
-		$this->pdo = null;
-		unset($this->store);
-	}
-
-
+        $this->pdo = null;
+        unset($this->store);
+    }
 }

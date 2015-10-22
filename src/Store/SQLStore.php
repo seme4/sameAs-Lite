@@ -38,7 +38,8 @@ namespace SameAsLite\Store;
 /**
  * Abstract class that impliments functions common to SQL Databases
  */
-abstract class SQLStore implements \SameAsLite\StoreInterface {
+abstract class SQLStore implements \SameAsLite\StoreInterface
+{
 
     /** @var \PDO $pdoObject The PDO object for the SQL database */
     protected $pdoObject;
@@ -49,23 +50,26 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /** @var string $storeName The name of this store, also the name of the SQL table */
     protected $storeName;
 
+    /** @var string $storeName The name of this store, also the name of the SQL table */
+    protected $dbName;
+
 
     /*
-     * Get the settings this Store takes for the factory class
-     * Expected in this form:
-     * ```
-     * Array (
-     *   [dsn_prefix] => <string>,
-     *   [params] => [
-     *         <array of strings with the varable names that the __construct function takes
-     *               excluding 'name'>
-     *   ]
-     * )
-     *
-     * @return mixed[] Array of settings
+        * Get the settings this Store takes for the factory class
+        * Expected in this form:
+        * ```
+        * Array (
+        *   [dsn_prefix] => <string>,
+        *   [params] => [
+        *         <array of strings with the varable names that the __construct function takes
+        *               excluding 'name'>
+        *   ]
+        * )
+        *
+        * @return mixed[] Array of settings
      */
 
-    //abstract public static function getFactorySettings();
+    // abstract public static function getFactorySettings();
 
 
 
@@ -74,10 +78,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @throws \Exception If unable to connect to the store
      */
-    public function connect(){
+    public function connect()
+    {
         /*
-         * Simple implimentation of connect
-         * Does not create tables, just a connection to the database via PDO
+            * Simple implementation of connect
+            * Does not create tables, just a connection to the database via PDO
          */
 
         // skip if we've already connected
@@ -105,7 +110,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function isConnected(){
+    public function isConnected()
+    {
         // We are connected if the pdoObject is a PDO object
         return (@get_class($this->pdoObject) === "PDO");
     }
@@ -114,7 +120,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function disconnect(){
+    public function disconnect()
+    {
         // Just set the PDO to null to disconnect
         $pdoObject = null;
     }
@@ -124,7 +131,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The name of the store
      */
-    public function getStoreName(){
+    public function getStoreName()
+    {
         return $this->storeName;
     }
 
@@ -134,7 +142,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return \PDO The PDO object used in this store
      */
-    public function getPDOObject(){
+    public function getPDOObject()
+    {
         return $this->pdoObject;
     }
 
@@ -142,10 +151,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      * Gets the name of the sql table used for this store
      * Default implementation uses $this->storeName as the table name
      * @see self::$storeName
-     * 
+     *
      * @return string The name of the SQL table for this store
      */
-    public function getTableName(){
+    public function getTableName()
+    {
         return $this->storeName;
     }
 
@@ -153,19 +163,22 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * Most implementations of database functions call another function that can be overridden
      * These functions should return the SQL string to be executed with the given symbols replacing the terms
+     *
+     * @return array $output Array of symbols
      */
-    public function querySymbol($symbol){
+    public function querySymbol($symbol)
+    {
 
-        try{
+        try {
             $sql = $this->getQuerySymbolString(':search');
             $statement = $this->pdoObject->prepare($sql);
             $statement->execute([ 'search' => $symbol ]);
 
             $output = [];
-            while($row = $statement->fetch(\PDO::FETCH_ASSOC)){
+            while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 $output[] = $row['symbol'];
             }
-        }catch(\PDOException $e){
+        } catch (\PDOException $e) {
             // This function throws an error
             $this->error("Query symbol '$symbol' failed", $e);
         }
@@ -181,7 +194,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getQuerySymbolString($symbolId){
+    protected function getQuerySymbolString($symbolId)
+    {
         $tn = $this->getTableName();
         return "SELECT `t1`.`canon`, `t1`.`symbol`
                 FROM `{$tn}` AS t1, `{$tn}` AS t2
@@ -194,19 +208,20 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function search($string){
+    public function search($string)
+    {
 
-        try{
+        try {
             $sql = $this->getSearchString(':search');
             $statement = $this->pdoObject->prepare($sql);
             $statement->bindValue(':search', "%$string%", \PDO::PARAM_STR);
             $statement->execute();
 
             $output = [];
-            while($row = $statement->fetch(\PDO::FETCH_ASSOC)){
+            while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 $output[] = $row['symbol'];
             }
-        }catch(\PDOException $e){
+        } catch (\PDOException $e) {
             $this->error("Search for '$string' failed", $e);
         }
 
@@ -222,7 +237,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getSearchString($string){
+    protected function getSearchString($string)
+    {
         $tn = $this->getTableName();
         return "SELECT `t1`.`canon`, `t1`.`symbol`
                 FROM `{$tn}` AS t1, `{$tn}` AS t2
@@ -236,7 +252,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function assertPair($symbol1, $symbol2){
+    public function assertPair($symbol1, $symbol2)
+    {
         try {
             // Are the symbols already in the store?
             $canon1 = $this->getCanon($symbol1);
@@ -287,8 +304,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function assertPairs(array $data){
-        foreach($data as $pair){
+    public function assertPairs(array $data)
+    {
+        foreach ($data as $pair) {
             $this->assertPair($pair[0], $pair[1]);
         }
         return true;
@@ -299,10 +317,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function assertTSV($tsv){
-        $data = str_getcsv($tsv, "\n"); //parse the rows 
-        foreach($data as &$row){
-            $row = str_getcsv($row, "\t"); //parse the items in rows 
+    public function assertTSV($tsv)
+    {
+        $data = str_getcsv($tsv, "\n"); // parse the rows
+        foreach ($data as &$row) {
+            $row = str_getcsv($row, "\t"); // parse the items in rows
         }
 
         return $this->assertPairs($data);
@@ -312,13 +331,14 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function removeSymbol($symbol){
+    public function removeSymbol($symbol)
+    {
 
         $canon = $this->getCanon($symbol);
-        if($canon === $symbol){
+        if ($canon === $symbol) {
             // This symbol is the canon
             $symbols = $this->querySymbol($symbol);
-            if(count($symbols) > 1){
+            if (count($symbols) > 1) {
                 // Greater than 1
                 // This means this is the canon and not the only thing in the bundle
                 $this->error("$symbol is the canon of the bundle, please delete all symbols or change the canon before deleting this symbol"); // Throws
@@ -342,7 +362,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getRemoveSymbolString($symbolId){
+    protected function getRemoveSymbolString($symbolId)
+    {
         return "DELETE FROM {$this->getTableName()} WHERE symbol = {$symbolId}";
     }
 
@@ -350,8 +371,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function removeSymbols(array $symbols){
-        foreach($symbols as $symbol){
+    public function removeSymbols(array $symbols)
+    {
+        foreach ($symbols as $symbol) {
             $this->removeSymbol($symbol);
         }
         return true;
@@ -362,10 +384,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function removeBundle($symbol){
+    public function removeBundle($symbol)
+    {
         // Get the symbol's canon
         $canon = $this->getCanon($symbol);
-        if(!isset($canon) || !$canon){
+        if (!isset($canon) || !$canon) {
             return;
         }
 
@@ -383,7 +406,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    public function getRemoveBundleString($canonId){
+    public function getRemoveBundleString($canonId)
+    {
         return "DELETE FROM {$this->getTableName()} WHERE canon = {$canonId}";
     }
 
@@ -391,7 +415,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function setCanon($symbol, $restrict = false){
+    public function setCanon($symbol, $restrict = false)
+    {
 
         // Do we have it?
         $canon = $this->getCanon($symbol);
@@ -401,12 +426,12 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
             // And make it the Canon of its singleton bundle
             $this->assertPair($symbol, $symbol);
         } else {
-            if($restrict === false){
+            if ($restrict === false) {
                 // Yes we do have it already
                 $sql = $this->getSetCanonString(':symbol', ':canon');
                 $statement = $this->pdoObject->prepare($sql);
                 $statement->execute([ ':symbol' => $symbol, ':canon' => $canon ]);
-            }else{
+            } else {
                 $this->error("Cannot change canon, $restrict = true and a canon symbol already exists");
             }
         }
@@ -422,7 +447,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getSetCanonString($symbolId, $canonId){
+    protected function getSetCanonString($symbolId, $canonId)
+    {
         return "UPDATE {$this->getTableName()} SET canon = {$symbolId} WHERE canon = {$canonId}";
     }
 
@@ -431,7 +457,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function getCanon($symbol){
+    public function getCanon($symbol)
+    {
         try {
             $sql = $this->getCanonString(':symbol');
             $statement = $this->pdoObject->prepare($sql);
@@ -452,7 +479,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getCanonString($symbolId){
+    protected function getCanonString($symbolId)
+    {
         return "SELECT canon FROM {$this->getTableName()} WHERE symbol = {$symbolId} LIMIT 1";
     }
 
@@ -461,7 +489,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function getAllCanons(){
+    public function getAllCanons()
+    {
 
         try {
             $sql = $this->getAllCanonsString();
@@ -469,7 +498,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
             $statement->execute();
 
             $output = [];
-            while($row = $statement->fetch(\PDO::FETCH_ASSOC)){
+            while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 $output[] = $row['canon'];
             }
         } catch (\PDOException $e) {
@@ -486,7 +515,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getAllCanonsString(){
+    protected function getAllCanonsString()
+    {
         return "SELECT DISTINCT canon FROM $this->storeName ORDER BY symbol ASC";
     }
 
@@ -495,7 +525,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function dumpPairs(){
+    public function dumpPairs()
+    {
 
         try {
             $sql = $this->getDumpPairsString();
@@ -503,7 +534,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
             $statement->execute();
 
             $output = [];
-            while($row = $statement->fetch(\PDO::FETCH_ASSOC)){
+            while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 $output[] = [ $row['canon'], $row['symbol'] ];
             }
         } catch (\PDOException $e) {
@@ -520,7 +551,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getDumpPairsString(){
+    protected function getDumpPairsString()
+    {
         return "SELECT canon, symbol FROM {$this->getTableName()} ORDER BY canon ASC, symbol ASC";
     }
 
@@ -529,17 +561,19 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function dumpTSV(){
+    public function dumpTSV()
+    {
         // Uses temporary files to get the TSV output string
         $pairs = $this->dumpPairs();
 
-        /* Adapted from http://stackoverflow.com/a/16353448 */
+        // Adapted from http://stackoverflow.com/a/16353448
+
 
         // Open a memory "file" for read/write...
         $fp = fopen('php://temp', 'r+');
         // ... write the $input array to the "file" using fputcsv()...
         
-        foreach($pairs as $pair){
+        foreach ($pairs as $pair) {
             fputcsv($fp, $pair, "\t");
         }
 
@@ -560,7 +594,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function statistics(){
+    public function statistics()
+    {
 
         $stats = [];
         try {
@@ -589,7 +624,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL that will return the number of symbols in the store
      */
-    protected function getStatisticsSymbolNumberString(){
+    protected function getStatisticsSymbolNumberString()
+    {
         return "SELECT COUNT(DISTINCT symbol) FROM {$this->getTableName()}";
     }
     /**
@@ -597,7 +633,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL that will return the number of canons in the store
      */
-    protected function getStatisticsCanonNumberString(){
+    protected function getStatisticsCanonNumberString()
+    {
         return "SELECT COUNT(DISTINCT canon) FROM {$this->getTableName()}";
     }
 
@@ -608,13 +645,15 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
     /**
      * {@inheritDoc}
      */
-    public function analyse(){
+    public function analyse()
+    {
 
         $output = [];
 
         $output["meta"] = [
             'store_name'     => $this->storeName,
-            'database_name'  => $this->dbName
+            // dbName is n/a
+            // 'database_name'  => $this->dbName
         ];
 
         try {
@@ -647,9 +686,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
                 $b = $row['canon'];
                 $nSymbols++;
                 
-                if(isset($bundleSizes[$b])){
+                if (isset($bundleSizes[$b])) {
                     $bundleSizes[$b]++;
-                }else{
+                } else {
                     $bundleSizes[$b] = 0;
                 }
                 
@@ -688,9 +727,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
             // Calculate the bundle averages
             $sortedBundleSizes = $bundleSizes;
             sort($sortedBundleSizes);
-            if($nBundles % 2 == 0){
+            if ($nBundles % 2 == 0) {
                 $middle = floor($nBundles / 2) - 1;
-            }else{
+            } else {
                 $middle = floor($nBundles / 2);
             }
             $bundleMedian = $sortedBundleSizes[$middle];
@@ -732,21 +771,21 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
                 'TLD'       => []
             ];
 
-            foreach(array_count_values($httpDomains) as $domain => $size){
+            foreach (array_count_values($httpDomains) as $domain => $size) {
                 $httpUris['domain'][] = [
                     'size'   => $size,
                     'domain' => $domain
                 ];
             }
 
-            foreach(array_count_values($http2LDDomains) as $domain => $size){
+            foreach (array_count_values($http2LDDomains) as $domain => $size) {
                 $httpUris['base+TLD'][] = [
                     'size'   => $size,
                     'domain' => $domain
                 ];
             }
 
-            foreach(array_count_values($httpTLDDomains) as $domain => $size){
+            foreach (array_count_values($httpTLDDomains) as $domain => $size) {
                 $httpUris['TLD'][] = [
                     'size'   => $size,
                     'domain' => $domain
@@ -760,21 +799,21 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
             ];
 
 
-            foreach(array_count_values($httpsDomains) as $domain => $size){
+            foreach (array_count_values($httpsDomains) as $domain => $size) {
                 $httpsUris['domain'][] = [
                     'size'   => $size,
                     'domain' => $domain
                 ];
             }
 
-            foreach(array_count_values($https2LDDomains) as $domain => $size){
+            foreach (array_count_values($https2LDDomains) as $domain => $size) {
                 $httpsUris['base+TLD'][] = [
                     'size'   => $size,
                     'domain' => $domain
                 ];
             }
 
-            foreach(array_count_values($httpsTLDDomains) as $domain => $size){
+            foreach (array_count_values($httpsTLDDomains) as $domain => $size) {
                 $httpsUris['TLD'][] = [
                     'size'   => $size,
                     'domain' => $domain
@@ -824,7 +863,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getAnalyseAllRowsString(){
+    protected function getAnalyseAllRowsString()
+    {
         return "SELECT * FROM {$this->getTableName()} ORDER BY canon ASC, symbol ASC";
     }
     /**
@@ -833,7 +873,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface {
      *
      * @return string The SQL string for the query
      */
-    protected function getAnalyseCanonsNotSymbolsString(){
+    protected function getAnalyseCanonsNotSymbolsString()
+    {
         return "SELECT DISTINCT canon FROM {$this->getTableName()} WHERE canon != symbol ORDER BY canon ASC";
     }
 

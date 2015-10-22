@@ -60,6 +60,17 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 
 #### Create the Database
 
+Create an empty SQlite database with the following commands:
+mkdir db
+sqlite3 db/sameaslite-store.db "create table a (b int); drop table a;"
+
+Make sure that the database is writable by the web server:
+sudo chown www-data:www-data db/sameaslite-store.db
+If your web server is running under another user (e.g. apache), replace www-data with that username.
+
+If you decide to place the database in another folder, adjust the "location" setting in index.php and config.ini.
+
+
 The SQL stores only use 1 table (per Store) to store the IDs.
 This means that sameAs Lite can be used in an existing Database/Schema, or in a new one altogether.
 

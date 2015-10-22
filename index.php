@@ -33,16 +33,17 @@
  * IN THE SOFTWARE.
  */
 
+// Composer autoload
 require_once 'vendor/autoload.php';
 
 
 // Dev error reporting
-#ini_set('display_errors', 1);
-#ini_set('display_startup_errors', 1);
-#error_reporting(-1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(-1);
 
 
-\SameAsLite\Store\SQLiteStore::setDefaultOptions([ 'location' => 'sameaslite-store.db' ]);
+\SameAsLite\Store\SQLiteStore::setDefaultOptions(['location' => 'db/sameaslite-store.db']);
 
 $app = \SameAsLite\SameAsLiteFactory::createWebApp('config.ini');
 
