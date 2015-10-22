@@ -1329,9 +1329,18 @@ class WebApp
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputList(array $list = array())
+    protected function outputList(array $list = array(), $status = null)
     {
+
         $list = array_values($list); // Convert into numeric array
+
+        // 404 header response
+        if (empty($list)) {
+            $status = 404;
+        }
+        if (isset($status)) {
+            $this->app->response->setStatus($status);
+        }
 
         $this->app->contentType($this->mimeBest);
         switch ($this->mimeBest) {
@@ -1367,6 +1376,12 @@ class WebApp
      */
     protected function outputTable(array $data, array $headers)
     {
+        // 404 header response
+        if (empty($data)) {
+            $status = 404;
+            $this->app->response->setStatus($status);
+        }
+
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
