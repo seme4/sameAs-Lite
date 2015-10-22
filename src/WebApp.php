@@ -371,12 +371,23 @@ class WebApp
         );
 
         // Search
+        //
+        // $this->registerURL(
+        //     'GET',
+        //     '/datasets/:store/search/:string',
+        //     'search',
+        //     'Search',
+        //     'Find symbols which contain/match the search string/pattern'
+        // );
+        //
         $this->registerURL(
             'GET',
-            '/datasets/:store/search/:string',
+            '/datasets/:store/pairs/:string',
             'search',
             'Search',
-            'Find symbols which contain/match the search string/pattern'
+            'Find symbols which contain/match the search string/pattern',
+            false,
+            'application/json,text/html,text/csv'
         );
 
         // Single symbol stuff
@@ -408,7 +419,7 @@ class WebApp
         // New to the service interaction (not in the Seme4 Platform)
         $this->registerURL(
             'GET',
-            '/datasets/:store/analyse',
+            '/datasets/:store/analysis',
             'analyse',
             'Analyse contents of the store'
         );
@@ -1242,7 +1253,7 @@ class WebApp
     }
 
     /**
-     * Actions the HTTP GET service from /analyse
+     * Actions the HTTP GET service from /analysis
      *
      * Simply passes the request on to the analyse sameAsLite Class method.
      * Outputs the results in the format requested
