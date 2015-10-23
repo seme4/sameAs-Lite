@@ -378,11 +378,11 @@ class WebApp
         // Search
         //
         // $this->registerURL(
-        //     'GET',
-        //     '/datasets/:store/search/:string',
-        //     'search',
-        //     'Search',
-        //     'Find symbols which contain/match the search string/pattern'
+        // 'GET',
+        // '/datasets/:store/search/:string',
+        // 'search',
+        // 'Search',
+        // 'Find symbols which contain/match the search string/pattern'
         // );
         //
         $this->registerURL(
@@ -1140,18 +1140,18 @@ class WebApp
      */
     public function querySymbol($store, $symbol)
     {
-        //bugfix
+        // bugfix
         $accept = $this->app->request->headers->get('Accept');
 
         if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
-            //non-HTML output
+            // non-HTML output
             $results = $this->stores[$store]->querySymbol($symbol);
             $results = array_diff($results, [ $symbol ]);
 
             $this->mimeBest = $accept;
             $this->outputList($results);
         } else {
-            //HTML output
+            // HTML output
             $shortName = $this->storeOptions[$store]['shortName'];
             $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
             $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);

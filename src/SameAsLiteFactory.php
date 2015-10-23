@@ -49,7 +49,9 @@ class SameAsLiteFactory
     const STORE_NAMESPACE = 'SameAsLite\Store\\';
 
 
-    // Private constructor so objects cannot be created
+    /**
+     * Private constructor so objects cannot be created
+     */
     private function __construct()
     {
     }
@@ -143,7 +145,8 @@ class SameAsLiteFactory
     public static function createWebAppFromArray(array $config)
     {
         if (!isset($config['webapp'])) {
-            throw new \InvalidArgumentException('No WebApp Config found, must be under category "[webapp]" in config.ini');
+            throw new \InvalidArgumentException('No WebApp Config found, must be under category "[webapp]"' .
+                ' in config.ini');
         }
 
         $appcfg = $config['webapp'];

@@ -83,11 +83,11 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
         * settings. Once a Store object is created, call the connect() function to
         * establish connection to the underlying database.
         *
-        * @param string $location  Location of the database file, if not supplied the database will be loaded into memory
+        * @param string $location  Location of the database file,
+        *    if not supplied the database will be loaded into memory
         *
         * @throws \InvalidArgumentException If any parameters are deemed invalid
-        */
-    // TIHNS
+    */
 
     /**
      * Constructor takes the options for the SQLite store:
@@ -205,10 +205,12 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
         } catch (\PDOException $e) {
             $this->error("Database failure to empty store", $e);
         }
+
         /*
             Just recreate table instead?
             $this->deleteStore();
             $this->init();
         */
+
     }
 }
