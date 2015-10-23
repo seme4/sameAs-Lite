@@ -75,6 +75,7 @@ class WebApp
         'application/json' => 'JSON',
         'text/csv' => 'CSV',
         'text/plain' => 'TXT',
+        'text/tab-separated-values' => 'TSV',
     );
 
     /** @var array $routeInfo Details of the available URL routes */
@@ -154,26 +155,30 @@ class WebApp
     {
 
         if (!isset($options['shortName'])) {
-            throw new \Exception('The $options array is missing required key/value "name"');
+            throw new \Exception('The Store array is missing required key/value "shortName" in config.ini');
         }
 
-        if (!isset($options['shortName'])) {
-            throw new \Exception('The $options array is missing required key/value "name"');
+        if (!isset($options['fullName'])) {
+            // throw new \Exception('The Store array is missing required key/value "fullName" in config.ini');
+            // as promised in config.ini, if fullName is not defined, it is set to shortName
+
+            // $options['fullName'] = ucwords($options['shortName']);
+            $options['fullName'] = $options['shortName'];
         }
 
         if (!isset($options['slug'])) {
-            throw new \Exception('The $options array is missing required key/value "slug"');
+            throw new \Exception('The Store array is missing required key/value "slug" in config.ini');
         }
 
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
             throw new \Exception(
-                'Value for $options["slug"] may contain only characters a-z, A-Z, 0-9, hyphen and undersore'
+                'The value for "slug" in config.ini may contain only characters a-z, A-Z, 0-9, hyphen and underscore'
             );
         }
 
         if (isset($this->stores[$options['slug']])) {
             throw new \Exception(
-                'You have already added a store with $options["slug"] value of ' . $options['slug']
+                'You have already added a store with "slug" value of ' . $options['slug'] . ' in config.ini.'
             );
         }
 
@@ -396,7 +401,9 @@ class WebApp
             '/datasets/:store/symbols/:symbol',
             'querySymbol',
             'Retrieve symbol',
-            'Return details of the given symbol'
+            'Return details of the given symbol',
+            false,
+            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain'
         );
         $this->registerURL(
             'DELETE',
@@ -455,12 +462,12 @@ class WebApp
     ) {
 
         // ensure the URL path has a leading slash
-        if (substr($urlPath, 0, 1) != '/') {
+        if (substr($urlPath, 0, 1) !== '/') {
             $urlPath  = '/' . $urlPath;
         }
 
         // ensure there are no trailing slashes
-        if (strlen($urlPath) > 1 && substr($urlPath, -1) == '/') {
+        if (strlen($urlPath) > 1 && substr($urlPath, -1) === '/') {
             $urlPath = substr($urlPath, 0, -1);
         }
 
@@ -472,7 +479,7 @@ class WebApp
         if ($authRequired) {
             $callbacks[] = array($this, 'callbackCheckAuth');
         }
-        if ($mimeTypes != null) {
+        if ($mimeTypes !== null) {
             $callbacks[] = array($this, 'callbackCheckFormats');
         }
 
@@ -486,7 +493,7 @@ class WebApp
         $route->via($httpMethod);
 
         // save route data, setting defaults on optional arguments if they are not set
-        if ($details == null) {
+        if ($details === null) {
             $details = $summary;
         }
         $this->routeInfo[$httpMethod . $urlPath] = compact(
@@ -538,7 +545,7 @@ class WebApp
     {
         // get the store name
         $args = func_get_args();
-        if (count($args) == 0 || (!$args[0] instanceof \Slim\Route)) {
+        if (count($args) === 0 || (!$args[0] instanceof \Slim\Route)) {
             throw new \InvalidArgumentException('This method should not be invoked outside of the Slim Framework');
         }
         $store = $args[0]->getParam('store');
@@ -588,14 +595,7 @@ class WebApp
 
         // missing or invalid credentials
         if (!$authorized) { // && (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
-            header('WWW-Authenticate: Basic realm="SameAs Lite"');
-            header('HTTP\ 1.0 401 Unauthorized');
-            $this->outputError(
-                401,
-                'Access Denied',
-                'You have failed to supply valid credentials, access to this resource is denied.',
-                'Access Denied'
-            );
+            $this->outputError401();
         }
     }
 
@@ -619,12 +619,12 @@ class WebApp
         // perform MIME-type matching on the requested and available formats
         // note that if there are no q-values, the *LAST* type "wins"
 
-// bugfix 1: change conneg class from Negotiate to Negotation
+        // bugfix 1: change conneg class from Negotiate to Negotation
         // $conneg = new \ptlis\ConNeg\Negotiate();
         $conneg = new \ptlis\ConNeg\Negotiation();
         $best = $conneg->mimeBest($_SERVER['HTTP_ACCEPT'], $acceptableMime);
 
-// bugfix 2: $best is a string, not an object
+        // bugfix 2: $best is a string, not an object
         // if the quality is zero, no matches between request and available
         // if ($best->getQualityFactor()->getFactor() == 0) {
         if (!$best) { // TODO: need to verify that this is the expected return if there are no matches
@@ -637,13 +637,13 @@ class WebApp
         }
 
         // store best match
-// bugfix 3: $best is a string, not an object
+        // bugfix 3: $best is a string, not an object
         // $this->mimeBest = $best->getType();
         $this->mimeBest = $best;
 
         // store alternative MIME types
         foreach ($conneg->mimeAll('*/*', $acceptableMime) as $type) {
-// bugfix 4
+            // bugfix 4
             // $type = $type->getAppType()->getType();
             $type = $type->getClientPreference();
 
@@ -730,7 +730,7 @@ class WebApp
             throw new \InvalidArgumentException('The $status parameter must be a valid integer HTTP status code');
         }
 
-        if ($title == null) {
+        if ($title === null) {
             $title = 'Error ' . $status;
         }
 
@@ -768,6 +768,21 @@ class WebApp
             404,
             'Page not found',
             'Sorry, the page you were looking for does not exist.'
+        );
+    }
+
+    /**
+     * Output a 401 (unauthorized) error
+     */
+    public function outputError401()
+    {
+        header('WWW-Authenticate: Basic realm="SameAs Lite"');
+        header($_SERVER["SERVER_PROTOCOL"].' 401 Unauthorized');
+        $this->outputError(
+            401,
+            'Access Denied',
+            'You have failed to supply valid credentials, access to this resource is denied.',
+            'Access Denied'
         );
     }
 
@@ -1021,6 +1036,7 @@ class WebApp
         $this->outputSuccess("Canon set to '$symbol'");
     }
 
+
     /**
      * Actions the HTTP GET service from /canons/:symbol
      *
@@ -1124,14 +1140,18 @@ class WebApp
      */
     public function querySymbol($store, $symbol)
     {
-        $accept = $this->app->request->get('accept');
-        if ($accept != null && $accept !== 'text/html') {
+        //bugfix
+        $accept = $this->app->request->headers->get('Accept');
+
+        if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
+            //non-HTML output
             $results = $this->stores[$store]->querySymbol($symbol);
             $results = array_diff($results, [ $symbol ]);
 
             $this->mimeBest = $accept;
             $this->outputList($results);
         } else {
+            //HTML output
             $shortName = $this->storeOptions[$store]['shortName'];
             $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
             $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
@@ -1150,6 +1170,17 @@ class WebApp
                     $result = $this->linkify($result);
                 }
 
+                $formats = $this->mimeLabels;
+                unset($formats['text/html']);
+                $this->app->view()->set(
+                    'alternate_formats',
+                    $formats
+                );
+
+                $this->app->view()->set(
+                    'javascript',
+                    '<script src="'. $this->app->request()->getRootUri() . '/assets/js/symbols.js"></script>'
+                );
 
                 $this->app->render('snippet-bundle.twig', [
                     'symbol' => $symbol,
@@ -1244,6 +1275,7 @@ class WebApp
                 break;
 
             default:
+                // TODO: this should notify about the available formats with the correct status code
                 $this->outputError(400, "Cannot return in format requested");
                 break;
 
@@ -1316,6 +1348,7 @@ class WebApp
         $this->app->contentType($this->mimeBest);
         switch ($this->mimeBest) {
             case 'text/plain':
+            case 'text/csv':
                 print $msg;
                 break;
 
@@ -1354,15 +1387,20 @@ class WebApp
         }
 
         $this->app->contentType($this->mimeBest);
+
         switch ($this->mimeBest) {
             case 'text/plain':
             case 'text/csv':
             case 'text/tab-separated-values':
-                print join("\n", $list);
+                print join(PHP_EOL, $list);
                 break;
 
             case 'application/json':
                 print json_encode($list);
+                break;
+
+            case 'text/turtle':
+                // TODO ?
                 break;
 
             case 'text/html':

@@ -100,12 +100,14 @@ class MySQLStore extends \SameAsLite\Store\SQLStore
         * @param string $charset      The Character set to use
         *
         * @throws \InvalidArgumentException If any parameters are deemed invalid
-    */
+        */
     // TINHD
 
     /**
-     * Constructor takes the options for the MySQL store:
-     * username, password dbName = 'SameAsLite', host = 'localhost', [port [,charset]]
+     * Constructor for the MySQL store
+     *
+     * @param string $name The name of the data store
+     * @param string $name Options for the MySQL store (username, password dbName = 'SameAsLite', host = 'localhost', [port [,charset]])
      *
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */

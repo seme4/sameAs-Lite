@@ -4,10 +4,17 @@
 
 {% block body %}
         <div class="alt-formats">
-          <a href="" class="label">JSON</a>
-          <a href="" class="label">TTL</a>
-          <a href="" class="label">RDF</a>
-          <a href="" class="label">XML</a>
+          <!--
+            <a href="" class="label alternate_format">JSON</a>
+            <a href="" class="label alternate_format">TTL</a>
+            <a href="" class="label alternate_format">RDF</a>
+            <a href="" class="label alternate_format">XML</a>
+          -->
+          <form id="alternate_mime_form" action="" method="GET">
+            {% for long,short in alternate_formats %}
+              <a href="" data-mime="{{long}}" class="label alternate_format">{{short}}</a>
+            {% endfor %}
+          </form>
         </div>
 
         <h2>
@@ -22,16 +29,18 @@
 
 
         {% if equiv_symbols|length > 0 %}
-          <p>Found {{ equiv_symbols|length }} equivalent symbols &ndash;</p>
+          <p id="equiv_symbols">Found <span id="equiv_symbols_num">{{equiv_symbols|length}}</span> equivalent symbols &ndash;</p>
 
-          <ul>
+          <div id="result">
+          <ul id="symbols_list">
             {% for sym in equiv_symbols %}
             <li>
-              {{ sym }}
+              {{sym}}
               {% if canon == sym %}
                 <span class="label label-success">Canonical</span>
               {% endif %}
             {% endfor %}
           </ul>
+          </div>
         {% endif %}
 {% endblock %}

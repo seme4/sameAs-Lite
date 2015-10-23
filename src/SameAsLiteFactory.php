@@ -143,7 +143,7 @@ class SameAsLiteFactory
     public static function createWebAppFromArray(array $config)
     {
         if (!isset($config['webapp'])) {
-            throw new \InvalidArgumentException('No WebApp Config found, must be under catagory "webapp"');
+            throw new \InvalidArgumentException('No WebApp Config found, must be under category "[webapp]" in config.ini');
         }
 
         $appcfg = $config['webapp'];
