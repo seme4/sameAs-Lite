@@ -1223,8 +1223,18 @@ class WebApp
         $this->app->view()->set('titleHeader', 'Statistics ' . $shortName);
 
         $result = $this->stores[$store]->statistics();
-        $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
-    }
+
+        // content negotiation
+        // $accept = $this->app->request->headers->get('Accept');
+        if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
+            // non-HTML output
+            $this->outputList($result);
+        } else {
+            // HTML output
+            $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
+        }//end if
+
+    }//end statstics()
 
     /**
      * Actions the HTTP GET service from /datasets
