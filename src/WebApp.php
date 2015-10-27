@@ -1051,7 +1051,7 @@ class WebApp
         $this->app->view()->set('titleHTML', 'Canon query');
         $this->app->view()->set('titleHeader', 'Canon for &ldquo;' . $symbol . '&rdquo;');
         $result = $this->stores[$store]->getCanon($symbol);
-        $this->outputList([$result]);
+        $this->outputList($result);
     }
 
     /**
@@ -1228,7 +1228,7 @@ class WebApp
         // $accept = $this->app->request->headers->get('Accept');
         if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
             // non-HTML output
-            $this->outputList($result);
+            $this->outputList($result, 200, false);
         } else {
             // HTML output
             $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
@@ -1379,34 +1379,69 @@ class WebApp
      * Output data which is an unordered list of items, in the most appropriate
      * MIME type
      *
-     * @param array $list The items to output
+     * @param array   $list The items to output
+     * @param integer $status HTTP status code
+     * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
+     *
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputList(array $list = array(), $status = null)
+    protected function outputList(array $list = array(), $status = null, $numeric_array = true)
     {
+        //single results are converted into array
+        if (!is_array($list)) {
+            $list = [$list];
+        }//end if
 
-        $list = array_values($list); // Convert into numeric array
+        // Convert into numeric array, if required
+        if ($numeric_array) {
+            $list = array_values($list);
+        }//end if
 
+        // open world assumption (unRESTful)
         // 404 header response
-        if (empty($list)) {
-            $status = 404;
-        }
-        if (isset($status)) {
-            $this->app->response->setStatus($status);
-        }
+        // if (empty($list)) {
+        //     $status = 404;
+        // }//end if
 
+        if (!is_null($status)) {
+            $this->app->response->setStatus($status);
+        }//end if
+
+        //set the content-type response header
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
             case 'text/plain':
-            case 'text/csv':
             case 'text/tab-separated-values':
                 print join(PHP_EOL, $list);
                 break;
 
+            case 'text/csv':
+                $csv = '';
+                // the array keys become the header row
+                $csv .= '"' . implode(array_keys($list), '","') . '"' . PHP_EOL;
+                // the array values become the content rows
+                $vals = array_values($list);
+                $csv_vals = '';
+                foreach ($vals as $v) {
+                    if (is_numeric($v)) {
+                        $csv_vals .= strval($v) . ',';
+                    } else {
+                        $csv_vals .= '"' . strval($v) . '",';
+                    }
+                }//end foreach
+                $csv_vals = rtrim($csv_vals, ',');
+                $csv .= $csv_vals . PHP_EOL;
+                print $csv;
+                break;
+
             case 'application/json':
                 print json_encode($list);
+                break;
+
+            case 'application/rdf+xml':
+                // TODO !
                 break;
 
             case 'text/turtle':
