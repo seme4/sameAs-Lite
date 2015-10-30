@@ -1106,11 +1106,24 @@ class WebApp
         // TODO - if the input is very large, this will probably blow up available memory?
         // $before = $this->stores[$store]->statistics();
 
-        $this->stores[$store]->assertTSV($this->app->request->post('body'));
+        // if request body is empty, there is nothing to assert
 
-        // $after = $this->stores[$store]->statistics();
-        // TODO array_merge(array('Before:'), $before, array('After:'), $after));
-        $this->outputSuccess('Pairs asserted');
+        $body = $this->app->request->getBody();
+
+        // if (!$this->app->request->post('body')) { // body no longer exists in request obj
+        if (!$body) { // body no longer exists in request obj
+
+            //TODO
+            die('EMpty request body' . PHP_EOL);
+
+        } else {
+
+            $this->stores[$store]->assertTSV($body);
+
+            // $after = $this->stores[$store]->statistics();
+            // TODO array_merge(array('Before:'), $before, array('After:'), $after));
+            $this->outputSuccess('Pairs asserted');
+        }
     }
 
     /**
@@ -1378,15 +1391,15 @@ class WebApp
         switch ($this->mimeBest) {
             case 'text/plain':
             case 'text/csv':
-                print $msg;
+                print $msg . PHP_EOL;
                 break;
 
             case 'application/json':
-                print json_encode(array('ok' => $msg));
+                print json_encode(array('ok' => $msg)) . PHP_EOL;
                 break;
 
             case 'text/html':
-                $this->outputHTML('<h2>Success!</h2><p>' . $msg . '</p>');
+                $this->outputHTML('<h2>Success!</h2><p>' . $msg . '</p>') . PHP_EOL;
                 break;
 
             default:

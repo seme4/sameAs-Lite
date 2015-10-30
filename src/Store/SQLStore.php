@@ -323,7 +323,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         foreach ($data as &$row) {
             $row = str_getcsv($row, "\t"); // parse the items in rows
         }
-
+        
         return $this->assertPairs($data);
     }
 
