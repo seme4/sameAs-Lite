@@ -57,7 +57,7 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 
 2. The default username and password for the restricted areas is 'demo'. To change this run `htpasswd -c auth.htpasswd username`. To add extra users run `htpasswd auth.htpasswd username`.
 
-3. Create an empty sqlite3 database and update `config.ini` and `index.php` to point to this database.
+3. Create an empty sqlite3 database and update `config.ini` to point to this database.
 
 4. Add pairs to the stores using the web interface. Navigate to `/api` to do this.
 
