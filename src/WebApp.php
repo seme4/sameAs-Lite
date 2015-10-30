@@ -571,22 +571,24 @@ class WebApp
      */
     public function callbackCheckAuth()
     {
-
         // do we have credentials to validate?
         $authorized = false;
+
         if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+
+            // parse the auth.htpasswd file for username/password
             $filename = dirname($_SERVER['DOCUMENT_ROOT'] . $_SERVER['PHP_SELF']) . '/auth.htpasswd';
-            $credentials = @file($filename);
-            if ($credentials === false || count($credentials) == 0) {
+            $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
+            if ($credentials === false || count($credentials) === 0) {
                 throw new \Exception('Failed to load valid authorization credentails from ' . $filename);
             }
             foreach ($credentials as $line) {
                 $line = trim($line);
-                if ($line == '' || strpos($line, ':') === false) {
+                if ($line === '' || strpos($line, ':') === false) {
                     continue;
                 }
                 list($u, $p) = explode(':', $line, 2);
-                if ($u == $_SERVER['PHP_AUTH_USER'] && crypt($_SERVER['PHP_AUTH_PW'], $p) == $p) {
+                if ($u === $_SERVER['PHP_AUTH_USER'] && crypt($_SERVER['PHP_AUTH_PW'], $p) === $p) {
                     $authorized = true;
                     break;
                 }
@@ -738,7 +740,7 @@ class WebApp
             $this->app->request()->getURL() .
             $this->app->request()->getRootUri() . '">the homepage</a>.';
 
-        if ($extendedTitle == '') {
+        if ($extendedTitle === '') {
             $defaultMsg = \Slim\Http\Response::getMessageForCode($status);
             if ($defaultMsg != null) {
                 $extendedTitle = substr($defaultMsg, 4);
@@ -1297,7 +1299,7 @@ class WebApp
                 break;
 
             default:
-                // TODO: this should notify about the available formats with the correct status code
+                // TODO: this should notify about the available formats in the HTTP response headers
                 $this->outputError(400, "Cannot return in format requested");
                 break;
 
