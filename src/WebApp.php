@@ -602,7 +602,6 @@ class WebApp
         // missing or invalid credentials
         if (!$authorized) { // && (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
             $this->outputError401();
-            die;
         }
     }
 
@@ -764,6 +763,8 @@ class WebApp
             'summary'      => $summary,
             'details'      => $extendedDetails
         ]);
+
+        exit; //execution must end here
     }
 
     /**
