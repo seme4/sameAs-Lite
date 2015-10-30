@@ -26,6 +26,7 @@ An application that wishes to use data from multiple sources as if they were a s
 
 
 ## Deploying sameAs Lite
+
 sameAs Lite can be deployed on any machine that supports PHP 5.4 or greater (and will need the `ctype` package installed).
 
 If you want to use sameAs Lite as a web service (recommended) you will need to install a web server.
@@ -39,6 +40,10 @@ It can be easily extended to use different storage methods as well (see Extendin
 These examples will use MySQL as a storage method.
 
 ### Getting Started
+
+#### Prerequisites
+
+Detailed instructions on how to install the prerequisites can be found [here](#).
 
 #### Download and install dependencies
 Download the repository using your usual method (see for example [Fork A Repository](https://help.github.com/articles/fork-a-repo/)).
