@@ -880,11 +880,18 @@ class WebApp
             }
         }
 
+        // template variables (basic info)
+        if (isset($this->storeOptions[$store]['shortName'])) {
+            $this->app->view()->set('shortName', $this->storeOptions[$store]['shortName']);
+        }
+
+        // inject javascript for the API page
         $this->app->view()->set(
             'javascript',
             '<script src="'. $this->app->request()->getRootUri() . '/assets/js/api.js"></script>'
         );
 
+        // render the template
         $this->app->render('api-index.twig', [
             'titleHTML' => ' - API',
             'titleHeader' => 'API overview',
@@ -1336,8 +1343,6 @@ class WebApp
             }
         }
 
-
-
         // fold arrays into PRE blocks
         if (is_array($body)) {
             $body = '<pre>' . join("\n", $body) . "</pre>\n";
@@ -1346,6 +1351,7 @@ class WebApp
         if (isset($status)) {
             $this->app->response->setStatus($status);
         }
+
         $this->app->render('page.twig', [
             'body'    => $body
         ]);
