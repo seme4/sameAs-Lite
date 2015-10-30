@@ -26,7 +26,8 @@
         "twig/twig": "*",
         "twbs/bootstrap": "3.*",
         "afarkas/html5shiv": "*",
-        "rogeriopradoj/respond": "*"
+        "rogeriopradoj/respond": "*",
+        "components/jquery": "1.*"
     },
     "require-dev": {
         "php": ">=5.4.0",

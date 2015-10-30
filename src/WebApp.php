@@ -816,6 +816,11 @@ class WebApp
             'apiPath' => "datasets/$storeSlug/api"
         ]);
 
+        $this->app->view()->set(
+            'javascript',
+            '<script src="'. $this->app->request()->getRootUri() . '/assets/js/homepage-store.js"></script>'
+        );
+
         $this->app->render('homepage-store.twig', $viewData);
     }
 
@@ -1050,7 +1055,7 @@ class WebApp
     {
         $this->app->view()->set('titleHTML', 'Canon query');
         $this->app->view()->set('titleHeader', 'Canon for &ldquo;' . $symbol . '&rdquo;');
-        $result = $this->stores[$store]->getCanon($symbol);
+        $result = [$this->stores[$store]->getCanon($symbol)];
         $this->outputList($result);
     }
 

@@ -302,7 +302,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
 
 
     /**
-     * {@inheritDoc}
+     * Assert that two symbols are equal
      */
     public function assertPairs(array $data)
     {
@@ -465,7 +465,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
             $statement->execute(array(':symbol' => $symbol));
             $r = $statement->fetch(\PDO::FETCH_NUM);
 
-            return $r;
+            return $r[0];
         } catch (\PDOException $e) {
             $this->error("Database failure to get the get the canon for symbol '$symbol'", $e);
         }
