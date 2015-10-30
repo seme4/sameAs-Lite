@@ -43,6 +43,7 @@ These examples will use MySQL as a storage method.
 
 #### Prerequisites
 
+SameAs requires an Apache 2 server, PHP, Composer, SQLite3, and optionally a MySQL server.
 Detailed instructions on how to install the prerequisites can be found [here](#).
 
 #### Download and install dependencies
@@ -105,6 +106,10 @@ For MySQL these options are:
 TODO: Needs some more help here, so that it works better out of the box (such as username/password).
 
 For other Store options please see the documentation.
+
+### Populating the MySQL database with sample data
+
+
 
 ### Using Stores
 `$store->assertPair('crisps', 'potato chips');` Create a relationship
