@@ -23,9 +23,13 @@
         "ptlis/conneg": "*",
         "slim/slim": "*",
         "slim/views": "*",
-        "twig/twig": "*"
+        "twig/twig": "*",
+        "twbs/bootstrap": "3.*",
+        "afarkas/html5shiv": "*",
+        "rogeriopradoj/respond": "*"
     },
     "require-dev": {
+        "php": ">=5.4.0",
         "ext-xsl": "*",
         "phpdocumentor/phpdocumentor": "*",
         "squizlabs/php_codesniffer": "2.*",
