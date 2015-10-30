@@ -81,6 +81,10 @@ class WebApp
     /** @var array $routeInfo Details of the available URL routes */
     protected $routeInfo = array();
 
+    /** @var string $store The store from the URL */
+    protected $store = null;
+
+
     /**
      * Constructor.
      *
@@ -548,18 +552,18 @@ class WebApp
         if (count($args) === 0 || (!$args[0] instanceof \Slim\Route)) {
             throw new \InvalidArgumentException('This method should not be invoked outside of the Slim Framework');
         }
-        $store = $args[0]->getParam('store');
+        $this->store = $args[0]->getParam('store');
 
         // if the store is not valid, skip the current route
-        if (!isset($this->stores[$store])) {
+        if (!isset($this->stores[$this->store])) {
             $this->app->pass();
         }
 
         // display name of store in titlebar
-        $u = $this->app->request()->getRootUri() . '/datasets/' . $store;
+        $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
         $this->app->view()->set(
             'titleSupplementary',
-            '<a href="'.$u.'" class="navbar-brand supplementary">' . $this->storeOptions[$store]['shortName'] . '</a>'
+            '<a href="'.$u.'" class="navbar-brand supplementary">' . $this->storeOptions[$this->store]['shortName'] . '</a>'
         );
     }
 
@@ -1473,7 +1477,69 @@ class WebApp
                 break;
 
             case 'application/rdf+xml':
-                // TODO !
+
+
+// get the parameter
+//search?
+$symbol = $this->app->request()->params('string');
+if (!$symbol) {
+    $symbol = $this->app->request()->params('symbol');
+}
+
+                // new EasyRdf graph
+                $graph = new \EasyRdf_Graph();
+
+                // meta info
+
+                $domain = 'http://';
+                // if ($_SERVER["HTTPS"] == "on") {$domain = "https://";}
+                if ($_SERVER["SERVER_PORT"] != "80") {
+                    $domain .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"];
+                } else {
+                    $domain .= $_SERVER["SERVER_NAME"];
+                }
+
+                $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
+                // TODO: maybe also add info about store (storename, URI)?
+                $meta_block->set('dc:creator', 'sameAsLite');
+                $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol); // TODO: add name of symbol
+                $meta_block->add('foaf:primaryTopic', $graph->resource('URI-HERE')); // TODO
+                $meta_block->add('dct:license', $graph->resource('http://creativecommons.org/publicdomain/zero/1.0/')); // questionable
+
+                // list
+                $symbol_block = $graph->resource('URI-HERE'); //TODO
+
+                foreach ($list as $symbol) {
+                    // TODO: check if it's a URI or literal
+                    // if it's a URI, add it as a resource
+                    // if it's a text symbol, add it as literal
+                    
+
+
+
+                    $symbol_block->add('owl:sameAs', $symbol);
+                }
+
+                $format = 'rdf';
+
+                $data = $graph->serialise($format);
+                if (!is_scalar($data)) {
+                    $data = var_export($data, true);
+                }
+                print $data;
+                die;
+
+
+//namespaces
+/*
+  xmlns:rdf  = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:owl  = "http://www.w3.org/2002/07/owl#"
+  xmlns:dc   = "http://purl.org/dc/elements/1.1/"
+  xmlns:dct  = "http://purl.org/dc/terms/"
+  xmlns:foaf = "http://xmlns.com/foaf/0.1/"
+*/
+
                 break;
 
             case 'text/turtle':
@@ -1553,6 +1619,9 @@ class WebApp
 
             default:
                 $this->app->contentType('text/html');
+
+                // TODO - this needs response headers that point to available formats
+
                 throw new \Exception('Could not render tabular output as ' . $this->mimeBest);
         }
     }
@@ -1570,6 +1639,16 @@ class WebApp
         }
         return $item;
     }
+
+
+    /**
+     * Set up EasyRdf
+     */
+    private function config_easyrdf() {
+
+
+    }
+
 }
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:
