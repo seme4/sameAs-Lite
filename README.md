@@ -50,13 +50,19 @@ Open the command line at the local copy and `make install`.
 sameAs Lite uses [Composer](https://getcomposer.org) for dependency management, so you will need to install it, if you don't have it.
 
 #### Quick start
+
 The sameAs Lite WebApp is able to work straight out of the box as long as Apache is installed.
 
 1. Edit `config.ini` to have the information for the stores you are using. Do not change the 'type' or 'location' settings, and add these to any new stores you create.
 
 2. The default username and password for the restricted areas is 'demo'. To change this run `htpasswd -c auth.htpasswd username`. To add extra users run `htpasswd auth.htpasswd username`.
 
-3. Add pairs to the stores using the web interface. Navigate to `/api` to do this.
+3. Create an empty sqlite3 database and update `config.ini` and `index.php` to point to this database.
+
+4. Add pairs to the stores using the web interface. Navigate to `/api` to do this.
+
+
+#### Installation
 
 #### Create the Database
 
