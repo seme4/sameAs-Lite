@@ -27,7 +27,8 @@
         "twbs/bootstrap": "3.*",
         "afarkas/html5shiv": "*",
         "rogeriopradoj/respond": "*",
-        "components/jquery": "1.*"
+        "components/jquery": "1.*",
+        "whitehat101/apr1-md5": "~1.0"
     },
     "require-dev": {
         "php": ">=5.4.0",

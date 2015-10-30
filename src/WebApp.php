@@ -580,7 +580,8 @@ class WebApp
             $filename = dirname($_SERVER['DOCUMENT_ROOT'] . $_SERVER['PHP_SELF']) . '/auth.htpasswd';
             $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
             if ($credentials === false || count($credentials) === 0) {
-                throw new \Exception('Failed to load valid authorization credentails from ' . $filename);
+                // auth.htpasswd could not be loaded
+                throw new \Exception('Failed to load valid authorization credentials from ' . $filename);
             }
             foreach ($credentials as $line) {
                 $line = trim($line);
@@ -588,7 +589,10 @@ class WebApp
                     continue;
                 }
                 list($u, $p) = explode(':', $line, 2);
-                if ($u === $_SERVER['PHP_AUTH_USER'] && crypt($_SERVER['PHP_AUTH_PW'], $p) === $p) {
+
+                // Check plaintext password against an APR1-MD5 hash
+                // if ($u === $_SERVER['PHP_AUTH_USER'] && crypt($_SERVER['PHP_AUTH_PW'], $p) === $p) {
+                if (true === \WhiteHat101\Crypt\APR1_MD5::check($_SERVER['PHP_AUTH_PW'], $p)) {
                     $authorized = true;
                     break;
                 }
@@ -598,6 +602,7 @@ class WebApp
         // missing or invalid credentials
         if (!$authorized) { // && (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
             $this->outputError401();
+            die;
         }
     }
 
