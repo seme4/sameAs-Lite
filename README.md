@@ -24,6 +24,12 @@ The canon represents a preferred ID for the set of duplicates.
 
 An application that wishes to use data from multiple sources as if they were a single resource can process results by looking up IDs within sameAs Lite and replacing these with their canons on the fly. This reduces the multiplicity of identifiers to a single definitive ID.
 
+#### Symbols
+
+#### Canons
+
+#### Bundles
+
 
 ## Deploying sameAs Lite
 
