@@ -1017,8 +1017,8 @@ class WebApp
     {
         $this->app->view()->set('titleHTML', 'Canons');
         $this->app->view()->set('titleHeader', 'All Canons in this dataset');
-        $result = $this->stores[$store]->getAllCanons();
-        $this->outputList($result);
+        $results = $this->stores[$store]->getAllCanons();
+        $this->outputList($results);
     }
 
     /**
@@ -1125,8 +1125,8 @@ class WebApp
         $this->app->view()->set('titleHTML', ' - Search: "' . $string . '"');
         $this->app->view()->set('titleHeader', 'Search: "' . $string . '"');
 
-        $result = $this->stores[$store]->search($string);
-        $this->outputList($result);
+        $results = $this->stores[$store]->search($string);
+        $this->outputList($results);
     }
 
     /**

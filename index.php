@@ -39,11 +39,13 @@ require_once 'vendor/autoload.php';
 
 // Dev error reporting
 ini_set('display_errors', 1);
+ini_set('html_errors', 0); // disable xdebug var-dump formatting
 ini_set('display_startup_errors', 1);
 error_reporting(-1);
 
 
-\SameAsLite\Store\SQLiteStore::setDefaultOptions(['location' => 'db/sameaslite-store.db']);
+// deprecated - not needed
+// \SameAsLite\Store\SQLiteStore::setDefaultOptions(['location' => 'db/sameaslite-store.db']);
 
 $app = \SameAsLite\SameAsLiteFactory::createWebApp('config.ini');
 
