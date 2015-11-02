@@ -1489,7 +1489,6 @@ class WebApp
                 $graph = new \EasyRdf_Graph();
 
                 // meta info
-
                 $domain = 'http://';
                 if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
                     $domain = "https://";
@@ -1498,31 +1497,35 @@ class WebApp
                 if ($_SERVER["SERVER_PORT"] != "80") {
                     $domain .= ":" . $_SERVER["SERVER_PORT"];
                 }//end if
-
                 $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
                 // TODO: maybe also add info about store (storename, URI)?
                 $meta_block->set('dc:creator', 'sameAsLite');
                 $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
-                $meta_block->add('foaf:primaryTopic', $graph->resource('URI-HERE')); // TODO
+                if (isset($this->appOptions->license['url'])) {
+                    $meta_block->add('dct:license', $graph->resource($this->appOptions->license['url']));
+                }
 
-//XXX
-var_dump($this->appOptions->license);
-die;
 
-                $meta_block->add('dct:license', $graph->resource('http://creativecommons.org/publicdomain/zero/1.0/')); // questionable
+                if (strpos($symbol, 'http') === 0) {
+                    $symbol_block = $graph->resource($symbol);
+                    $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
+                } else {
+                    $symbol_block = $graph->newBNode();
+                    $meta_block->add('foaf:primaryTopic', $graph->resource($symbol_block->getBNodeId()));
+                }
+
 
                 // list
-                $symbol_block = $graph->resource('URI-HERE'); //TODO
-
                 foreach ($list as $symbol) {
                     // TODO: check if it's a URI or literal
                     // if it's a URI, add it as a resource
                     // if it's a text symbol, add it as literal
-                    
 
-
-
-                    $symbol_block->add('owl:sameAs', $symbol);
+                    if (strpos($symbol, 'http') === 0) {
+                        $symbol_block->add('owl:sameAs', $graph->resource(urldecode($symbol)));
+                    } else {
+                        $symbol_block->add('owl:sameAs', $symbol);
+                    }
                 }
 
                 $format = 'rdf';
@@ -1532,7 +1535,7 @@ die;
                     $data = var_export($data, true);
                 }
                 print $data;
-                die;
+                exit;
 
 
 //namespaces
