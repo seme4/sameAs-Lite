@@ -145,7 +145,8 @@ class WebApp
         foreach ($options as $k => $v) {
             $this->app->view->set($k, $v);
         }
-    }
+
+    }//end __construct()
 
     /**
      * Add a dataset to this web application
@@ -1493,7 +1494,7 @@ class WebApp
                 if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
                     $domain = "https://";
                 }//end if
-                $domain .= $_SERVER["SERVER_NAME"]
+                $domain .= $_SERVER["SERVER_NAME"];
                 if ($_SERVER["SERVER_PORT"] != "80") {
                     $domain .= ":" . $_SERVER["SERVER_PORT"];
                 }//end if
@@ -1503,6 +1504,11 @@ class WebApp
                 $meta_block->set('dc:creator', 'sameAsLite');
                 $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
                 $meta_block->add('foaf:primaryTopic', $graph->resource('URI-HERE')); // TODO
+
+//XXX
+var_dump($this->appOptions->license);
+die;
+
                 $meta_block->add('dct:license', $graph->resource('http://creativecommons.org/publicdomain/zero/1.0/')); // questionable
 
                 // list

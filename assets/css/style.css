@@ -82,3 +82,5 @@ div.alt-formats a:hover { background: #3498db; }
 .panel-api input[type="submit"] { width: auto; float: left; }
 .panel-api textarea { margin-bottom: 5px; min-height: 100px; }
 ul li span.label { position: absolute; margin: 2px 0 0 10px; }
+
+.no-margin-top{padding-top:0;margin-top:0;}
