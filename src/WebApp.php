@@ -1485,14 +1485,18 @@ class WebApp
 
             case 'application/rdf+xml':
 
+// bug: list contains each item four times!
+// var_dump($list);
+// die;
+
+
+
                 // get the parameter
                 $symbol = $this->app->request()->params('string');
                 if (!$symbol) {
                     $symbol = $this->app->request()->params('symbol');
                 }//end if
 
-                // new EasyRdf graph
-                $graph = new \EasyRdf_Graph();
 
                 // meta info
                 $domain = 'http://';
@@ -1503,6 +1507,12 @@ class WebApp
                 if ($_SERVER["SERVER_PORT"] != "80") {
                     $domain .= ":" . $_SERVER["SERVER_PORT"];
                 }//end if
+
+// EASY RDF version
+/*
+                // new EasyRdf graph
+                $graph = new \EasyRdf_Graph();
+
                 $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
                 // TODO: maybe also add info about store (storename, URI)?
                 $meta_block->set('dc:creator', 'sameAsLite');
@@ -1511,7 +1521,6 @@ class WebApp
                     $meta_block->add('dct:license', $graph->resource($this->appOptions->license['url']));
                 }
 
-
                 if (strpos($symbol, 'http') === 0) {
                     $symbol_block = $graph->resource($symbol);
                     $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
@@ -1519,7 +1528,6 @@ class WebApp
                     $symbol_block = $graph->newBNode();
                     $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $symbol_block->getBNodeId()));
                 }
-
 
                 // list
                 foreach ($list as $symbol) {
@@ -1544,6 +1552,57 @@ class WebApp
                     $data = var_export($data, true);
                 }
                 print $data;
+*/
+
+//plain text version
+
+
+                // XML output as text/plain
+
+                $out = '<?xml version="1.0" encoding="utf-8" ?>' . PHP_EOL .
+                '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"' . PHP_EOL .
+                '         xmlns:dct="http://purl.org/dc/terms/"' . PHP_EOL .
+                '         xmlns:dc="http://purl.org/dc/elements/1.1/"' . PHP_EOL .
+                '         xmlns:foaf="http://xmlns.com/foaf/0.1/"' . PHP_EOL .
+                '         xmlns:owl="http://www.w3.org/2002/07/owl#">' . PHP_EOL;
+
+
+                $out .= '  <rdf:Description rdf:about="' . $domain . $_SERVER['REQUEST_URI'] . '">' . PHP_EOL;
+
+                $out .= '      <dc:creator>sameAsLite</dc:creator>' . PHP_EOL;
+                $out .= '      <dc:title>Co-references from sameAs.org for ' . $symbol . '</dc:title>' . PHP_EOL;
+                if (isset($this->appOptions->license['url'])) {
+                    $out .= '      <dct:license rdf:resource="' . $this->appOptions->license['url'] . '"></dct:license>' . PHP_EOL;
+                }
+
+                if (strpos($symbol, 'http') === 0) {
+                    // queried symbol is a URI
+                    $symbol = urldecode($symbol);
+                    $out .= '      <foaf:primaryTopic rdf:resource="' . $symbol . '" />'  . PHP_EOL .
+                            '  </rdf:Description>' . PHP_EOL;
+                    $out .= '  <rdf:Description rdf:about="' . $symbol . '">'  . PHP_EOL;
+                } else {
+                    // queried symbol is a literal
+                    $out .= '      <foaf:primaryTopic rdf:resource="_:genid1" />'  . PHP_EOL .
+                            '  </rdf:Description>' . PHP_EOL;
+                    $out .= '  <rdf:Description rdf:about="genid1">' . PHP_EOL;
+                }
+
+                foreach ($list as $s) {
+                    if (strpos($s, 'http') === 0) {
+                        $out .= '    <owl:sameAs rdf:resource="' . urldecode($s) . '" />' . PHP_EOL;
+                    } else {
+                        $out .= '    <owl:sameAs>' . $s . '</owl:sameAs>' . PHP_EOL;
+                    }
+                }
+
+                $out .= '  </rdf:Description>' . PHP_EOL;
+                $out .= '  </rdf:RDF>' . PHP_EOL;
+
+
+                print $out;
+
+
                 exit;
 
                 break;
