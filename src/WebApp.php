@@ -1425,6 +1425,15 @@ class WebApp
      */
     protected function outputList(array $list = array(), $status = null, $numeric_array = true)
     {
+
+// bug: list contains each item four times!
+// var_dump($list);
+// die;
+
+//profiling
+        $this->mimeBest = 'application/rdf+xml';
+
+
         //single results are converted into array
         if (!is_array($list)) {
             $list = [$list];
@@ -1485,12 +1494,6 @@ class WebApp
 
             case 'application/rdf+xml':
 
-// bug: list contains each item four times!
-// var_dump($list);
-// die;
-
-
-
                 // get the parameter
                 $symbol = $this->app->request()->params('string');
                 if (!$symbol) {
@@ -1508,8 +1511,9 @@ class WebApp
                     $domain .= ":" . $_SERVER["SERVER_PORT"];
                 }//end if
 
+
 // EASY RDF version
-/*
+
                 // new EasyRdf graph
                 $graph = new \EasyRdf_Graph();
 
@@ -1517,8 +1521,8 @@ class WebApp
                 // TODO: maybe also add info about store (storename, URI)?
                 $meta_block->set('dc:creator', 'sameAsLite');
                 $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
-                if (isset($this->appOptions->license['url'])) {
-                    $meta_block->add('dct:license', $graph->resource($this->appOptions->license['url']));
+                if (isset($this->appOptions['license']['url'])) {
+                    $meta_block->add('dct:license', $graph->resource($this->appOptions['license']['url']));
                 }
 
                 if (strpos($symbol, 'http') === 0) {
@@ -1545,18 +1549,17 @@ class WebApp
                     }
                 }
 
-                $format = 'rdf';
+                $format = 'turtle';
 
                 $data = $graph->serialise($format);
                 if (!is_scalar($data)) {
                     $data = var_export($data, true);
                 }
                 print $data;
-*/
+
 
 //plain text version
-
-
+/*
                 // XML output as text/plain
 
                 $out = '<?xml version="1.0" encoding="utf-8" ?>' . PHP_EOL .
@@ -1571,8 +1574,9 @@ class WebApp
 
                 $out .= '      <dc:creator>sameAsLite</dc:creator>' . PHP_EOL;
                 $out .= '      <dc:title>Co-references from sameAs.org for ' . $symbol . '</dc:title>' . PHP_EOL;
-                if (isset($this->appOptions->license['url'])) {
-                    $out .= '      <dct:license rdf:resource="' . $this->appOptions->license['url'] . '"></dct:license>' . PHP_EOL;
+
+                if (isset($this->appOptions['license']['url'])) {
+                    $out .= '      <dct:license rdf:resource="' . $this->appOptions['license']['url'] . '"></dct:license>' . PHP_EOL;
                 }
 
                 if (strpos($symbol, 'http') === 0) {
@@ -1585,7 +1589,7 @@ class WebApp
                     // queried symbol is a literal
                     $out .= '      <foaf:primaryTopic rdf:resource="_:genid1" />'  . PHP_EOL .
                             '  </rdf:Description>' . PHP_EOL;
-                    $out .= '  <rdf:Description rdf:about="genid1">' . PHP_EOL;
+                    $out .= '  <rdf:Description rdf:nodeID="genid1">' . PHP_EOL;
                 }
 
                 foreach ($list as $s) {
@@ -1599,8 +1603,8 @@ class WebApp
                 $out .= '  </rdf:Description>' . PHP_EOL;
                 $out .= '  </rdf:RDF>' . PHP_EOL;
 
-
                 print $out;
+*/
 
 
                 exit;

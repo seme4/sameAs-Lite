@@ -210,17 +210,21 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     public function search($string)
     {
-
         try {
             $sql = $this->getSearchString(':search');
             $statement = $this->pdoObject->prepare($sql);
+            // PDO->bindValue does not escape % and _
+            // see http://php.net/manual/en/pdostatement.bindvalue.php#95065
+            $string = str_replace('%', '\%', $string);
             $statement->bindValue(':search', "%$string%", \PDO::PARAM_STR);
             $statement->execute();
 
-            $output = [];
+            $output = array();
+
             while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 $output[] = $row['symbol'];
             }
+
         } catch (\PDOException $e) {
             $this->error("Search for '$string' failed", $e);
         }
@@ -240,7 +244,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     protected function getSearchString($string)
     {
         $tn = $this->getTableName();
-        return "SELECT `t1`.`canon`, `t1`.`symbol`
+        return "SELECT DISTINCT `t1`.`canon`, `t1`.`symbol`
                 FROM `{$tn}` AS t1, `{$tn}` AS t2
                 WHERE `t1`.`canon` = `t2`.`canon` AND `t2`.`symbol` LIKE {$string}
                 ORDER BY `t1`.`canon` DESC, `t1`.`symbol` ASC";
