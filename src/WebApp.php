@@ -1478,13 +1478,11 @@ class WebApp
 
             case 'application/rdf+xml':
 
-
-// get the parameter
-//search?
-$symbol = $this->app->request()->params('string');
-if (!$symbol) {
-    $symbol = $this->app->request()->params('symbol');
-}
+                // get the parameter
+                $symbol = $this->app->request()->params('string');
+                if (!$symbol) {
+                    $symbol = $this->app->request()->params('symbol');
+                }//end if
 
                 // new EasyRdf graph
                 $graph = new \EasyRdf_Graph();
@@ -1492,17 +1490,18 @@ if (!$symbol) {
                 // meta info
 
                 $domain = 'http://';
-                // if ($_SERVER["HTTPS"] == "on") {$domain = "https://";}
+                if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
+                    $domain = "https://";
+                }//end if
+                $domain .= $_SERVER["SERVER_NAME"]
                 if ($_SERVER["SERVER_PORT"] != "80") {
-                    $domain .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"];
-                } else {
-                    $domain .= $_SERVER["SERVER_NAME"];
-                }
+                    $domain .= ":" . $_SERVER["SERVER_PORT"];
+                }//end if
 
                 $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
                 // TODO: maybe also add info about store (storename, URI)?
                 $meta_block->set('dc:creator', 'sameAsLite');
-                $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol); // TODO: add name of symbol
+                $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
                 $meta_block->add('foaf:primaryTopic', $graph->resource('URI-HERE')); // TODO
                 $meta_block->add('dct:license', $graph->resource('http://creativecommons.org/publicdomain/zero/1.0/')); // questionable
 
