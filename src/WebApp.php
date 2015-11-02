@@ -1452,6 +1452,8 @@ class WebApp
             case 'text/plain':
             case 'text/tab-separated-values':
                 print join(PHP_EOL, $list);
+                exit;
+
                 break;
 
             case 'text/csv':
@@ -1471,10 +1473,14 @@ class WebApp
                 $csv_vals = rtrim($csv_vals, ',');
                 $csv .= $csv_vals . PHP_EOL;
                 print $csv;
+                exit;
+
                 break;
 
             case 'application/json':
                 print json_encode($list);
+                exit;
+
                 break;
 
             case 'application/rdf+xml':
@@ -1511,7 +1517,7 @@ class WebApp
                     $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
                 } else {
                     $symbol_block = $graph->newBNode();
-                    $meta_block->add('foaf:primaryTopic', $graph->resource($symbol_block->getBNodeId()));
+                    $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $symbol_block->getBNodeId()));
                 }
 
 
@@ -1522,8 +1528,11 @@ class WebApp
                     // if it's a text symbol, add it as literal
 
                     if (strpos($symbol, 'http') === 0) {
+                        // resource
                         $symbol_block->add('owl:sameAs', $graph->resource(urldecode($symbol)));
                     } else {
+                        // literal values - not technically correct, because sameAs expects a resource
+                        // but validates in W3C Validator
                         $symbol_block->add('owl:sameAs', $symbol);
                     }
                 }
@@ -1537,17 +1546,6 @@ class WebApp
                 print $data;
                 exit;
 
-
-//namespaces
-/*
-  xmlns:rdf  = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-  xmlns:rdfs = "http://www.w3.org/2000/01/rdf-schema#"
-  xmlns:owl  = "http://www.w3.org/2002/07/owl#"
-  xmlns:dc   = "http://purl.org/dc/elements/1.1/"
-  xmlns:dct  = "http://purl.org/dc/terms/"
-  xmlns:foaf = "http://xmlns.com/foaf/0.1/"
-*/
-
                 break;
 
             case 'text/turtle':
@@ -1559,6 +1557,8 @@ class WebApp
                 $this->app->render('page-list.twig', [
                     'list' => $list
                 ]);
+                exit;
+
                 break;
 
             default:
