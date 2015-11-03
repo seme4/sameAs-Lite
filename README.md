@@ -55,4 +55,4 @@ Detailed installation instructions are available [here](#).
 
 ### License
 
-TODO: Short license info here with link to full license
+[MIT License](./LICENSE)
