@@ -15,20 +15,10 @@ Linked Data and Semantic Web users should simply consider IDs to be IDs.
 
 
 ## Concepts
-Equivalent IDs are conceptually stored in a bundle.
-A bundle is a set of IDs referring to resources which are considered to be equivalent, in the context of this store.
-An ID can exist in at most one bundle within a set exposed by a sameAs Lite instance.
 
-One ID in each bundle is nominated to be a canonical identifier, or canon, for that bundle.
-The canon represents a preferred ID for the set of duplicates.
+---- Some SIMPLE text without confusing special terms ----
 
-An application that wishes to use data from multiple sources as if they were a single resource can process results by looking up IDs within sameAs Lite and replacing these with their canons on the fly. This reduces the multiplicity of identifiers to a single definitive ID.
-
-#### Symbols
-
-#### Canons
-
-#### Bundles
+[Read more about the sameAs concepts](#)...
 
 
 ### Sample website
