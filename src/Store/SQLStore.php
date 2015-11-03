@@ -67,7 +67,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         * )
         *
         * @return mixed[] Array of settings
-     */
+    */
 
     // abstract public static function getFactorySettings();
 
@@ -83,7 +83,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         /*
             * Simple implementation of connect
             * Does not create tables, just a connection to the database via PDO
-         */
+        */
 
         // skip if we've already connected
         if ($this->pdoObject != null) {
@@ -163,6 +163,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     /**
      * Most implementations of database functions call another function that can be overridden
      * These functions should return the SQL string to be executed with the given symbols replacing the terms
+     *
+     * @param string $symbol The given symbol that replaces the search term in the PDO statement
      *
      * @return array $output Array of symbols
      */

@@ -61,7 +61,10 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
 
 
     /**
-     * {@inheritDoc}
+     * Set default options (store location) of the application
+     * @deprecated
+     *
+     * @param array $options Array with options from the config.ini file
      */
     public static function setDefaultOptions(array $options)
     {
@@ -70,7 +73,9 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
 
 
     /**
-     * {@inheritDoc}
+     * Set default options (store location) of the application
+     *
+     * @returns array self::$availableOptions Stored options
      */
     public static function getAvailableOptions()
     {
@@ -92,6 +97,9 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
     /**
      * Constructor takes the options for the SQLite store:
      * location  - The location of the DB file or null if stored in memory (optional)
+     *
+     * @param string $name    Name of the option
+     * @param array  $options Options
      *
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */

@@ -177,7 +177,7 @@ interface StoreInterface
     /**
      * Take a array of pairs (also an array) and assert those symbols to the store
      *
-     * @param string[][] $data The 2D array of pairs to be asserted
+     * @param array $data The 2D array of pairs to be asserted
      *
      * @return bool True on success
      * @throws \Exception On FIRST pair to fail to be asserted
@@ -217,7 +217,7 @@ interface StoreInterface
      * Remove an array of Symbols from the store
      * If you wish to remove a whole bundle from a given symbol the use {@link removeBundle()}
      *
-     * @param string[] $symbols The symbols to be removed
+     * @param array $symbols The symbols to be removed
      *
      * @return bool True on success
      * @throws \Exception On FIRST pair to fail to be removed

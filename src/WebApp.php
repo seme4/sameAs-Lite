@@ -564,7 +564,8 @@ class WebApp
         $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
         $this->app->view()->set(
             'titleSupplementary',
-            '<a href="'.$u.'" class="navbar-brand supplementary">' . $this->storeOptions[$this->store]['shortName'] . '</a>'
+            '<a href="'.$u.'" class="navbar-brand supplementary">' .
+            $this->storeOptions[$this->store]['shortName'] . '</a>'
         );
     }
 
@@ -580,7 +581,6 @@ class WebApp
         $authorized = false;
 
         if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
-
             // parse the auth.htpasswd file for username/password
             $filename = dirname($_SERVER['DOCUMENT_ROOT'] . $_SERVER['PHP_SELF']) . '/auth.htpasswd';
             $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
@@ -769,7 +769,7 @@ class WebApp
             'details'      => $extendedDetails
         ]);
 
-        exit; //execution must end here
+        exit; // execution must end here
     }
 
     /**
@@ -1105,6 +1105,8 @@ class WebApp
      * Reports the before and after statistics; failure will have caused an exception
      *
      * @param string $store The URL slug identifying the store
+     *
+     * @throws \Exception An exception is thrown if the request body is empty
      */
     public function assertPairs($store)
     {
@@ -1114,9 +1116,8 @@ class WebApp
         // if request body is empty, there is nothing to assert
         $body = $this->app->request->getBody();
         if (!$body) { // body no longer exists in request obj
-            throw new \Exception('Empty request body. Nothing to assert.'); //TODO : this would also require HTTP status
+            throw new \Exception('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
         } else {
-
             $this->stores[$store]->assertTSV($body);
 
             // $after = $this->stores[$store]->statistics();
@@ -1269,7 +1270,7 @@ class WebApp
             $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
         }//end if
 
-    }//end statstics()
+    }//end statistics()
 
     /**
      * Actions the HTTP GET service from /datasets
@@ -1416,8 +1417,8 @@ class WebApp
      * Output data which is an unordered list of items, in the most appropriate
      * MIME type
      *
-     * @param array   $list The items to output
-     * @param integer $status HTTP status code
+     * @param array   $list          The items to output
+     * @param integer $status        HTTP status code
      * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
      *
      * @throws \Exception An exception may be thrown if the requested MIME type
@@ -1430,7 +1431,7 @@ class WebApp
 // var_dump($list);
 // die;
 
-        //single results are converted into array
+        // single results are converted into array
         if (!is_array($list)) {
             $list = [$list];
         }//end if
@@ -1443,14 +1444,14 @@ class WebApp
         // open world assumption (unRESTful)
         // 404 header response
         // if (empty($list)) {
-        //     $status = 404;
+        // $status = 404;
         // }//end if
 
         if (!is_null($status)) {
             $this->app->response->setStatus($status);
         }//end if
 
-        //set the content-type response header
+        // set the content-type response header
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
@@ -1489,7 +1490,6 @@ class WebApp
                 break;
 
             case 'application/rdf+xml':
-
                 // get the parameter
                 $symbol = $this->app->request()->params('string');
                 if (!$symbol) {
@@ -1509,8 +1509,9 @@ class WebApp
 
 
 // EASY RDF version
+
 /*
-                // new EasyRdf graph
+    // new EasyRdf graph
                 $graph = new \EasyRdf_Graph();
 
                 $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
@@ -1554,7 +1555,7 @@ class WebApp
                 print $data;
 */
 
-//plain text version
+// plain text version
 
                 // XML output as text/plain
 
@@ -1706,16 +1707,6 @@ class WebApp
         }
         return $item;
     }
-
-
-    /**
-     * Set up EasyRdf
-     */
-    private function config_easyrdf() {
-
-
-    }
-
 }
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:

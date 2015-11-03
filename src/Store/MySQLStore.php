@@ -71,7 +71,10 @@ class MySQLStore extends \SameAsLite\Store\SQLStore
 
 
     /**
-     * {@inheritDoc}
+     * Set default options (store location) of the application
+     * @deprecated
+     *
+     * @param array $options Array with options from the config.ini file
      */
     public static function setDefaultOptions(array $options)
     {
@@ -79,7 +82,9 @@ class MySQLStore extends \SameAsLite\Store\SQLStore
     }
 
     /**
-     * {@inheritDoc}
+     * Set default options (store location) of the application
+     *
+     * @returns array self::$availableOptions Stored options
      */
     public static function getAvailableOptions()
     {
@@ -88,7 +93,7 @@ class MySQLStore extends \SameAsLite\Store\SQLStore
 
 
     /*
-        * Cnstructor for a SameAs Lite MySQL store, validates and saves
+        * Constructor for a SameAs Lite MySQL store, validates and saves
         * settings. Once a Store object is created, call the connect() function to
         * establish connection to the underlying database.
         *
@@ -100,14 +105,14 @@ class MySQLStore extends \SameAsLite\Store\SQLStore
         * @param string $charset      The Character set to use
         *
         * @throws \InvalidArgumentException If any parameters are deemed invalid
-        */
-    // TINHD
+    */
 
     /**
      * Constructor for the MySQL store
      *
-     * @param string $name The name of the data store
-     * @param string $name Options for the MySQL store (username, password dbName = 'SameAsLite', host = 'localhost', [port [,charset]])
+     * @param string $name    The name of the data store
+     * @param array  $options Options for the MySQL store
+     *                        (username, password dbName = 'SameAsLite', host = 'localhost', [port [,charset]])
      *
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
