@@ -14,9 +14,9 @@ Linked Data and Semantic Web users should simply consider IDs to be IDs.
 
 
 
-## Concepts
+### Concepts
 
----- Some SIMPLE text without confusing special terms ----
+---- TODO: Some SIMPLE text without confusing special terms ----
 
 [Read more about the sameAs concepts](#)...
 
@@ -53,11 +53,6 @@ Detailed installation instructions are available [here](#).
 ![Retrieving equivalent symbols](/path/to/img.jpg)
 
 
-### Extending
-It is possible to create new Stores to work with sameAs Lite.
-The Store class must implement *\SameAsLite\StoreInterface*, the functions that must be implemented are described in the docs.
+### License
 
-For creating SQL based stores, an abstract class *\SameAsLite\Store\SQLStore* is provided, this implements most functionality common to SQL databases.
-Some functions (such as `__construct`, `init` and `deleteStore`) need to be implemented.
-
-
+TODO: Short license info here with link to full license
