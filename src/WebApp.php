@@ -1432,12 +1432,36 @@ class WebApp
 
         $result = $this->stores[$store]->analyse();
 
-        // add the alternate formats for ajax query
-        $this->addAlternateFormats();
+        $this->app->contentType($this->mimeBest);
 
-        // $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
+        switch ($this->mimeBest) {
 
-        $this->outputTable($result); // headers are contained in the multidimensional array
+            case 'text/plain':
+                print_r($result, false);
+
+                exit;
+                break;
+
+            case 'application/json':
+                print json_encode($result, JSON_PRETTY_PRINT) . PHP_EOL;
+
+                exit;
+                break;
+
+            case 'text/html':
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
+
+                // old way:
+                // $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
+                $this->outputTable($result); // headers are contained in the multidimensional array
+
+                exit;
+                break;
+
+            default:
+                throw new \Exception('Could not render analysis as ' . $this->mimeBest);
+        }
     }
 
     /**
@@ -1905,34 +1929,36 @@ class WebApp
 
             // full webpage output
             case 'text/html':
-                // how many array levels do we have?
-
-                function countdim($array)
-                {
-                    if (is_array(reset($array)))
-                    {
-                        $return = countdim(reset($array)) + 1;
-                    }
-                    else
-                    {
-                        $return = 1;
-                    }
-                    return $return;
-                }
 
                 $tables = array();
 
-                if (!$headers && countdim($data) === 2) {
-
-                    $subtabledata = array();
+                // no headers were given
+                // turn the array keys into table headlines
+                // use the sub-keys in the first column
+                // and the array values in the second column
+                if (!$headers && $this->countdim($data) === 2) {
 
                     foreach ($data as $hdr => $dat) {
 
+                        // reset the table
+                        $subtabledata = array();
+
                         if (is_array($dat)) {
                             foreach ($dat as $k => $v) {
-                                //add a new data row with key and value
-                                $subtabledata[] = array($k, $v);
+                                if (is_array($v)) {
+                                    $hdr = $k;
+                                    // TODO
+                                    //add a new data row with key and value
+                                    foreach ($v as $uk => $uv) {
+                                        $subtabledata[] = array($uk, $uv);
+                                    }
+                                } else {
+                                    //add a new data row with key and value
+                                    $subtabledata[] = array($k, $v);
+                                }
                             }
+                        } else {
+                            $subtabledata[] = array($hdr, $dat);
                         }
 
                         $tables[] = array(
@@ -2026,6 +2052,25 @@ class WebApp
         );
     }
 
+    /**
+     * Count array dimensions
+     *
+     * @param array $array Array
+     *
+     * @return integer $return Number of dimensions of the array
+     */
+    protected function countdim(array $array)
+    {
+        if (is_array(reset($array)))
+        {
+            $return = $this->countdim(reset($array)) + 1;
+        }
+        else
+        {
+            $return = 1;
+        }
+        return $return;
+    }
 }
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:

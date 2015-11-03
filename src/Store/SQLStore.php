@@ -649,11 +649,12 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
 
 
     /**
-     * {@inheritDoc}
+     * Analyse store contents
+     *
+     * @return array $output Analysis of store contents
      */
     public function analyse()
     {
-
         $output = [];
 
         $output["meta"] = [
@@ -671,7 +672,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
 
             $output['rows'] = count($store);
 
-            if (count($store) === 0) {
+            if ($output['rows'] === 0) {
                 return $output; // Return here as the store is empty
             };
 
@@ -687,6 +688,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
             $httpsDomains = array(); // Array of https domains, with symbol counts in
             $httpsTLDDomains = array(); // Array of https TLD domains, with symbol counts in
             $https2LDDomains = array(); // Array of https second level+TLD domains, with symbol counts in
+
             foreach ($store as $row) {
                 $s = $row['symbol'];
                 $b = $row['canon'];

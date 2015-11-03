@@ -22,6 +22,7 @@ body.error h4 { margin-top: 40px; }
 pre.white { background: transparent; border: 0; padding: 0; margin: 20px 0; }
 .centered { text-align: center; }
 .right { text-align: right; }
+table td.w50, table th.w50 { width:50%; }
 
 /* nav bar */
 .navbar { min-height: 70px; padding-top: 10px; margin-bottom: 0px; }
