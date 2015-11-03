@@ -1300,18 +1300,30 @@ class WebApp
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
+            case 'text/plain':
             case 'text/csv':
+            case 'text/tab-separated-values':
                 $out = fopen('php://output', 'w');
                 $url = $this->app->request->getUrl();
 
-                fputcsv($out, ['name', 'url']);
+                // delimiter for CSV
+                $delimiter = ',';
+                // delimiter for TSV
+                if ($this->mimeBest === 'text/tab-separated-values') {
+                    $delimiter = "\t";
+                }
+
+                fputcsv($out, ['name', 'url'], $delimiter);
                 foreach ($this->storeOptions as $i) {
                     $o = [
                         $i['shortName'],
                         $url . '/datasets/' . $i['slug']
                     ];
-                    fputcsv($out, $o);
+                    fputcsv($out, $o, $delimiter);
                 }
+
+                exit;
+
                 break;
 
             case 'application/json':
@@ -1326,8 +1338,28 @@ class WebApp
                 }
 
                 echo json_encode($out, JSON_PRETTY_PRINT); // PHP 5.4+
+
+                exit;
+
                 break;
 
+            case 'application/rdf+xml':
+
+                $out = [];
+                $url = $this->app->request->getUrl();
+
+                foreach ($this->storeOptions as $i) {
+                    $out[] = [
+                        'name' => $i['shortName'],
+                        'url' => $url . '/datasets/' . $i['slug']
+                    ];
+                }
+
+                $this->outputNamedList($out);
+
+                exit;
+
+                break;
 
             case 'text/html':
 
@@ -1339,11 +1371,15 @@ class WebApp
                     'titleHeader' => 'Datasets',
                     'stores' => $this->storeOptions
                 ]);
+
+                exit;
+
                 break;
 
             default:
                 // TODO: this should notify about the available formats in the HTTP response headers
                 $this->outputError(400, "Cannot return in format requested");
+
                 break;
 
         }
@@ -1366,6 +1402,10 @@ class WebApp
         $this->app->view()->set('titleHeader', 'Analyse ' . $shortName);
 
         $result = $this->stores[$store]->analyse();
+
+        // add the alternate formats for ajax query
+        $this->addAlternateFormats();
+
         $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
     }
 
@@ -1435,6 +1475,136 @@ class WebApp
     }
 
     /**
+     * Output data which is an keyed list of items, in the most appropriate
+     * MIME type
+     *
+     * @param array   $list          The items to output
+     * @param integer $status        HTTP status code
+     *
+     * @throws \Exception An exception may be thrown if the requested MIME type
+     * is not supported
+     */
+    protected function outputNamedList(array $list = array(), $status = null)
+    {
+
+        if (!is_null($status)) {
+            $this->app->response->setStatus($status);
+        }//end if
+
+        // set the content-type response header
+        $this->app->contentType($this->mimeBest);
+
+        switch ($this->mimeBest) {
+            case 'text/plain':
+            case 'text/tab-separated-values':
+                print join(PHP_EOL, $list);
+                exit;
+
+                break;
+
+            case 'text/csv':
+                $csv = '';
+                // the array keys become the header row
+                $csv .= '"' . implode(array_keys($list), '","') . '"' . PHP_EOL;
+                // the array values become the content rows
+                $vals = array_values($list);
+                $csv_vals = '';
+                foreach ($vals as $v) {
+                    if (is_numeric($v)) {
+                        $csv_vals .= strval($v) . ',';
+                    } else {
+                        $csv_vals .= '"' . strval($v) . '",';
+                    }
+                }//end foreach
+                $csv_vals = rtrim($csv_vals, ',');
+                $csv .= $csv_vals . PHP_EOL;
+                print $csv;
+                exit;
+
+                break;
+
+            case 'application/json':
+                print json_encode($list, JSON_PRETTY_PRINT); // PHP 5.4+
+                exit;
+
+                break;
+
+            case 'application/rdf+xml':
+
+                $domain = 'http://';
+                if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
+                    $domain = "https://";
+                }//end if
+                $domain .= $_SERVER["SERVER_NAME"];
+                if ($_SERVER["SERVER_PORT"] != "80") {
+                    $domain .= ":" . $_SERVER["SERVER_PORT"];
+                }//end if
+
+
+// EASY RDF version
+
+// TODO
+                
+                // new EasyRdf graph
+                $graph = new \EasyRdf_Graph();
+
+                $stores = $graph->resource($domain . $_SERVER['REQUEST_URI']);
+
+                foreach ($list as $arr) {
+
+                    foreach ($arr as $key => $value) {
+
+                        $rdf = $graph->resource($graph->resource(urldecode($value)));
+
+//var_dump($key);
+
+                        if (strpos($value, 'http') === 0) {
+                            $rdf->add('ns0:'.$key, $graph->resource(urldecode($value)));
+                        } else {
+                            $rdf->add('ns0:'.$key, $value);
+                        }
+
+                    }
+                }
+
+//die;
+                $format = 'rdf';
+
+                $data = $graph->serialise($format);
+                if (!is_scalar($data)) {
+                    $data = var_export($data, true);
+                }
+                print $data;
+
+                exit;
+
+                break;
+
+            case 'text/turtle':
+                // TODO ?
+                break;
+
+            case 'text/html':
+                $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
+
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
+
+                $this->app->render('page-list.twig', [
+                    'list' => $list
+                ]);
+                exit;
+
+                break;
+
+            default:
+                // TODO - this requires a response header
+                throw new \Exception('Could not render list output as ' . $this->mimeBest);
+        }
+    }
+
+
+    /**
      * Output data which is an unordered list of items, in the most appropriate
      * MIME type
      *
@@ -1453,9 +1623,9 @@ class WebApp
 // die;
 
         // single results are converted into array
-        if (!is_array($list)) {
-            $list = [$list];
-        }//end if
+        // if (!is_array($list)) {
+        //     $list = [$list];
+        // }//end if
 
         // Convert into numeric array, if required
         if ($numeric_array) {

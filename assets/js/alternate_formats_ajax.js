@@ -12,7 +12,7 @@ $(document).ready(function() {
         //get the required format
         var mime = $(this).data('mime');
 
-        // issue an ajax request for the selected mime type
+        // issue an ajax request to the current page for the selected mime type
         // then replace the content of the page with the result
         $.ajax({
             url: '',
@@ -27,9 +27,10 @@ $(document).ready(function() {
                 $result = $('#result');
 
                 if (data) {
-                    $result.html("");
+                    // clear
+                    // $result.html("");
                     $result.text(data);
-                    console.log($result.parent('pre'));
+                    // wrap pre tags around result (only once)
                     if ($result.parent('pre').length === 0) {
                         $result.wrap('<pre></pre>');
                     }
