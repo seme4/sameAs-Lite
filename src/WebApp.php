@@ -84,6 +84,8 @@ class WebApp
     /** @var string $store The store from the URL */
     protected $store = null;
 
+    /** @var integer $currentPage Identifies the page we are on. Used for paginating results. */
+    protected $currentPage = 1;
 
     /**
      * Constructor.
@@ -1101,6 +1103,24 @@ class WebApp
     {
         $this->app->view()->set('titleHTML', 'All pairs');
         $this->app->view()->set('titleHeader', 'Contents of the store:');
+
+        // pagination check
+        if ($this->appOptions['pagination']) {
+            if (isset($this->appOptions['num_per_page']) && intval($this->appOptions['num_per_page']) > 0) {
+                // set the start of the query and
+                // set the maximum number of returned values per query
+
+                $this->currentPage = (@$_GET['page'] ? intval($_GET['page']) : 1);
+                $offset = ($this->currentPage - 1) * $this->appOptions['num_per_page'];
+
+                $this->stores[$store]->configurePagination($offset, $this->appOptions['num_per_page']);
+            }
+            // add pagination buttons to the template
+            $this->app->view()->set('pagination', true);
+            $this->app->view()->set('currentPage', $this->currentPage);
+            $this->app->view()->set('maxPageNum', 5);
+        }
+
         $result = $this->stores[$store]->dumpPairs();
 
         $this->outputTable(
@@ -1283,7 +1303,8 @@ class WebApp
                 $headers[] = $header;
             }
 
-            $this->outputTable(array($res), array_keys($result));
+            $this->outputTable(array($res), $headers);
+
         }//end if
 
     }//end statistics()
@@ -1296,6 +1317,7 @@ class WebApp
      */
     public function listStores()
     {
+
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
@@ -1868,6 +1890,7 @@ class WebApp
      */
     protected function outputTable(array $data, array $headers = array())
     {
+
         // 404 header response
         if (empty($data)) {
             $status = 404;
@@ -1884,7 +1907,6 @@ class WebApp
                 foreach ($data as $i) {
                     fputcsv($out, $i);
                 }
-
                 fclose($out);
 
                 exit;
@@ -1896,13 +1918,12 @@ class WebApp
                 break;
 
             case 'text/tab-separated-values':
+
                 $out = fopen('php://output', 'w');
-
-                fputcsv($out, $headers, "\t");
-                foreach ($data as $i) {
-                    fputcsv($out, $i, "\t");
+                // fputcsv($out, $headers, "\t");
+                foreach ($data as $k => $i) {
+                    fputcsv($out, array($headers[$k], $i), "\t");
                 }
-
                 fclose($out);
 
                 exit;

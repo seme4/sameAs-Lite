@@ -68,9 +68,17 @@
     <main id="content">
       <div class="container">
 
-        {% if alternate_formats %}
-          {% include './snippet-altformats.twig' %}
-        {% endif %}
+        <div class="pageActions">
+
+          {% if alternate_formats %}
+            {% include './snippet-altformats.twig' %}
+          {% endif %}
+
+          {% if pagination %}
+            {% include './snippet-pagination.twig' %}
+          {% endif %}
+
+        </div>
 
         {% block body %}
           {{body}}

@@ -53,6 +53,13 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     /** @var string $storeName The name of this store, also the name of the SQL table */
     protected $dbName;
 
+    /** @var integer $pagination Pagination is disabled, unless  configured in config.ini */
+    protected $pagination = false;
+    /** @var integer $offset The offset to start the query */
+    protected $offset = false;
+    /** @var integer $limit The number of results to return */
+    protected $limit = false;
+
 
     /*
         * Get the settings this Store takes for the factory class
@@ -157,6 +164,22 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     public function getTableName()
     {
         return $this->storeName;
+    }
+
+
+    /**
+     * Gets the name of the sql table used for this store
+     * Default implementation uses $this->storeName as the table name
+     * @see self::$storeName
+     *
+     * @param integer $start The query offset
+     * @param integer $limit The maximum number of results to return per query
+     */
+    public function configurePagination($offset, $limit)
+    {
+        $this->pagination = true;
+        $this->offset = intval($offset);
+        $this->limit = intval($limit);
     }
 
 
@@ -536,7 +559,16 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
 
         try {
             $sql = $this->getDumpPairsString();
-            $statement = $this->pdoObject->prepare($sql);
+
+            if ($this->pagination === true) {
+                $sql .= " LIMIT :offset, :limit";
+                $statement = $this->pdoObject->prepare($sql);
+                $statement->bindParam(':offset', $this->offset, \PDO::PARAM_INT);
+                $statement->bindParam(':limit', $this->limit, \PDO::PARAM_INT);
+            } else {
+                $statement = $this->pdoObject->prepare($sql);
+            }
+
             $statement->execute();
 
             $output = [];

@@ -87,3 +87,11 @@ div.alt-formats a:hover { background: #3498db; }
 ul li span.label { position: absolute; margin: 2px 0 0 10px; }
 
 .no-margin-top{padding-top:0;margin-top:0;}
+
+.pagination { float:left; margin:0; }
+.pagination .label.page { background: #eee; border: 1px solid #888; color: #888;}
+.pagination .label.page:hover { background: #3498db; color:#fff; }
+.pagination .label.page:active { background: #3498db; color:#fff; }
+.pagination .label.page.current { background: #3498db; color:#fff; }
+
+#content .pageActions { margin-bottom: 3em; }
