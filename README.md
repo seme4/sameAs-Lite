@@ -30,11 +30,11 @@ An installation with some sample data can be found [here](#).
 
 The sameAs Lite WebApp is able to work straight out of the box as long as Apache is installed.
 
-1. Edit `config.ini` to have the information for the stores you are using. Do not change the 'type' or 'location' settings, and add these to any new stores you create.
+1. Edit `config.ini` and add the information for the stores you are using.
 
 2. The default username and password for the restricted areas is 'demo'. To change this run `htpasswd -c auth.htpasswd username`. To add extra users run `htpasswd auth.htpasswd username`.
 
-3. Create an empty sqlite3 database and update `config.ini` to point to this database.
+3. Create an empty sqlite3 database. Update the location parameter of the teststore in the `config.ini` with the path to this database (default is `db/sameaslite-store.db`).
 
 4. Add pairs to the stores using the web interface. Navigate to `/api` to do this.
 
