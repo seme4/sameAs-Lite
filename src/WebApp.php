@@ -1102,6 +1102,10 @@ class WebApp
         $this->app->view()->set('titleHTML', 'All pairs');
         $this->app->view()->set('titleHeader', 'Contents of the store:');
         $result = $this->stores[$store]->dumpPairs();
+
+        // add the alternate formats for ajax query
+        $this->addAlternateFormats();
+
         $this->outputTable(
             $result,
             array('canon', 'symbol')
@@ -1216,19 +1220,8 @@ class WebApp
                     $result = $this->linkify($result);
                 }
 
-                $formats = $this->mimeLabels;
-                // we are viewing a html page, so remove this result format
-                unset($formats['text/html']);
-                $this->app->view()->set(
-                    'alternate_formats',
-                    $formats
-                );
-
-                // inject javascript
-                $this->app->view()->set(
-                    'javascript',
-                    '<script src="'. $this->app->request()->getRootUri() . '/assets/js/alternate_formats_ajax.js" type="text/javascript"></script>'
-                );
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
 
                 // render the page
                 $this->app->render('snippet-bundle.twig', [
@@ -1281,7 +1274,17 @@ class WebApp
             $this->outputList($result, 200, false);
         } else {
             // HTML output
-            $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
+
+            // add the alternate formats for ajax query
+            $this->addAlternateFormats();
+
+            $res = array();
+            foreach ($result as $header => $value) {
+                $res[] = $value;
+                $headers[] = $header;
+            }
+
+            $this->outputTable(array($res), array_keys($result));
         }//end if
 
     }//end statistics()
@@ -1327,6 +1330,10 @@ class WebApp
 
 
             case 'text/html':
+
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
+
                 $this->app->render('page-storeList.twig', [
                     'titleHTML' => ' ',
                     'titleHeader' => 'Datasets',
@@ -1612,7 +1619,7 @@ class WebApp
                 }
 
                 $out .= '  </rdf:Description>' . PHP_EOL;
-                $out .= '  </rdf:RDF>' . PHP_EOL;
+                $out .= '</rdf:RDF>' . PHP_EOL;
 
                 print $out;
 
@@ -1628,6 +1635,10 @@ class WebApp
 
             case 'text/html':
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
+
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
+
                 $this->app->render('page-list.twig', [
                     'list' => $list
                 ]);
@@ -1693,7 +1704,9 @@ class WebApp
             case 'text/html':
                 foreach ($data as &$d) {
                     $d = array_map([ $this, 'linkify' ], $d);
+                    // $d = $this->linkify($d);
                 }
+
                 $this->app->render('page-table.twig', [
                     'headers' => $headers,
                     "data"    => $data
@@ -1733,6 +1746,28 @@ class WebApp
         }
         return $item;
     }
+
+    /**
+     * This function adds the clickable labels with alternate formats to the results webpage
+     *
+     * @return void
+     */
+    protected function addAlternateFormats()
+    {
+        $formats = $this->mimeLabels;
+        // we are viewing a html page, so remove this result format
+        unset($formats['text/html']);
+        $this->app->view()->set(
+            'alternate_formats',
+            $formats
+        );
+        // inject javascript
+        $this->app->view()->set(
+            'javascript',
+            '<script src="'. $this->app->request()->getRootUri() . '/assets/js/alternate_formats_ajax.js" type="text/javascript"></script>'
+        );
+    }
+
 }
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:
