@@ -92,6 +92,6 @@ ul li span.label { position: absolute; margin: 2px 0 0 10px; }
 .pagination .label.page { background: #eee; border: 1px solid #888; color: #888;}
 .pagination .label.page:hover { background: #3498db; color:#fff; }
 .pagination .label.page:active { background: #3498db; color:#fff; }
-.pagination .label.page.current { background: #3498db; color:#fff; }
+.pagination .label.page.current { background: #888; color:#fff; }
 
 #content .pageActions { margin-bottom: 3em; }
