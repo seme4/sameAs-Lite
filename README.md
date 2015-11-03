@@ -31,16 +31,12 @@ An application that wishes to use data from multiple sources as if they were a s
 #### Bundles
 
 
-## Deploying sameAs Lite
+### Sample website
 
-sameAs Lite can be deployed on any machine that supports PHP 5.4 or greater (and will need the `ctype` package installed).
-
-Detailed installation instructions are available [here](#).
-
-### Getting Started
+An installation with some sample data can be found [here](#).
 
 
-#### Quick start
+### Quick start
 
 The sameAs Lite WebApp is able to work straight out of the box as long as Apache is installed.
 
@@ -55,79 +51,9 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 
 #### Installation
 
-#### Create the Database
-
-Create an empty SQlite database with the following commands:
-mkdir db
-sqlite3 db/sameaslite-store.db "create table a (b int); drop table a;"
-
-Make sure that the database is writable by the web server:
-sudo chown www-data:www-data db/sameaslite-store.db
-If your web server is running under another user (e.g. apache), replace www-data with that username.
-
-If you decide to place the database in another folder, adjust the "location" setting in index.php and config.ini.
+Detailed installation instructions are available [here](#).
 
 
-The SQL stores only use 1 table (per Store) to store the IDs.
-This means that sameAs Lite can be used in an existing Database/Schema, or in a new one altogether.
-
-It is recommended you give sameAs Lite its own user and grant it CREATE and DROP permissions on the Schema so that it can create and delete the store(s) as required. 
-sameAs Lite will not interfere with any other tables or the Schema itself.
-
-#### Creating Stores
-All Stores bundled with sameAs Lite are in the *\SameAsLite\Store* namespace and all take a _name_ for the store and an array of _options_.
-For MySQL these options are:
-```php
-[
-  'username' => <string>,
-  'password' => <string>,
-  'dbName' => <string, default=sameAsLite>,
-  'host' => <string default=localhost>,
-  'port' => <int, optional>,
-  'charset' => <string, optional>
-]
-```
-
-TODO: Needs some more help here, so that it works better out of the box (such as username/password).
-
-For other Store options please see the documentation.
-
-### Populating the MySQL database with sample data
-
-
-
-### Using Stores
-`$store->assertPair('crisps', 'potato chips');` Create a relationship
-
-`$store->querySymbol('crisps');` Looks up all equivilent symbols. Returns `['crisps', 'potato chips']`
-
-`$store->getCanon('potato chips');` Gets the canon for the symbol.
-Canons are created when a pair is asserted and neither of the symbols are in the store, and the first symbol is used as the canon.
-Returns `'crisps'`
-
-`$store->removeSymbol('potato chips');` Removes that symbol from the store.
-
-
-
-### Using the WebApp
-These stores can be used by themselves and accessed directly.
-However sameAs Lite also comes with a WebApp that can be used to provide a RESTful API and HTML interface to interact with the store.
-The WebApp uses [Slim](http://slimframework.com) for routing.
-
-To use the WebApp create a new *\SameAsLite\WebApp* object, passing in an array of options.
-```php
-"Options described here"
-```
-
-Stores can then be added to the app using the `addDataset` function:
-```php
-$app->addDataset($store);
-```
-
-Finally, run the app using `run()`.
-```php
-$app->run();
-```
 
 A full example can be found in [examples/manual.php](examples/manual.php)
 
