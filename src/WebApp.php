@@ -96,10 +96,20 @@ class WebApp
         // fake $_SERVER parameters if required (eg command line invocation)
         $this->initialiseServerParameters();
 
+        $mode = (isset($options['mode']) ? $options['mode'] : 'production');
+
+        if ($mode === 'development') {
+            // Dev error reporting
+            ini_set('display_errors', 1);
+            ini_set('html_errors', 0); // disable xdebug var-dump formatting
+            ini_set('display_startup_errors', 1);
+            error_reporting(-1); // show all errors for development
+        }
+
         // initialise and configure Slim, using Twig template engine
         $this->app = new \Slim\Slim(
             array(
-                'mode' => (isset($options['mode']) ? $options['mode'] : 'production'),
+                'mode' => $mode,
                 'debug' => false,
                 'view' => new \Slim\Views\Twig()
             )
