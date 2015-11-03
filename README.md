@@ -39,15 +39,21 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 4. Add pairs to the stores using the web interface. Navigate to `/api` to do this.
 
 
-#### Installation
+### Installation
 
 Detailed installation instructions are available [here](#).
 
 
+### Screenshots
 
-A full example can be found in [examples/manual.php](examples/manual.php)
+![Store homepage](/path/to/img.jpg)
 
-## Extending
+![Api overview](/path/to/img.jpg)
+
+![Retrieving equivalent symbols](/path/to/img.jpg)
+
+
+### Extending
 It is possible to create new Stores to work with sameAs Lite.
 The Store class must implement *\SameAsLite\StoreInterface*, the functions that must be implemented are described in the docs.
 
