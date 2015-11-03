@@ -1301,6 +1301,19 @@ class WebApp
 
         switch ($this->mimeBest) {
             case 'text/plain':
+
+                $out = fopen('php://output', 'w');
+
+                $url = $this->app->request->getUrl();
+
+                foreach ($this->storeOptions as $i) {
+                    $o = $i['shortName'] . ' => ' . $url . '/datasets/' . $i['slug'] . PHP_EOL;
+                    fwrite($out, $o);
+                }
+                fclose($out);
+
+                break;
+
             case 'text/csv':
             case 'text/tab-separated-values':
                 $out = fopen('php://output', 'w');
@@ -1544,7 +1557,7 @@ class WebApp
 // EASY RDF version
 
 // TODO
-                
+
                 // new EasyRdf graph
                 $graph = new \EasyRdf_Graph();
 
