@@ -11,17 +11,12 @@ sameAs allows users to search for a Linked Data URI and other URIs that are equi
 
 It should be noted that the sameAs Lite software makes no assumptions or requirements that the identifiers being managed are Linked Data URIs.
 
-
-### Concepts
-
----- TODO: Some SIMPLE text without confusing special terms ----
-
-[Read more about the sameAs concepts](#)...
+[Read more about the sameAs history](http://sameas.org/about.php)...
 
 
 ### Sample website
 
-An installation with some sample data can be found [here](#).
+A website with some sample data can be found [here](#).
 
 
 ### Quick start
@@ -39,7 +34,7 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 
 ### Installation
 
-Detailed installation instructions are available [here](#).
+Please refer to the [Github Wiki](./wiki) for detailed installation instructions.
 
 
 ### Screenshots
