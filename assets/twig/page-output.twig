@@ -1,0 +1,17 @@
+{% extends "page.twig" %}
+
+
+
+{% block body %}
+
+
+{% if list %}
+	<div id="result">
+		{{ list }}
+	</div>
+{% else %}
+	<p>No items found</p>
+{% endif %}
+
+
+{% endblock %}

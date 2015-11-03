@@ -1300,6 +1300,22 @@ class WebApp
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
+            case 'text/turtle':
+
+                $out = [];
+                $url = $this->app->request->getUrl();
+
+                foreach ($this->storeOptions as $i) {
+                    $out[] = [
+                        'name' => $i['shortName'],
+                        'url' => $url . '/datasets/' . $i['slug']
+                    ];
+                }
+
+                $this->outputArbitrary($out);
+
+                break;
+
             case 'text/plain':
 
                 $out = fopen('php://output', 'w');
@@ -1368,7 +1384,7 @@ class WebApp
                     ];
                 }
 
-                $this->outputNamedList($out);
+                $this->outputArbitrary($out);
 
                 exit;
 
@@ -1419,7 +1435,9 @@ class WebApp
         // add the alternate formats for ajax query
         $this->addAlternateFormats();
 
-        $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
+        // $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
+
+        $this->outputTable($result); // headers are contained in the multidimensional array
     }
 
     /**
@@ -1497,7 +1515,7 @@ class WebApp
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputNamedList(array $list = array(), $status = null)
+    protected function outputArbitrary(array $list = array(), $status = null)
     {
 
         if (!is_null($status)) {
@@ -1507,42 +1525,14 @@ class WebApp
         // set the content-type response header
         $this->app->contentType($this->mimeBest);
 
+        // add the alternate formats for ajax query
+        $this->addAlternateFormats();
+
         switch ($this->mimeBest) {
-            case 'text/plain':
-            case 'text/tab-separated-values':
-                print join(PHP_EOL, $list);
-                exit;
-
-                break;
-
-            case 'text/csv':
-                $csv = '';
-                // the array keys become the header row
-                $csv .= '"' . implode(array_keys($list), '","') . '"' . PHP_EOL;
-                // the array values become the content rows
-                $vals = array_values($list);
-                $csv_vals = '';
-                foreach ($vals as $v) {
-                    if (is_numeric($v)) {
-                        $csv_vals .= strval($v) . ',';
-                    } else {
-                        $csv_vals .= '"' . strval($v) . '",';
-                    }
-                }//end foreach
-                $csv_vals = rtrim($csv_vals, ',');
-                $csv .= $csv_vals . PHP_EOL;
-                print $csv;
-                exit;
-
-                break;
-
-            case 'application/json':
-                print json_encode($list, JSON_PRETTY_PRINT); // PHP 5.4+
-                exit;
-
-                break;
 
             case 'application/rdf+xml':
+            case 'text/turtle':
+            case 'application/x-turtle':
 
                 $domain = 'http://';
                 if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
@@ -1552,6 +1542,7 @@ class WebApp
                 if ($_SERVER["SERVER_PORT"] != "80") {
                     $domain .= ":" . $_SERVER["SERVER_PORT"];
                 }//end if
+
 
 
 // EASY RDF version
@@ -1569,19 +1560,20 @@ class WebApp
 
                         $rdf = $graph->resource($graph->resource(urldecode($value)));
 
-//var_dump($key);
-
                         if (strpos($value, 'http') === 0) {
-                            $rdf->add('ns0:'.$key, $graph->resource(urldecode($value)));
+                            $graph->addResource($rdf, 'ns0:'.$key, $graph->resource(urldecode($value)));
                         } else {
-                            $rdf->add('ns0:'.$key, $value);
+                            $graph->addLiteral($rdf, 'ns0:'.$key, $value);
                         }
 
                     }
                 }
 
-//die;
-                $format = 'rdf';
+                if ($this->mimeBest === 'application/rdf+xml') {
+                    $format = 'rdf';
+                } else {
+                    $format = 'turtle';
+                }
 
                 $data = $graph->serialise($format);
                 if (!is_scalar($data)) {
@@ -1593,18 +1585,29 @@ class WebApp
 
                 break;
 
-            case 'text/turtle':
-                // TODO ?
+
+            case 'text/plain':
+
+                    print print_r($list, true);
+
+                exit;
+
+                break;
+
+            case 'application/json':
+
+                    print json_encode($list, JSON_PRETTY_PRINT); // PHP 5.4+
+
+                exit;
+
                 break;
 
             case 'text/html':
+
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
-                // add the alternate formats for ajax query
-                $this->addAlternateFormats();
-
-                $this->app->render('page-list.twig', [
-                    'list' => $list
+                $this->app->render('page-output.twig', [
+                    'list' => '<pre>' . print_r($list, true) . '</pre>'
                 ]);
                 exit;
 
@@ -1694,6 +1697,9 @@ class WebApp
                 break;
 
             case 'application/rdf+xml':
+            case 'application/x-turtle':
+            case 'text/turtle':
+
                 // get the parameter
                 $symbol = $this->app->request()->params('string');
                 if (!$symbol) {
@@ -1843,7 +1849,7 @@ class WebApp
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputTable(array $data, array $headers)
+    protected function outputTable(array $data, array $headers = array())
     {
         // 404 header response
         if (empty($data)) {
@@ -1863,6 +1869,13 @@ class WebApp
                 }
 
                 fclose($out);
+
+                exit;
+
+                break;
+
+            case 'text/turtle':
+                $this->outputArbitrary(array_merge($headers, $data));
                 break;
 
             case 'text/tab-separated-values':
@@ -1874,6 +1887,9 @@ class WebApp
                 }
 
                 fclose($out);
+
+                exit;
+
                 break;
 
             case 'application/json':
@@ -1882,18 +1898,74 @@ class WebApp
                     $op[] = array_combine($headers, $row);
                 }
                 print json_encode($op, JSON_PRETTY_PRINT); // PHP 5.4+
+
+                exit;
+
                 break;
 
+            // full webpage output
             case 'text/html':
-                foreach ($data as &$d) {
-                    $d = array_map([ $this, 'linkify' ], $d);
-                    // $d = $this->linkify($d);
+                // how many array levels do we have?
+
+                function countdim($array)
+                {
+                    if (is_array(reset($array)))
+                    {
+                        $return = countdim(reset($array)) + 1;
+                    }
+                    else
+                    {
+                        $return = 1;
+                    }
+                    return $return;
                 }
 
-                $this->app->render('page-table.twig', [
-                    'headers' => $headers,
-                    "data"    => $data
-                ]);
+                $tables = array();
+
+                if (!$headers && countdim($data) === 2) {
+
+                    $subtabledata = array();
+
+                    foreach ($data as $hdr => $dat) {
+
+                        if (is_array($dat)) {
+                            foreach ($dat as $k => $v) {
+                                //add a new data row with key and value
+                                $subtabledata[] = array($k, $v);
+                            }
+                        }
+
+                        $tables[] = array(
+                            'title' => $hdr,
+                            'headers' => array(),
+                            "data"    => $subtabledata
+                        );
+
+                    }
+
+                    // var_dump($tables);die;
+
+                } else {
+
+                    $tables[] = array(
+                        'headers' => $headers,
+                        "data"    => $data
+                    );
+                    foreach ($data as &$d) {
+                        if (!is_array($d)) {
+                            $d = array_map([ $this, 'linkify' ], $d);
+                            // $d = $this->linkify($d);
+                        }
+                    }
+
+                }
+
+
+
+                $this->app->render('page-table.twig', array('tables' => $tables));
+
+                exit;
+
                 break;
 
             default:
@@ -1915,15 +1987,18 @@ class WebApp
         // what if the item is a symbol 'http'?
         // if (substr($item, 0, 4) === 'http') {
         if (
-            //URL
-            filter_var($item, FILTER_VALIDATE_URL)
-            //email and some other linkable url schemes
-            || strpos($item, 'mailto:') === 0
-            || strpos($item, 'ftp:') === 0
-            || strpos($item, 'news:') === 0
-            || strpos($item, 'nntp:') === 0
-            || strpos($item, 'telnet:') === 0
-            || strpos($item, 'wais:') === 0
+            !is_array($item) &&
+            (
+                //URL
+                filter_var($item, FILTER_VALIDATE_URL)
+                //email and some other linkable url schemes
+                || strpos($item, 'mailto:') === 0
+                || strpos($item, 'ftp:') === 0
+                || strpos($item, 'news:') === 0
+                || strpos($item, 'nntp:') === 0
+                || strpos($item, 'telnet:') === 0
+                || strpos($item, 'wais:') === 0
+            )
         ) {
             return '<a href="' . $item . '">' . $item . '</a>';
         }

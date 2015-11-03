@@ -4,25 +4,33 @@
 
 {% block body %}
 
-
-<table class="table">
-	<thead>
-		<tr>
-			{% for header in headers %}
-				<th>{{ header }}</th>
+{% for table in tables %}
+	{% if table.title %}
+		<h3>{{ table.title }}</h3>
+	{% endif %}
+	<table class="table">
+		{% if table.headers %}
+			<thead>
+				<tr>
+					{% for header in table.headers %}
+						<th>{{ header }}</th>
+					{% endfor %}
+				</tr>
+			</thead>
+		{% endif %}
+		<tbody>
+			{% for row in table.data %}
+				<tr>
+					{% for value in row %}
+						{% if value is not iterable %}
+						<td>{{ value }}</td>
+						{% endif %}
+					{% endfor %}
+				</tr>
 			{% endfor %}
-		</tr>
-	</thead>
-	<tbody>
-		{% for row in data %}
-			<tr>
-				{% for value in row %}
-					<td>{{ value }}</td>
-				{% endfor %}
-			</tr>
-		{% endfor %}
-	</tbody>
-</table>
+		</tbody>
+	</table>
+{% endfor %}
 
 
 {% endblock %}
