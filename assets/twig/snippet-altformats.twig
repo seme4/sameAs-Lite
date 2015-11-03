@@ -1,0 +1,14 @@
+
+        <div class="alt-formats">
+          <!--
+            <a href="" class="label alternate_format">JSON</a>
+            <a href="" class="label alternate_format">TTL</a>
+            <a href="" class="label alternate_format">RDF</a>
+            <a href="" class="label alternate_format">XML</a>
+          -->
+          <form id="alternate_mime_options" action="" method="GET">
+            {% for long,short in alternate_formats %}
+              <a href="#" title="Preview as {{long}}" data-mime="{{long}}" class="label alternate_format">{{short}}</a>
+            {% endfor %}
+          </form>
+        </div>

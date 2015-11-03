@@ -5,18 +5,14 @@
 
 $(document).ready(function() {
 
-    $(".label.alternate_format").click(function (e) {
+    $("#alternate_mime_options .label.alternate_format").click(function (e) {
         e.preventDefault();
         e.stopPropagation();
 
         //get the required format
         var mime = $(this).data('mime');
 
-        // issue the request with the selected mime type
-
-
-        // TODO
-        // needs to be ajax
+        // issue an ajax request for the selected mime type
         // then replace the content of the page with the result
         $.ajax({
             url: '',
@@ -28,8 +24,15 @@ $(document).ready(function() {
             },
             success: function (data, textStatus) {
 
+                $result = $('#result');
+
                 if (data) {
-                    $('#result').html(data);
+                    $result.html("");
+                    $result.text(data);
+                    console.log($result.parent('pre'));
+                    if ($result.parent('pre').length === 0) {
+                        $result.wrap('<pre></pre>');
+                    }
                 }
 
             },

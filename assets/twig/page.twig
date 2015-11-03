@@ -3,21 +3,21 @@
 <html lang="en">
   <head>
     {% block head %}
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>SameAs Lite{{titleHTML}}</title>
+      <title>SameAs Lite{{titleHTML}}</title>
 
-    <!-- stylesheets -->
-    <link rel="stylesheet" href="{{path}}/vendor/twbs/bootstrap/dist/css/bootstrap.min.css">
-    <link href="{{path}}/assets/css/style.css" rel="stylesheet">
+      <!-- stylesheets -->
+      <link rel="stylesheet" href="{{path}}/vendor/twbs/bootstrap/dist/css/bootstrap.min.css">
+      <link href="{{path}}/assets/css/style.css" rel="stylesheet">
 
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-      <script src="{{path}}/components/html5shiv/dist/html5shiv.js"></script>
-      <script src="{{path}}/components/respond/dest/respond.min.js"></script>
-    <![endif]-->
+      <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+      <!--[if lt IE 9]>
+        <script src="{{path}}/components/html5shiv/dist/html5shiv.js"></script>
+        <script src="{{path}}/components/respond/dest/respond.min.js"></script>
+      <![endif]-->
     {% endblock %}
   </head>
 
@@ -67,9 +67,15 @@
 
     <main id="content">
       <div class="container">
+
+        {% if alternate_formats %}
+          {% include './snippet-altformats.twig' %}
+        {% endif %}
+
         {% block body %}
           {{body}}
         {% endblock %}
+
       </div>
     </main><!--/content -->
 

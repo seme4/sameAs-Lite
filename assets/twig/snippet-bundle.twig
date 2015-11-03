@@ -1,20 +1,6 @@
 {% extends "page.twig" %}
 
-
 {% block body %}
-        <div class="alt-formats">
-          <!--
-            <a href="" class="label alternate_format">JSON</a>
-            <a href="" class="label alternate_format">TTL</a>
-            <a href="" class="label alternate_format">RDF</a>
-            <a href="" class="label alternate_format">XML</a>
-          -->
-          <form id="alternate_mime_form" action="" method="GET">
-            {% for long,short in alternate_formats %}
-              <a href="" data-mime="{{long}}" class="label alternate_format">{{short}}</a>
-            {% endfor %}
-          </form>
-        </div>
 
         <h2>
           Equivalent Symbols

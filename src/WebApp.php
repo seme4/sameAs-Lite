@@ -1217,22 +1217,26 @@ class WebApp
                 }
 
                 $formats = $this->mimeLabels;
+                // we are viewing a html page, so remove this result format
                 unset($formats['text/html']);
                 $this->app->view()->set(
                     'alternate_formats',
                     $formats
                 );
 
+                // inject javascript
                 $this->app->view()->set(
                     'javascript',
-                    '<script src="'. $this->app->request()->getRootUri() . '/assets/js/symbols.js"></script>'
+                    '<script src="'. $this->app->request()->getRootUri() . '/assets/js/alternate_formats_ajax.js" type="text/javascript"></script>'
                 );
 
+                // render the page
                 $this->app->render('snippet-bundle.twig', [
                     'symbol' => $symbol,
                     'equiv_symbols' => $results,
                     'canon' => $canon
                 ]);
+
             } else {
                 $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store", 404);
             }
@@ -1318,7 +1322,7 @@ class WebApp
                     ];
                 }
 
-                echo json_encode($out);
+                echo json_encode($out, JSON_PRETTY_PRINT); // PHP 5.4+
                 break;
 
 
@@ -1494,7 +1498,7 @@ class WebApp
                 break;
 
             case 'application/json':
-                print json_encode($list);
+                print json_encode($list, JSON_PRETTY_PRINT); // PHP 5.4+
                 exit;
 
                 break;
@@ -1632,6 +1636,7 @@ class WebApp
                 break;
 
             default:
+                // TODO - this requires a response header
                 throw new \Exception('Could not render list output as ' . $this->mimeBest);
         }
     }
@@ -1682,7 +1687,7 @@ class WebApp
                 foreach ($data as $row) {
                     $op[] = array_combine($headers, $row);
                 }
-                print json_encode($op);
+                print json_encode($op, JSON_PRETTY_PRINT); // PHP 5.4+
                 break;
 
             case 'text/html':
@@ -1699,7 +1704,6 @@ class WebApp
                 $this->app->contentType('text/html');
 
                 // TODO - this needs response headers that point to available formats
-
                 throw new \Exception('Could not render tabular output as ' . $this->mimeBest);
         }
     }
@@ -1712,7 +1716,19 @@ class WebApp
      */
     protected function linkify($item)
     {
-        if (substr($item, 0, 4) == 'http') {
+        // what if the item is a symbol 'http'?
+        // if (substr($item, 0, 4) === 'http') {
+        if (
+            //URL
+            filter_var($item, FILTER_VALIDATE_URL)
+            //email and some other linkable url schemes
+            || strpos($item, 'mailto:') === 0
+            || strpos($item, 'ftp:') === 0
+            || strpos($item, 'news:') === 0
+            || strpos($item, 'nntp:') === 0
+            || strpos($item, 'telnet:') === 0
+            || strpos($item, 'wais:') === 0
+        ) {
             return '<a href="' . $item . '">' . $item . '</a>';
         }
         return $item;
