@@ -35,31 +35,10 @@ An application that wishes to use data from multiple sources as if they were a s
 
 sameAs Lite can be deployed on any machine that supports PHP 5.4 or greater (and will need the `ctype` package installed).
 
-If you want to use sameAs Lite as a web service (recommended) you will need to install a web server.
-A .htaccess file for [Apache](http://httpd.apache.org) is included in the repository, and means that the application can be simply dropped into an Apache environment and will work.
-If you use nginx or another web server, more configuration may be required, see the [Slim documentation](http://docs.slimframework.com/routing/rewrite/) for more information.
-
-At the moment it has only be tested on Unix-like machines (Linux and Macs).
-
-sameAs Lite comes with two methods of Storage: SQLite and MySQL.
-It can be easily extended to use different storage methods as well (see Extending).
-These examples will use MySQL as a storage method.
+Detailed installation instructions are available [here](#).
 
 ### Getting Started
 
-#### Prerequisites
-
-SameAs requires an Apache 2 server, PHP, Composer, SQLite3, and optionally a MySQL server.
-Detailed instructions on how to install the prerequisites can be found [here](#).
-
-#### Download and install dependencies
-Download the repository using your usual method (see for example [Fork A Repository](https://help.github.com/articles/fork-a-repo/)).
-
-If you are going to use sameAs Lite as a web service, this will be in your web space.
-
-Open the command line at the local copy and `make install`.
-
-sameAs Lite uses [Composer](https://getcomposer.org) for dependency management, so you will need to install it, if you don't have it.
 
 #### Quick start
 
