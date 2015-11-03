@@ -72,6 +72,8 @@ div.alt-formats { float: right; text-align: right; }
 div.alt-formats a { background: #aaa; }
 div.alt-formats a:hover { background: #3498db; }
 
+.list-group { margin-bottom: 0; }
+
 /* API pages */
 .panel-api .panel-heading { cursor: pointer; }
 .panel-api .panel-heading .method { min-width: 75px; float: left; }

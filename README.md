@@ -34,7 +34,7 @@ The sameAs Lite WebApp is able to work straight out of the box as long as Apache
 
 ### Installation
 
-Please refer to the [Github Wiki](./wiki) for detailed installation instructions.
+Please refer to the [Github Wiki](wiki) for detailed installation instructions.
 
 
 ### Screenshots

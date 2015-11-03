@@ -1103,9 +1103,6 @@ class WebApp
         $this->app->view()->set('titleHeader', 'Contents of the store:');
         $result = $this->stores[$store]->dumpPairs();
 
-        // add the alternate formats for ajax query
-        $this->addAlternateFormats();
-
         $this->outputTable(
             $result,
             array('canon', 'symbol')
@@ -1195,6 +1192,7 @@ class WebApp
 
         if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
             // non-HTML output
+
             $results = $this->stores[$store]->querySymbol($symbol);
             $results = array_diff($results, [ $symbol ]);
 
@@ -1202,6 +1200,7 @@ class WebApp
             $this->outputList($results);
         } else {
             // HTML output
+
             $shortName = $this->storeOptions[$store]['shortName'];
             $this->app->view()->set('titleHTML', ' - ' . $symbol . ' in ' . $shortName);
             $this->app->view()->set('titleHeader', $symbol . ' in ' . $shortName);
@@ -1307,6 +1306,7 @@ class WebApp
 
                 foreach ($this->storeOptions as $i) {
                     $out[] = [
+                        'rdf:type' => 'Store',
                         'name' => $i['shortName'],
                         'url' => $url . '/datasets/' . $i['slug']
                     ];
@@ -1549,9 +1549,6 @@ class WebApp
         // set the content-type response header
         $this->app->contentType($this->mimeBest);
 
-        // add the alternate formats for ajax query
-        $this->addAlternateFormats();
-
         switch ($this->mimeBest) {
 
             case 'application/rdf+xml':
@@ -1568,26 +1565,19 @@ class WebApp
                 }//end if
 
 
-
-// EASY RDF version
-
-// TODO
-
-                // new EasyRdf graph
+                // EasyRdf graph
                 $graph = new \EasyRdf_Graph();
-
-                $stores = $graph->resource($domain . $_SERVER['REQUEST_URI']);
 
                 foreach ($list as $arr) {
 
+                    $store = $graph->resource($domain . $_SERVER['REQUEST_URI']);
+
                     foreach ($arr as $key => $value) {
 
-                        $rdf = $graph->resource($graph->resource(urldecode($value)));
-
                         if (strpos($value, 'http') === 0) {
-                            $graph->addResource($rdf, 'ns0:'.$key, $graph->resource(urldecode($value)));
+                            $graph->addResource($store, $key, $graph->resource(urldecode($value)));
                         } else {
-                            $graph->addLiteral($rdf, 'ns0:'.$key, $value);
+                            $graph->addLiteral($store, $key, $value);
                         }
 
                     }
@@ -1600,10 +1590,10 @@ class WebApp
                 }
 
                 $data = $graph->serialise($format);
-                if (!is_scalar($data)) {
-                    $data = var_export($data, true);
-                }
-                print $data;
+                //if (!is_scalar($data)) {
+                //    $data = var_export($data, true);
+                //}
+                print trim($data);
 
                 exit;
 
@@ -1612,7 +1602,7 @@ class WebApp
 
             case 'text/plain':
 
-                    print print_r($list, true);
+                    echo print_r($list, true);
 
                 exit;
 
@@ -1627,6 +1617,9 @@ class WebApp
                 break;
 
             case 'text/html':
+
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
@@ -1929,6 +1922,9 @@ class WebApp
 
             // full webpage output
             case 'text/html':
+
+                // add the alternate formats for ajax query
+                $this->addAlternateFormats();
 
                 $tables = array();
 
