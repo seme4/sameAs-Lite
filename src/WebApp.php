@@ -99,7 +99,7 @@ class WebApp
         // initialise and configure Slim, using Twig template engine
         $this->app = new \Slim\Slim(
             array(
-                // 'mode' => 'production',
+                'mode' => (isset($options['mode']) ? $options['mode'] : 'production'),
                 'debug' => false,
                 'view' => new \Slim\Views\Twig()
             )
@@ -1112,21 +1112,16 @@ class WebApp
         // $before = $this->stores[$store]->statistics();
 
         // if request body is empty, there is nothing to assert
-
         $body = $this->app->request->getBody();
-
-        // if (!$this->app->request->post('body')) { // body no longer exists in request obj
         if (!$body) { // body no longer exists in request obj
-
-            //TODO
-            die('EMpty request body' . PHP_EOL);
-
+            throw new \Exception('Empty request body. Nothing to assert.'); //TODO : this would also require HTTP status
         } else {
 
             $this->stores[$store]->assertTSV($body);
 
             // $after = $this->stores[$store]->statistics();
             // TODO array_merge(array('Before:'), $before, array('After:'), $after));
+
             $this->outputSuccess('Pairs asserted');
         }
     }
@@ -1144,8 +1139,10 @@ class WebApp
     public function assertPair($store, $symbol1, $symbol2)
     {
         $this->stores[$store]->assertPair($symbol1, $symbol2);
+
         $this->app->view()->set('titleHTML', 'Pair asserted');
         $this->app->view()->set('titleHeader', 'Pair asserted');
+
         $this->outputSuccess("The pair ($symbol1, $symbol2) has been asserted");
     }
 
@@ -1397,14 +1394,17 @@ class WebApp
             case 'text/plain':
             case 'text/csv':
                 print $msg . PHP_EOL;
+                exit;
                 break;
 
             case 'application/json':
                 print json_encode(array('ok' => $msg)) . PHP_EOL;
+                exit;
                 break;
 
             case 'text/html':
                 $this->outputHTML('<h2>Success!</h2><p>' . $msg . '</p>') . PHP_EOL;
+                exit;
                 break;
 
             default:
@@ -1429,10 +1429,6 @@ class WebApp
 // bug: list contains each item four times!
 // var_dump($list);
 // die;
-
-//profiling
-        $this->mimeBest = 'application/rdf+xml';
-
 
         //single results are converted into array
         if (!is_array($list)) {
@@ -1513,7 +1509,7 @@ class WebApp
 
 
 // EASY RDF version
-
+/*
                 // new EasyRdf graph
                 $graph = new \EasyRdf_Graph();
 
@@ -1534,18 +1530,18 @@ class WebApp
                 }
 
                 // list
-                foreach ($list as $symbol) {
+                foreach ($list as $s) {
                     // TODO: check if it's a URI or literal
                     // if it's a URI, add it as a resource
                     // if it's a text symbol, add it as literal
 
-                    if (strpos($symbol, 'http') === 0) {
+                    if (strpos($s, 'http') === 0) {
                         // resource
-                        $symbol_block->add('owl:sameAs', $graph->resource(urldecode($symbol)));
+                        $symbol_block->add('owl:sameAs', $graph->resource(urldecode($s)));
                     } else {
                         // literal values - not technically correct, because sameAs expects a resource
                         // but validates in W3C Validator
-                        $symbol_block->add('owl:sameAs', $symbol);
+                        $symbol_block->add('owl:sameAs', $s);
                     }
                 }
 
@@ -1556,10 +1552,10 @@ class WebApp
                     $data = var_export($data, true);
                 }
                 print $data;
-
+*/
 
 //plain text version
-/*
+
                 // XML output as text/plain
 
                 $out = '<?xml version="1.0" encoding="utf-8" ?>' . PHP_EOL .
@@ -1604,7 +1600,7 @@ class WebApp
                 $out .= '  </rdf:RDF>' . PHP_EOL;
 
                 print $out;
-*/
+
 
 
                 exit;
