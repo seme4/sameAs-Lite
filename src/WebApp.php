@@ -2082,7 +2082,7 @@ class WebApp
     {
         $formats = $this->mimeLabels;
         // we are viewing a html page, so remove this result format
-        unset($formats['text/html']);
+        // unset($formats['text/html']);
         $this->app->view()->set('alternate_formats', $formats);
         //set the current selected mime type
         $this->app->view()->set('current_mime', $this->mimeBest);

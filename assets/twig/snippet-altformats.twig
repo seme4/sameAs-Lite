@@ -2,7 +2,7 @@
         <div class="alt-formats">
           <form id="alternate_mime_options" action="" method="GET">
             {% for long,short in alternate_formats %}
-              <a href="#" title="Preview as {{long}}" data-mime="{{long}}" class="label alternate_format">{{short}}</a>
+              <a href="#" title="Preview as {{long}}" data-mime="{{long}}" class="label alternate_format{% if current_mime == long %} current{% endif %}">{{short}}</a>
             {% endfor %}
           </form>
         </div>

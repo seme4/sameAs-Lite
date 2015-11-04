@@ -33,8 +33,10 @@ var app = {
         // so we cheat and execute a call for json
         // then process the result on the client side
         // to update the table on the page
-        if (app.ajaxMimeType === 'text/html') {
+        if (app.outputMimeType === 'text/html') {
             app.ajaxMimeType = 'text/json';
+        } else {
+            app.ajaxMimeType = app.outputMimeType;
         }
 
         $.ajax({
@@ -56,10 +58,12 @@ var app = {
                         // $result.html("");
 
                         if (app.outputMimeType !== 'text/html') {
+
                             $result.text(data);
                             // wrap pre tags around result (only once)
                             if ($result.parent('pre').length === 0) {
                                 $result.wrap('<pre></pre>');
+
                             }
                         } else {
                             // build a table from the incoming json data
@@ -143,7 +147,7 @@ $(document).ready(function() {
         e.stopPropagation();
 
         //get the required format and remember the mime type
-        app.ajaxMimeType = $(this).data('mime');
+        app.outputMimeType = $(this).data('mime');
 
         app.getPageContents();
     });
