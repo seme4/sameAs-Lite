@@ -1938,8 +1938,8 @@ class WebApp
 
         switch ($this->mimeBest) {
             case 'text/csv':
-                $out = fopen('php://output', 'w');
 
+                $out = fopen('php://output', 'w');
                 fputcsv($out, $headers);
                 foreach ($data as $i) {
                     fputcsv($out, $i);
@@ -1950,7 +1950,9 @@ class WebApp
 
                 break;
 
+            case 'application/rdf+xml':
             case 'text/turtle':
+            case 'application/x-turtle':
                 $this->outputArbitrary(array_merge($headers, $data));
                 break;
 
