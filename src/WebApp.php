@@ -1355,23 +1355,6 @@ class WebApp
         $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
-            case 'text/turtle':
-
-                $out = [];
-                $url = $this->app->request->getUrl();
-
-                foreach ($this->storeOptions as $i) {
-                    $out[] = [
-                        'rdf:type' => 'Store',
-                        'name' => $i['shortName'],
-                        'url' => $url . '/datasets/' . $i['slug']
-                    ];
-                }
-
-                $this->outputArbitrary($out);
-
-                break;
-
             case 'text/plain':
 
                 $out = fopen('php://output', 'w');
@@ -1429,15 +1412,23 @@ class WebApp
                 break;
 
             case 'application/rdf+xml':
+            case 'text/turtle':
+            case 'application/x-turtle':
 
                 $out = [];
                 $url = $this->app->request->getUrl();
 
                 foreach ($this->storeOptions as $i) {
-                    $out[] = [
-                        'name' => $i['shortName'],
+                    $out[$i['shortName']] = [
+                        'dc:type' => 'Store',
+                        'dc:title' => $i['shortName'],
                         'url' => $url . '/datasets/' . $i['slug']
                     ];
+
+                    // only add the full store name if it differs from the short name 
+                    if ($i['shortName'] !== $i['fullName']) {
+                        $out[$i['shortName']]['dc:description'] = $i['fullName'];
+                    }
                 }
 
                 $this->outputArbitrary($out);
@@ -1624,16 +1615,23 @@ class WebApp
                 // EasyRdf graph
                 $graph = new \EasyRdf_Graph();
 
-                foreach ($list as $arr) {
+                foreach ($list as $key => $arr) {
 
-                    $store = $graph->resource($domain . $_SERVER['REQUEST_URI']);
+                    if (isset($arr['url'])) {
+                        $url = $arr['url'];
+                        unset($arr['url']);
+                    } else {
+                        $url = $domain . $_SERVER['REQUEST_URI'];
+                    }
+
+                    $resource = $graph->resource($url);
 
                     foreach ($arr as $key => $value) {
 
                         if (strpos($value, 'http') === 0) {
-                            $graph->addResource($store, $key, $graph->resource(urldecode($value)));
+                            $graph->addResource($resource, $key, $graph->resource(urldecode($value)));
                         } else {
-                            $graph->addLiteral($store, $key, $value);
+                            $graph->addLiteral($resource, $key, $value);
                         }
 
                     }
@@ -1798,7 +1796,7 @@ class WebApp
                 $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
                 // TODO: maybe also add info about store (storename, URI)?
                 $meta_block->set('dc:creator', 'sameAsLite');
-                $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
+                // $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
                 if (isset($this->appOptions['license']['url'])) {
                     $meta_block->add('dct:license', $graph->resource($this->appOptions['license']['url']));
                 }
@@ -1827,7 +1825,11 @@ class WebApp
                     }
                 }
 
-                $format = 'turtle';
+                if ($this->mimeBest === 'application/rdf+xml') {
+                    $format = 'rdf';
+                } else {
+                    $format = 'turtle';
+                }
 
                 $data = $graph->serialise($format);
                 if (!is_scalar($data)) {

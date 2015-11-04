@@ -101,10 +101,15 @@ var app = {
 
                                 $table = $('<table></table>').addClass('table');
 
+                                // if the first element is an object,
+                                // then there are several levels to the array
+                                // see for example analysis output
+
                                 // get the table header from the first element
                                 if (data[0]) {
                                     header_values = Object.keys(data[0]);
                                 }
+
                                 // get the table rows
                                 for (i = 0; i < s; i++){
                                     data_rows[i] = [];
