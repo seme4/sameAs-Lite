@@ -49,8 +49,8 @@ Please refer to the [Github Wiki](wiki) for detailed installation instructions.
 
 Support info here
 
-### License
-
-SameAs&trade; is a registered trademark of Seme4 Ltd.
+### License and Legal Information
 
 [MIT License](./LICENSE)
+
+SameAs&trade; is a registered trademark of Seme4 Ltd.
