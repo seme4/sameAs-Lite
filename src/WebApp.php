@@ -1105,23 +1105,21 @@ class WebApp
         $this->app->view()->set('titleHeader', 'Contents of the store:');
 
         // pagination check
-        if ($this->appOptions['pagination']) {
-            if (isset($this->appOptions['num_per_page']) && intval($this->appOptions['num_per_page']) > 0) {
-                // set the start of the query and
-                // set the maximum number of returned values per query
-
-                $this->currentPage = (@$_GET['page'] ? intval($_GET['page']) : 1);
-                $offset = ($this->currentPage - 1) * $this->appOptions['num_per_page'];
-
-                $this->stores[$store]->configurePagination($offset, $this->appOptions['num_per_page']);
-            }
-            // add pagination buttons to the template
-            $this->app->view()->set('pagination', true);
-            $this->app->view()->set('currentPage', $this->currentPage);
-            $this->app->view()->set('maxPageNum', 5);
+        if ($this->appOptions['pagination'] == true) {
+            // enable pagination in the store
+            $this->stores[$store]->configurePagination($this->appOptions['num_per_page']);
         }
 
         $result = $this->stores[$store]->dumpPairs();
+
+        // pagination check
+        if ($this->appOptions['pagination'] == true) {
+            // add pagination buttons to the template
+            $this->app->view()->set('pagination', true);
+            $this->app->view()->set('currentPage', $this->stores[$store]->currentPage);
+            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
+            $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));
+        }
 
         $this->outputTable(
             $result,

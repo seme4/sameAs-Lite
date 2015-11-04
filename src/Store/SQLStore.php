@@ -53,12 +53,14 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     /** @var string $storeName The name of this store, also the name of the SQL table */
     protected $dbName;
 
-    /** @var integer $pagination Pagination is disabled, unless  configured in config.ini */
+    /** @var integer $pagination Pagination is disabled, unless configured in config.ini */
     protected $pagination = false;
-    /** @var integer $offset The offset to start the query */
+    /** @var integer $offset The offset to start the query (for pagination) */
     protected $offset = false;
-    /** @var integer $limit The number of results to return */
+    /** @var integer $limit The number of results to return (for pagination) */
     protected $limit = false;
+    /** @var integer $maxResults Maximum number of results that can be returned (for pagination) */
+    protected $maxResults = false;
 
 
     /*
@@ -164,22 +166,6 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     public function getTableName()
     {
         return $this->storeName;
-    }
-
-
-    /**
-     * Gets the name of the sql table used for this store
-     * Default implementation uses $this->storeName as the table name
-     * @see self::$storeName
-     *
-     * @param integer $start The query offset
-     * @param integer $limit The maximum number of results to return per query
-     */
-    public function configurePagination($offset, $limit)
-    {
-        $this->pagination = true;
-        $this->offset = intval($offset);
-        $this->limit = intval($limit);
     }
 
 
@@ -558,23 +544,25 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     {
 
         try {
-            $sql = $this->getDumpPairsString();
 
             if ($this->pagination === true) {
-                $sql .= " LIMIT :offset, :limit";
+                // get the maximum number of results for pagination
+                $sql = $this->getDumpPairsStringMax();
                 $statement = $this->pdoObject->prepare($sql);
-                $statement->bindParam(':offset', $this->offset, \PDO::PARAM_INT);
-                $statement->bindParam(':limit', $this->limit, \PDO::PARAM_INT);
-            } else {
-                $statement = $this->pdoObject->prepare($sql);
+                $statement->execute();
+                $row = $statement->fetch(\PDO::FETCH_ASSOC);
+                $this->maxResults = intval($row['total']);
             }
 
+            $sql = $this->getDumpPairsString();
+            $statement = $this->pdoObject->prepare($sql);
             $statement->execute();
 
             $output = [];
             while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 $output[] = [ $row['canon'], $row['symbol'] ];
             }
+
         } catch (\PDOException $e) {
             $this->error("Unable to dump pairs", $e);
         }
@@ -591,9 +579,29 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getDumpPairsString()
     {
-        return "SELECT canon, symbol FROM {$this->getTableName()} ORDER BY canon ASC, symbol ASC";
-    }
+        $sql = "SELECT `canon`, `symbol` FROM `{$this->getTableName()}` ORDER BY `canon` ASC, `symbol` ASC";
 
+        if ($this->pagination === true) {
+            // if we are paginating, we limit the results
+            $sql .= " LIMIT " . intval($this->offset) . ", " . intval($this->limit);
+        }
+
+        return $sql;
+    }
+    /**
+     * Gets the total number of results for pagination of { @link dumpPairs() }
+     * @see dumpPairs()
+     *
+     * @return string The SQL string for the query
+     */
+    protected function getDumpPairsStringMax()
+    {
+        // $sql = $this->getDumpPairsString();
+        // $sql = preg_replace('~SELECT\s+[a-z\s0-9_\-,\.`]+\s+FROM~i', 'SELECT COUNT(*) AS `total` FROM', $sql);
+        // $sql = preg_replace('~\s?LIMIT\s[0-9]+,\s?[0-9]+~i', '', $sql);
+        $sql = "SELECT COUNT(`canon`) AS `total` FROM `{$this->getTableName()}`";
+        return $sql;
+    }
 
 
     /**
@@ -919,8 +927,39 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     }
 
 
+    /**
+     * Gets the name of the sql table used for this store
+     * Default implementation uses $this->storeName as the table name
+     * @see self::$storeName
+     *
+     * @param integer $limit The maximum number of results to return per query
+     */
+    public function configurePagination($limit)
+    {
+        $limit = intval($limit);
 
+        if (!($limit > 0)) {
+            $this->error("Pagination is enabled, but num_per_page options is not valid in config.ini"); // Throws
+        }
 
+        $this->pagination = true;
+
+        // set the maximum number of returned values per query
+        $this->limit = $limit;
+
+        // set the start of the query
+        $this->currentPage = (@$_GET['page'] ? intval($_GET['page']) : 1);
+        $this->offset = ($this->currentPage - 1) * $this->limit;
+    }
+    /**
+     * Get the maximum number of results
+     *
+     * @return integer $maxResults Total number of available records for the query
+     */
+    public function getMaxResults()
+    {
+        return $this->maxResults;
+    }
 
 
     /**
