@@ -5,7 +5,7 @@ sameAs Lite is an open source software to provide sameAs&reg; services.
 The sameAs services are motivated by the [Semantic Web](https://en.wikipedia.org/wiki/Semantic_Web) and especially [Linked Data](http://linkeddata.org/), although they have wider uses.
 
 Linked Data is a way of joining and relating information in a machine readable way.
-One of the principles of Linked Data is that all things can be referred to by a URI; these things may be things such as a person or book, where we are used to having identifiers, or more abstract concepts such as anger, expertise, last week, sub-Saharan Africa or a Charm Quark. [[1]](http://www.w3.org/DesignIssues/LinkedData.html).
+One of the principles of Linked Data is that all things can be referred to by a URI; these things may be things such as a person or book, where we are used to having identifiers, or more abstract concepts such as anger, expertise, last week, sub-Saharan Africa or a Charm Quark[[1]](http://www.w3.org/DesignIssues/LinkedData.html).
 Since anyone can publish Linked Data about anything, without universal agreement on identifiers for everything (which will clearly never happen), different sources may use many different IDs that identify the same thing.
 sameAs allows users to search for a Linked Data URI and other URIs that are equivalent will be returned.
 
