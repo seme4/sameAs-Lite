@@ -8,7 +8,14 @@ $(function() {
 	$s.css('cursor', 'pointer');
     $s.on('click', function () {
     	// view the pairs in this store
-    	window.location = 'http://sameaslite.com/datasets/test/pairs';
+    	window.location = window.location + '/pairs';
+    });
+
+	$s = $('#bundles');
+	$s.css('cursor', 'pointer');
+    $s.on('click', function () {
+    	// view the pairs in this store
+    	window.location = window.location + '/canons';
     });
 });
 
