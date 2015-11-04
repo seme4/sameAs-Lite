@@ -1742,20 +1742,22 @@ class WebApp
 
             case 'text/csv':
                 $csv = '';
+                
                 // the array keys become the header row
-                $csv .= '"' . implode(array_keys($list), '","') . '"' . PHP_EOL;
-                // the array values become the content rows
+                // $csv .= '"' . implode(array_keys($list), '","') . '"' . PHP_EOL;
+                
+                // the array values become the content columns
                 $vals = array_values($list);
                 $csv_vals = '';
                 foreach ($vals as $v) {
                     if (is_numeric($v)) {
-                        $csv_vals .= strval($v) . ',';
+                        $csv_vals .= strval($v) . PHP_EOL;
                     } else {
-                        $csv_vals .= '"' . strval($v) . '",';
+                        $csv_vals .= '"' . strval($v) . '"' . PHP_EOL;
                     }
                 }//end foreach
-                $csv_vals = rtrim($csv_vals, ',');
-                $csv .= $csv_vals . PHP_EOL;
+                // $csv_vals = rtrim($csv_vals, ',');
+                $csv .= $csv_vals;
                 print $csv;
                 exit;
 
