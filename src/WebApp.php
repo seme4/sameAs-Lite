@@ -1238,7 +1238,7 @@ class WebApp
                 }
 
                 // add the alternate formats for ajax query
-                $this->addAlternateFormats();
+                $this->prepareWebResultView();
 
                 // render the page
                 $this->app->render('snippet-bundle.twig', [
@@ -1293,7 +1293,7 @@ class WebApp
             // HTML output
 
             // add the alternate formats for ajax query
-            $this->addAlternateFormats();
+            $this->prepareWebResultView();
 
             $res = array();
             foreach ($result as $header => $value) {
@@ -1413,7 +1413,7 @@ class WebApp
             case 'text/html':
 
                 // add the alternate formats for ajax query
-                $this->addAlternateFormats();
+                $this->prepareWebResultView();
 
                 $this->app->render('page-storeList.twig', [
                     'titleHTML' => ' ',
@@ -1470,7 +1470,7 @@ class WebApp
 
             case 'text/html':
                 // add the alternate formats for ajax query
-                $this->addAlternateFormats();
+                $this->prepareWebResultView();
 
                 // old way:
                 // $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
@@ -1639,7 +1639,7 @@ class WebApp
             case 'text/html':
 
                 // add the alternate formats for ajax query
-                $this->addAlternateFormats();
+                $this->prepareWebResultView();
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
@@ -1863,7 +1863,7 @@ class WebApp
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
                 // add the alternate formats for ajax query
-                $this->addAlternateFormats();
+                $this->prepareWebResultView();
 
                 $this->app->render('page-list.twig', [
                     'list' => $list
@@ -1943,7 +1943,7 @@ class WebApp
             case 'text/html':
 
                 // add the alternate formats for ajax query
-                $this->addAlternateFormats();
+                $this->prepareWebResultView();
 
                 $tables = array();
 
@@ -2051,19 +2051,18 @@ class WebApp
      *
      * @return void
      */
-    protected function addAlternateFormats()
+    protected function prepareWebResultView()
     {
         $formats = $this->mimeLabels;
         // we are viewing a html page, so remove this result format
         unset($formats['text/html']);
-        $this->app->view()->set(
-            'alternate_formats',
-            $formats
-        );
+        $this->app->view()->set('alternate_formats', $formats);
+        //set the current selected mime type
+        $this->app->view()->set('current_mime', $this->mimeBest);
         // inject javascript
         $this->app->view()->set(
             'javascript',
-            '<script src="'. $this->app->request()->getRootUri() . '/assets/js/alternate_formats_ajax.js" type="text/javascript"></script>'
+            '<script src="'. $this->app->request()->getRootUri() . '/assets/js/web-result.js" type="text/javascript"></script>'
         );
     }
 

@@ -71,6 +71,7 @@ main > div.container > *:last-child { margin-bottom: 0; }
 div.alt-formats { float: right; text-align: right; }
 div.alt-formats a { background: #aaa; }
 div.alt-formats a:hover { background: #3498db; }
+div.alt-formats a.current { background: #888; cursor:default; }
 
 .list-group { margin-bottom: 0; }
 
@@ -92,6 +93,6 @@ ul li span.label { position: absolute; margin: 2px 0 0 10px; }
 .pagination .label.page { background: #eee; border: 1px solid #888; color: #888;}
 .pagination .label.page:hover { background: #3498db; color:#fff; }
 .pagination .label.page:active { background: #3498db; color:#fff; }
-.pagination .label.page.current { background: #888; color:#fff; }
+.pagination .label.page.current { background: #888; color:#fff; cursor:default; }
 
 #content .pageActions { margin-bottom: 3em; }
