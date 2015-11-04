@@ -34,7 +34,7 @@ var app = {
         // then process the result on the client side
         // to update the table on the page
         if (app.outputMimeType === 'text/html') {
-            app.ajaxMimeType = 'text/json';
+            app.ajaxMimeType = 'application/json';
         } else {
             app.ajaxMimeType = app.outputMimeType;
         }
@@ -112,13 +112,16 @@ var app = {
                             });
                             $table.append($body);
 
-                            $('#result').html('');
+                            // for html table output, we do not want <pre> tags
+                            if ($result.parent('pre').length) {
+                                $result.unwrap();
+                            }
 
-                            $('#result').html($table);
+                            $result.html($table);
                         }
 
                         // loop over the mime buttons to mark the current one
-                        app.markCurrent($('.label.alternate_format'), app.ajaxMimeType, 'data');
+                        app.markCurrent($('.label.alternate_format'), app.outputMimeType, 'data');
 
                         // loop over the page buttons to mark the current one
                         app.markCurrent($('.pagination .label.page'), app.page, 'text');
