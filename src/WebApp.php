@@ -451,7 +451,7 @@ class WebApp
         // add datasets to template
         $this->app->view()->set('datasets', $this->storeOptions);
 
-        // run
+        // run (Slim)
         $this->app->run();
     }
 
@@ -499,6 +499,7 @@ class WebApp
         if ($mimeTypes !== null) {
             $callbacks[] = array($this, 'callbackCheckFormats');
         }
+        $callbacks[] = array($this, 'callbackCheckPagination');
 
         // initialise route
         $httpMethod = strToUpper($httpMethod);
@@ -579,6 +580,19 @@ class WebApp
             '<a href="'.$u.'" class="navbar-brand supplementary">' .
             $this->storeOptions[$this->store]['shortName'] . '</a>'
         );
+    }
+
+    /**
+     * Middleware callback used to add pagination for web application results.
+     * Must be executed after { @link callbackCheckDataset() }
+     */
+    public function callbackCheckPagination()
+    {
+        // pagination check
+        if ($this->appOptions['pagination'] == true) {
+            // enable pagination in the store
+            $this->stores[$this->store]->configurePagination($this->appOptions['num_per_page']);
+        }
     }
 
     /**
@@ -1104,18 +1118,11 @@ class WebApp
         $this->app->view()->set('titleHTML', 'All pairs');
         $this->app->view()->set('titleHeader', 'Contents of the store:');
 
-        // pagination check
-        if ($this->appOptions['pagination'] == true) {
-            // enable pagination in the store
-            $this->stores[$store]->configurePagination($this->appOptions['num_per_page']);
-        }
-
         $result = $this->stores[$store]->dumpPairs();
 
         // pagination check
         if ($this->appOptions['pagination'] == true) {
             // add pagination buttons to the template
-            $this->app->view()->set('pagination', true);
             $this->app->view()->set('currentPage', $this->stores[$store]->currentPage);
             // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));

@@ -1,10 +1,6 @@
 
           <div class="pagination">
               {% for i in 1..maxPageNum %}
-	              {% if i != currentPage %}
-	                <a href="?page={{ i }}" class="label page {% if i == currentPage %}current{% endif %}">{{ i }}</a>
-	              {% else %}
-	                <span class="label page current">{{ i }}</span>
-	              {% endif %}
+	              <a href="?page={{ i }}" class="label page{% if i == currentPage %} current{% endif %}">{{ i }}</a>
               {% endfor %} 
           </div>

@@ -17,46 +17,53 @@ var app = {
             beforeSend: function(xhr) {
                 xhr.overrideMimeType(app.mimeType);
             },
-            success: function (data, textStatus) {
+            success: function (data, textStatus, jObj) {
 
-                $result = $('#result');
+                if (jObj.status == 200) {
 
-                if (data) {
-                    // clear
-                    // $result.html("");
-                    $result.text(data);
-                    // wrap pre tags around result (only once)
-                    if ($result.parent('pre').length === 0) {
-                        $result.wrap('<pre></pre>');
+                    $result = $('#result');
+
+                    if (data) {
+                        // clear
+                        // $result.html("");
+                        $result.text(data);
+                        // wrap pre tags around result (only once)
+                        if ($result.parent('pre').length === 0) {
+                            $result.wrap('<pre></pre>');
+                        }
+
+                        var $items = [];
+                        
+                        // loop over the mime buttons to mark the current one
+                        $items = $('.label.alternate_format');
+                        $items.removeClass('current');
+                        $items.each(function(){
+                            if ($(this).data('mime') == app.mimeType) {
+                                $(this).addClass('current');
+                                return false; //break
+                            }
+                        });
+
+                        // loop over the page buttons to mark the current one
+                        $items = $('.pagination .label.page');
+                        $items.removeClass('current');
+                        $items.each(function(){
+                            if ($(this).text() == app.page) {
+                                $(this).addClass('current');
+                                return false; //break
+                            }
+                        });
+
+                        // mess with the url
+                        //window.location.href.replace(/page=\d+/i, "?page=" + app.page);
+
+                        window.history.pushState(data, "SameAs-Lite Result Page " + app.page, "?page=" + app.page);
+
                     }
 
-                    var $items = [];
-                    
-                    // loop over the mime buttons to mark the current one
-                    $items = $('.label.alternate_format');
-                    $items.removeClass('current');
-                    $items.each(function(){
-                        if ($(this).data('mime') == app.mimeType) {
-                            $(this).addClass('current');
-                            return false; //break
-                        }
-                    });
-
-                    // loop over the page buttons to mark the current one
-                    $items = $('.pagination .label.page');
-                    $items.removeClass('current');
-                    $items.each(function(){
-                        if ($(this).text() == app.page) {
-                            $(this).addClass('current');
-                            return false; //break
-                        }
-                    });
-
-                    // mess with the url
-                    //window.location.href.replace(/page=\d+/i, "?page=" + app.page);
-
-                    window.history.pushState(data, "SameAs-Lite Result Page " + app.page, "?page=" + app.page);
-
+                } else {
+                    // TODO
+                    console.log(jObj);
                 }
 
             },
@@ -83,8 +90,13 @@ $(document).ready(function() {
         e.preventDefault();
         e.stopPropagation();
 
-        app.page = $(this).text();
+        var button_text = $(this).text();
 
+        if (app.page == button_text) {
+            return; // we do not need to get the results for the already loaded page
+        }
+
+        app.page = button_text;
         app.getPageContents();
     });
 
