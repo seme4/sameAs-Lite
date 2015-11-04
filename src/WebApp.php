@@ -1089,6 +1089,15 @@ class WebApp
         $this->app->view()->set('titleHTML', 'Canons');
         $this->app->view()->set('titleHeader', 'All Canons in this dataset');
         $results = $this->stores[$store]->getAllCanons();
+
+        // pagination check
+        if ($this->stores[$store]->isPaginated()) {
+            // add pagination buttons to the template
+            $this->app->view()->set('currentPage', $this->stores[$store]->getCurrentPage());
+            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
+            $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));
+        }
+
         $this->outputList($results);
     }
 
@@ -1784,8 +1793,6 @@ class WebApp
 
 // EASY RDF version
 
-/*
-    // new EasyRdf graph
                 $graph = new \EasyRdf_Graph();
 
                 $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
@@ -1827,8 +1834,9 @@ class WebApp
                     $data = var_export($data, true);
                 }
                 print $data;
-*/
 
+
+/*
 // plain text version
 
                 // XML output as text/plain
@@ -1875,7 +1883,7 @@ class WebApp
                 $out .= '</rdf:RDF>' . PHP_EOL;
 
                 print $out;
-
+*/
 
 
                 exit;

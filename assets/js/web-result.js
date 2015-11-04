@@ -72,8 +72,7 @@ var app = {
                             data = $.parseJSON(data);
                             //console.log(data);
 
-                            var $table = $('<table></table>').addClass('table'),
-                                header_values = [],
+                            var header_values = [],
                                 $header = '',
                                 $body = '',
                                 $row = '',
@@ -86,8 +85,21 @@ var app = {
 
                                 // no headers
                                 header_values = false;
+                                data_rows = data;
+
+                                // add results as an unordered list
+                                $ul = $('<ul></ul>').addClass('table');
+                                $.each(data_rows, function(index, row) {
+                                    $row = $('<li></li>').append(row);
+                                    $ul.append($row);
+                                });
+                                $result.html('');
+
+                                $result.append($ul);
 
                             } else {
+
+                                $table = $('<table></table>').addClass('table');
 
                                 // get the table header from the first element
                                 if (data[0]) {
@@ -101,36 +113,41 @@ var app = {
                                     });
                                 }
 
-                            }
+                                // add the processed data to a table
+                                // headers
+                                if (header_values) {
+                                    $header = $('<thead></thead>');
+                                    $header_row = $('<tr></tr>');
+                                    $.each(header_values, function() {
+                                        $header_row.append('<th class="w50">' + this + '</th>');
+                                    });
+                                    $header.append($header_row);
+                                    $table.append($header);
+                                }
+                                // rows
+                                $body = $('<tbody></tbody>');
+                                $.each(data_rows, function(index, row) {
+                                    $row = $('<tr></tr>');
+                                    if (typeof row === 'string') {
+                                        $row.append('<td>' + row + '</td>');
+                                    } else {
+                                        $.each(row, function() {
+                                            $row.append('<td>' + this + '</td>');
+                                        });
+                                    }
+                                    $body.append($row);
+                                });
+                                $table.append($body);
 
-                            // add the processed data to a table
-                            // headers
-                            if (header_values) {
-                                $header = $('<thead></thead>');
-                                $header_row = $('<tr></tr>');
-                                $.each(header_values, function() {
-                                    $header_row.append('<th class="w50">' + this + '</th>');
-                                });
-                                $header.append($header_row);
-                                $table.append($header);
+                                $result.html($table);
+
                             }
-                            // rows
-                            $body = $('<tbody></tbody>');
-                            $.each(data_rows, function(index, row) {
-                                $row = $('<tr></tr>');
-                                $.each(row, function() {
-                                    $row.append('<td>' + this + '</td>');
-                                });
-                                $body.append($row);
-                            });
-                            $table.append($body);
 
                             // for html table output, we do not want <pre> tags
                             if ($result.parent('pre').length) {
                                 $result.unwrap();
                             }
 
-                            $result.html($table);
                         }
 
                         // loop over the mime buttons to mark the current one

@@ -510,6 +510,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     {
 
         try {
+
+            if ($this->pagination == true) {
+                $this->prepareMaxResults($this->getAllCanonsStringMax());
+            }
+
             $sql = $this->getAllCanonsString();
             $statement = $this->pdoObject->prepare($sql);
             $statement->execute();
@@ -534,7 +539,24 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getAllCanonsString()
     {
-        return "SELECT DISTINCT canon FROM $this->storeName ORDER BY symbol ASC";
+        $sql = "SELECT DISTINCT canon FROM $this->storeName ORDER BY symbol ASC";
+
+        if ($this->pagination == true) {
+            // if we are paginating, we limit the results
+            $sql .= " LIMIT " . intval($this->offset) . ", " . intval($this->limit);
+        }
+
+        return $sql;
+    }
+    /**
+     * Gets the maximum number of canons of { @link getAllCanons() }
+     * @see getAllCanons()
+     *
+     * @return string The SQL string for the query
+     */
+    protected function getAllCanonsStringMax()
+    {
+        return "SELECT COUNT(DISTINCT canon) AS total FROM $this->storeName";
     }
 
 
@@ -547,13 +569,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
 
         try {
 
-            if ($this->pagination === true) {
-                // get the maximum number of results for pagination
-                $sql = $this->getDumpPairsStringMax();
-                $statement = $this->pdoObject->prepare($sql);
-                $statement->execute();
-                $row = $statement->fetch(\PDO::FETCH_ASSOC);
-                $this->maxResults = intval($row['total']);
+            if ($this->pagination == true) {
+                $this->prepareMaxResults($this->getDumpPairsStringMax());
             }
 
             $sql = $this->getDumpPairsString();
@@ -583,7 +600,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     {
         $sql = "SELECT `canon`, `symbol` FROM `{$this->getTableName()}` ORDER BY `canon` ASC, `symbol` ASC";
 
-        if ($this->pagination === true) {
+        if ($this->pagination == true) {
             // if we are paginating, we limit the results
             $sql .= " LIMIT " . intval($this->offset) . ", " . intval($this->limit);
         }
@@ -961,6 +978,19 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     public function getMaxResults()
     {
         return $this->maxResults;
+    }
+    /**
+     * Set the maximum number of results for the query
+     *
+     * @param string $sql SQL query string
+     */
+    protected function prepareMaxResults($sql)
+    {
+        // get the maximum number of results for pagination
+        $statement = $this->pdoObject->prepare($sql);
+        $statement->execute();
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        $this->maxResults = intval($row['total']);
     }
     /**
      * Get the current page
