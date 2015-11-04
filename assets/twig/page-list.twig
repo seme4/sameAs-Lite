@@ -6,11 +6,13 @@
 
 
 {% if list|length > 0 %}
-	<ul>
-		{% for item in list %}
-			<li>{{ item }}</li>
-		{% endfor %}
-	</ul>
+	<div id="result">
+		<ul>
+			{% for item in list %}
+				<li>{{ item }}</li>
+			{% endfor %}
+		</ul>
+	</div>
 {% else %}
 	<p>No items found</p>
 {% endif %}

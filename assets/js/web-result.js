@@ -76,31 +76,44 @@ var app = {
                                 header_values = [],
                                 $header = '',
                                 $body = '',
-                                $row = '';
-                            // get the table header from the first element
-                            if (data[0]) {
-                                header_values = Object.keys(data[0]);
-                            }
-
-                            var data_rows = [],
+                                $row = '',
+                                data_rows = [],
                                 i = 0,
                                 s = data.length;
-                            for (i = 0; i < s; i++){
-                                data_rows[i] = [];
-                                $.each(header_values, function() {
-                                    data_rows[i].push(data[i][this]);
-                                });
+
+                            // is this tabular data or a simple list of values?
+                            if (typeof data[0] === 'string') {
+
+                                // no headers
+                                header_values = false;
+
+                            } else {
+
+                                // get the table header from the first element
+                                if (data[0]) {
+                                    header_values = Object.keys(data[0]);
+                                }
+                                // get the table rows
+                                for (i = 0; i < s; i++){
+                                    data_rows[i] = [];
+                                    $.each(header_values, function() {
+                                        data_rows[i].push(data[i][this]);
+                                    });
+                                }
+
                             }
 
                             // add the processed data to a table
                             // headers
-                            $header = $('<thead></thead>');
-                            $header_row = $('<tr></tr>');
-                            $.each(header_values, function() {
-                                $header_row.append('<th class="w50">' + this + '</th>');
-                            });
-                            $header.append($header_row);
-                            $table.append($header);
+                            if (header_values) {
+                                $header = $('<thead></thead>');
+                                $header_row = $('<tr></tr>');
+                                $.each(header_values, function() {
+                                    $header_row.append('<th class="w50">' + this + '</th>');
+                                });
+                                $header.append($header_row);
+                                $table.append($header);
+                            }
                             // rows
                             $body = $('<tbody></tbody>');
                             $.each(data_rows, function(index, row) {
