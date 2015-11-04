@@ -8,7 +8,7 @@
  * @author    Seme4 Ltd <sameAs@seme4.com>
  * @copyright 2009 - 2014 Seme4 Ltd
  * @link      http://www.seme4.com
- * @version   0.0.1
+ * @version   0.0.2
  * @license   MIT Public License
  *
  * MIT LICENSE
@@ -84,8 +84,6 @@ class WebApp
     /** @var string $store The store from the URL */
     protected $store = null;
 
-    /** @var integer $currentPage Identifies the page we are on. Used for paginating results. */
-    protected $currentPage = 1;
 
     /**
      * Constructor.
@@ -221,7 +219,8 @@ class WebApp
             'Renders the main application homepage',
             false,
             'text/html',
-            true
+            true,
+            false //no pagination
         );
         $this->registerURL(
             'GET',
@@ -231,7 +230,8 @@ class WebApp
             'Lists all methods available via this API',
             false,
             'application/json,text/html',
-            true
+            true,
+            false //no pagination
         );
         $this->registerURL(
             'GET',
@@ -240,7 +240,9 @@ class WebApp
             'Lists available datasets',
             'Returns the available datasets hosted by this service',
             false,
-            'application/json,text/html,text/csv'
+            'application/json,text/html,text/csv',
+            false,
+            true // pagination
         );
         $this->registerURL(
             'GET',
@@ -250,7 +252,8 @@ class WebApp
             'Gives an overview of the specific store',
             false,
             'application/json,text/html',
-            true
+            true, // hide from API
+            false // no pagination
         );
         $this->registerURL(
             'GET',
@@ -260,7 +263,8 @@ class WebApp
             'Gives an API overview of the specific store',
             false,
             'application/json,text/html',
-            true
+            true, // hide from API
+            false // no pagination
         );
 
         $this->registerURL(
@@ -271,7 +275,8 @@ class WebApp
             'Renders the about page',
             false,
             'text/html',
-            true
+            true, // hide from API
+            false // no pagination
         );
         $this->registerURL(
             'GET',
@@ -281,7 +286,8 @@ class WebApp
             'Renders the contact page',
             false,
             'text/html',
-            true
+            true, // hide from API
+            false // no pagination
         );
         $this->registerURL(
             'GET',
@@ -291,9 +297,9 @@ class WebApp
             'Renders the SameAsLite license',
             false,
             'text/html',
-            true
+            true, // hide from API
+            false // no pagination
         );
-
 
 
         // dataset admin actions
@@ -342,7 +348,9 @@ class WebApp
             'Returns a list of all canons',
             null,
             false,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            true // pagination
         );
         $this->registerURL(
             'PUT',
@@ -360,7 +368,9 @@ class WebApp
             'Get canon',
             'Returns the canon for the given :symbol',
             false,
-            'text/html,text/plain'
+            'text/html,text/plain',
+            false,
+            true // pagination
         );
 
         // Pairs
@@ -371,7 +381,9 @@ class WebApp
             'Export list of pairs',
             'This method dumps *all* pairs from the database',
             false,
-            'application/json,text/html,text/csv'
+            'application/json,text/html,text/csv',
+            false,
+            true // pagination
         );
         $this->registerURL(
             'PUT',
@@ -392,16 +404,6 @@ class WebApp
             'application/json,text/html,text/plain'
         );
 
-        // Search
-        //
-        // $this->registerURL(
-        // 'GET',
-        // '/datasets/:store/search/:string',
-        // 'search',
-        // 'Search',
-        // 'Find symbols which contain/match the search string/pattern'
-        // );
-        //
         $this->registerURL(
             'GET',
             '/datasets/:store/pairs/:string',
@@ -409,7 +411,9 @@ class WebApp
             'Search',
             'Find symbols which contain/match the search string/pattern',
             false,
-            'application/json,text/html,text/csv'
+            'application/json,text/html,text/csv',
+            false,
+            true // pagination
         );
 
         // Single symbol stuff
@@ -420,7 +424,9 @@ class WebApp
             'Retrieve symbol',
             'Return details of the given symbol',
             false,
-            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain'
+            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain',
+            false,
+            true // pagination
         );
         $this->registerURL(
             'DELETE',
@@ -475,7 +481,8 @@ class WebApp
         $details = null,
         $authRequired = false,
         $mimeTypes = 'text/html',
-        $hidden = false
+        $hidden = false,
+        $paginate = false
     ) {
 
         // ensure the URL path has a leading slash
@@ -499,7 +506,13 @@ class WebApp
         if ($mimeTypes !== null) {
             $callbacks[] = array($this, 'callbackCheckFormats');
         }
-        $callbacks[] = array($this, 'callbackCheckPagination');
+        if ($paginate === true) {
+            $callbacks[] = array($this, 'callbackCheckPagination');
+        } else {
+            $this->app->view->set('pagination', false);
+        }
+
+
 
         // initialise route
         $httpMethod = strToUpper($httpMethod);
@@ -578,7 +591,7 @@ class WebApp
         $this->app->view()->set(
             'titleSupplementary',
             '<a href="'.$u.'" class="navbar-brand supplementary">' .
-            $this->storeOptions[$this->store]['shortName'] . '</a>'
+                $this->storeOptions[$this->store]['shortName'] . '</a>'
         );
     }
 
@@ -589,9 +602,16 @@ class WebApp
     public function callbackCheckPagination()
     {
         // pagination check
-        if ($this->appOptions['pagination'] == true) {
+        if (isset($this->store) && $this->appOptions['pagination']) {
             // enable pagination in the store
             $this->stores[$this->store]->configurePagination($this->appOptions['num_per_page']);
+            $this->app->view->set('pagination', true);
+        /*
+        } else {
+            // disable pagination, since there are either multiple or no stores queried
+            $this->pagination = false;
+            $this->app->view->set('pagination', false);
+        */
         }
     }
 
@@ -1121,9 +1141,9 @@ class WebApp
         $result = $this->stores[$store]->dumpPairs();
 
         // pagination check
-        if ($this->appOptions['pagination'] == true) {
+        if ($this->stores[$store]->isPaginated()) {
             // add pagination buttons to the template
-            $this->app->view()->set('currentPage', $this->stores[$store]->currentPage);
+            $this->app->view()->set('currentPage', $this->stores[$store]->getCurrentPage());
             // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
@@ -1244,7 +1264,7 @@ class WebApp
                     $result = $this->linkify($result);
                 }
 
-                // add the alternate formats for ajax query
+                // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
                 // render the page
@@ -1299,7 +1319,7 @@ class WebApp
         } else {
             // HTML output
 
-            // add the alternate formats for ajax query
+            // add the alternate formats for ajax query and pagination buttons
             $this->prepareWebResultView();
 
             $res = array();
@@ -1419,7 +1439,7 @@ class WebApp
 
             case 'text/html':
 
-                // add the alternate formats for ajax query
+                // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
                 $this->app->render('page-storeList.twig', [
@@ -1476,7 +1496,7 @@ class WebApp
                 break;
 
             case 'text/html':
-                // add the alternate formats for ajax query
+                // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
                 // old way:
@@ -1645,7 +1665,7 @@ class WebApp
 
             case 'text/html':
 
-                // add the alternate formats for ajax query
+                // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
@@ -1869,7 +1889,7 @@ class WebApp
             case 'text/html':
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
-                // add the alternate formats for ajax query
+                // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
                 $this->app->render('page-list.twig', [
@@ -1949,7 +1969,7 @@ class WebApp
             // full webpage output
             case 'text/html':
 
-                // add the alternate formats for ajax query
+                // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
                 $tables = array();

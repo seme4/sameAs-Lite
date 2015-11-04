@@ -61,6 +61,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     protected $limit = false;
     /** @var integer $maxResults Maximum number of results that can be returned (for pagination) */
     protected $maxResults = false;
+    /** @var integer $currentPage Identifies the page we are on. Used for paginating results. */
+    protected $currentPage = 1;
 
 
     /*
@@ -959,6 +961,24 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     public function getMaxResults()
     {
         return $this->maxResults;
+    }
+    /**
+     * Get the current page
+     *
+     * @return integer $currentPage Current page
+     */
+    public function getCurrentPage()
+    {
+        return $this->currentPage;
+    }
+    /**
+     * Is the result set to be paginated?
+     *
+     * @return boolean Pagination status
+     */
+    public function isPaginated()
+    {
+        return $this->pagination;
     }
 
 
