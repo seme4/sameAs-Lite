@@ -39,9 +39,9 @@ require_once '../vendor/autoload.php';
 
 
 /*
- * Using SQLite is a quick way to get the service up and running and checking if everything is working
- * SQLite only takes one option (the location of the store), for quick testing pass in null or false 
- * and the Database will be created in memory
+    * Using SQLite is a quick way to get the service up and running and checking if everything is working
+    * SQLite only takes one option (the location of the store), for quick testing pass in null or false 
+    * and the Database will be created in memory
 */
 
 

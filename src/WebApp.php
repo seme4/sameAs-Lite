@@ -164,35 +164,31 @@ class WebApp
      * @param \SameAsLite\StoreInterface $store   A class implimenting StoreInterface to contain the data
      * @param array                      $options Array of configration options describing the dataset
      *
-     * @throws \Exception if there are problems with arguments
+     * @throws \SameAsLite\ConfigException if there are problems with arguments in config.ini
      */
     public function addDataset(\SameAsLite\StoreInterface $store, array $options)
     {
 
-        if (!isset($options['shortName'])) {
-            throw new \Exception('The Store array is missing required key/value "shortName" in config.ini');
+        foreach (array('shortName', 'slug') as $configoption) {
+            if (!isset($options[$configoption])) {
+                throw new ConfigException('The Store array is missing required key/value "' . $configoption . '" in config.ini');
+            }
         }
 
         if (!isset($options['fullName'])) {
-            // throw new \Exception('The Store array is missing required key/value "fullName" in config.ini');
             // as promised in config.ini, if fullName is not defined, it is set to shortName
-
             // $options['fullName'] = ucwords($options['shortName']);
             $options['fullName'] = $options['shortName'];
         }
 
-        if (!isset($options['slug'])) {
-            throw new \Exception('The Store array is missing required key/value "slug" in config.ini');
-        }
-
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
-            throw new \Exception(
+            throw new ConfigException(
                 'The value for "slug" in config.ini may contain only characters a-z, A-Z, 0-9, hyphen and underscore'
             );
         }
 
         if (isset($this->stores[$options['slug']])) {
-            throw new \Exception(
+            throw new ConfigException(
                 'You have already added a store with "slug" value of ' . $options['slug'] . ' in config.ini.'
             );
         }
@@ -570,6 +566,7 @@ class WebApp
     /**
      * Middleware callback used to check for valid store.
      * It is not intended that you call this function yourself.
+     *
      * @throws \InvalidArgumentException Exception thrown if callback invoked incorrectly.
      */
     public function callbackCheckDataset()
@@ -619,7 +616,8 @@ class WebApp
      * Middleware callback used to check the HTTP authentication is OK.
      * Credentials are read from file named auth.htpasswd in the root directory.
      * It is not intended that you call this function yourself.
-     * @throws \Exception An exception is thrown if the credentials file cannot be opened
+     *
+     * @throws \SameASLite\AuthException An exception is thrown if the credentials file cannot be opened
      */
     public function callbackCheckAuth()
     {
@@ -632,7 +630,7 @@ class WebApp
             $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
             if ($credentials === false || count($credentials) === 0) {
                 // auth.htpasswd could not be loaded
-                throw new \Exception('Failed to load valid authorization credentials from ' . $filename);
+                throw new AuthException('Failed to load valid authorization credentials from ' . $filename);
             }
             foreach ($credentials as $line) {
                 $line = trim($line);
@@ -659,6 +657,7 @@ class WebApp
     /**
      * Middleware callback used to check MIME types are OK.
      * It is not intended that you call this function yourself.
+     *
      * @throws \InvalidArgumentException Exception thrown if callback invoked incorrectly.
      */
     public function callbackCheckFormats()
@@ -774,12 +773,13 @@ class WebApp
     /**
      * Output a generic error page
      *
-     * @throws \InvalidArgumentException if the status is not a valid HTTP status code
      * @param string $status          The HTTP status code (eg 401, 404, 500)
      * @param string $title           Optional brief title of the page, used in HTML head etc
      * @param string $summary         Optional summary message describing the error
      * @param string $extendedTitle   Optional extended title, used at top of main content
      * @param string $extendedDetails Optional extended details, conveying more details
+     *
+     * @throws \InvalidArgumentException if the status is not a valid HTTP status code
      */
     protected function outputError($status, $title = null, $summary = '', $extendedTitle = '', $extendedDetails = '')
     {
@@ -1158,7 +1158,7 @@ class WebApp
      *
      * @param string $store The URL slug identifying the store
      *
-     * @throws \Exception An exception is thrown if the request body is empty
+     * @throws \SameAsLite\InvalidInputException An exception is thrown if the request body is empty
      */
     public function assertPairs($store)
     {
@@ -1168,7 +1168,7 @@ class WebApp
         // if request body is empty, there is nothing to assert
         $body = $this->app->request->getBody();
         if (!$body) { // body no longer exists in request obj
-            throw new \Exception('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
+            throw new InvalidInputException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
         } else {
             $this->stores[$store]->assertTSV($body);
 
@@ -1457,6 +1457,9 @@ class WebApp
      * Outputs the results in the format requested
      *
      * @param string $store The URL slug identifying the store
+     *
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * is not supported
      */
     public function analyse($store)
     {
@@ -1494,7 +1497,7 @@ class WebApp
                 break;
 
             default:
-                throw new \Exception('Could not render analysis as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render analysis as ' . $this->mimeBest);
         }
     }
 
@@ -1535,7 +1538,8 @@ class WebApp
      * Output a success message, in the most appropriate MIME type
      *
      * @param string $msg The information to be displayed
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     *
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputSuccess($msg)
@@ -1559,7 +1563,7 @@ class WebApp
                 break;
 
             default:
-                throw new \Exception('Could not render success output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render success output as ' . $this->mimeBest);
         }
     }
 
@@ -1570,7 +1574,7 @@ class WebApp
      * @param array   $list          The items to output
      * @param integer $status        HTTP status code
      *
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputArbitrary(array $list = array(), $status = null)
@@ -1681,7 +1685,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new \Exception('Could not render list output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1694,9 +1698,6 @@ class WebApp
      * @param integer $status HTTP status code
      *
      * @uses \EasyRdf_Graph
-     *
-     * @throws \Exception An exception may be thrown if the requested MIME type
-     * is not supported
      */
     protected function outputRDF(array $list = array(), $format = 'list', $status = null)
     {
@@ -1791,7 +1792,7 @@ class WebApp
      * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
      * @param integer $status        HTTP status code
      *
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputList(array $list = array(), $numeric_array = true, $status = null)
@@ -1873,7 +1874,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new \Exception('Could not render list output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1882,7 +1883,8 @@ class WebApp
      *
      * @param array $data    The rows to output
      * @param array $headers Column headers
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     *
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputTable(array $data, array $headers = array())
@@ -2028,7 +2030,7 @@ class WebApp
                 $this->app->contentType('text/html');
 
                 // TODO - this needs response headers that point to available formats
-                throw new \Exception('Could not render tabular output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
         }
     }
 
