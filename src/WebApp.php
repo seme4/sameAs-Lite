@@ -671,12 +671,14 @@ class WebApp
         // bugfix 1: change conneg class from Negotiate to Negotation
         // $conneg = new \ptlis\ConNeg\Negotiate();
         $conneg = new \ptlis\ConNeg\Negotiation();
-        $best = $conneg->mimeBest($_SERVER['HTTP_ACCEPT'], $acceptableMime);
 
-        // bugfix 2: $best is a string, not an object
+        $this->mimeBest = $conneg->mimeBest($_SERVER['HTTP_ACCEPT'], $acceptableMime);
+
+        // bugfix 2: $this->mimeBest is a string, not an object
         // if the quality is zero, no matches between request and available
         // if ($best->getQualityFactor()->getFactor() == 0) {
-        if (!$best) { // TODO: need to verify that this is the expected return if there are no matches
+        if (!$this->mimeBest) {
+            // TODO: need to verify that this is the expected return if there are no matches
             $this->outputError(
                 406,
                 'Not Acceptable',
@@ -684,11 +686,6 @@ class WebApp
                 'Sorry, we cannot serve you data in your requested format'
             );
         }
-
-        // store best match
-        // bugfix 3: $best is a string, not an object
-        // $this->mimeBest = $best->getType();
-        $this->mimeBest = $best;
 
         // store alternative MIME types
         foreach ($conneg->mimeAll('*/*', $acceptableMime) as $type) {
@@ -718,11 +715,29 @@ class WebApp
      */
     public function outputException(\Exception $e)
     {
+        $status = 500;
+        
+        // the user requested an unsupported content type
+        if ($e instanceof Exception\ContentTypeException) {
 
-var_dump($e);die;
+            // this is a client error -> use the correct header in 4XX range
+            // $this->app->response->setStatus(406); //406 Not Acceptable
+            $status = 406;
+
+            // header("406 Not Acceptable");
+
+            // TODO:
+            // add the available formats in response header
+            // see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.7
+            // Unless it was a HEAD request, the response SHOULD include an entity containing a list of available entity characteristics and location(s) from which the user or user agent can choose the one most appropriate. The entity format is specified by the media type given in the Content-Type header field. Depending upon the format and the capabilities of the user agent, selection of the most appropriate choice MAY be performed automatically. However, this specification does not define any standard for such automatic selection.
+
+
+
+        }
 
 
         if ($this->app->getMode() == 'development') {
+
             // show details if we are in dev mode
             $op  = PHP_EOL;
             $op .= "        <h4>Request details &ndash;</h4>" . PHP_EOL;
@@ -749,7 +764,7 @@ var_dump($e);die;
             }
 
             $this->outputError(
-                500,
+                $status,
                 'Server Error',
                 $summary . '<strong>' . $e->getFile() . '</strong> &nbsp; +' . $e->getLine(),
                 $msg,
@@ -757,14 +772,17 @@ var_dump($e);die;
                 '        <pre class="white">' . $e->getTraceAsString() . '</pre>' .
                 $op
             );
+
         } else {
+
             // show basic message
             $this->outputError(
-                500,
+                $status,
                 'Unexpected Error',
                 '</p><p>Apologies for any inconvenience, the problem has been logged and we\'ll get on to it ASAP.',
                 'Whoops! An unexpected error has occured...'
             );
+
         }
     }
 
@@ -789,7 +807,7 @@ var_dump($e);die;
             $title = 'Error ' . $status;
         }
 
-        $summary .= '</p><p>Please try returning to <a href="' .
+        $summary .= '</p>' . PHP_EOL . PHP_EOL . '<p>Please try returning to <a href="' .
             $this->app->request()->getURL() .
             $this->app->request()->getRootUri() . '">the homepage</a>.';
 
@@ -802,8 +820,9 @@ var_dump($e);die;
             }
         }
 
-        $this->app->contentType('text/html');
         $this->app->response->setStatus($status);
+
+        $this->app->contentType('text/html');
 
         $this->app->render('error.twig', [
             'titleHTML'    => ' - ' . strip_tags($title),
@@ -1529,7 +1548,7 @@ var_dump($e);die;
             $body = '<pre>' . join("\n", $body) . "</pre>\n";
         }
 
-        if (isset($status)) {
+        if (!is_null($status)) {
             $this->app->response->setStatus($status);
         }
 

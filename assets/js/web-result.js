@@ -41,6 +41,7 @@ var app = {
 
         $.ajax({
             url: (app.page > 1 ? '?page=' + app.page : ''),
+            dataType: "text",
             headers: {
                 "Accept": app.ajaxMimeType
             },
@@ -171,8 +172,11 @@ var app = {
                     console.log(jObj);
                 }
 
-            },
-          dataType: "text"
+            },//end success()
+            error: function (jObj) {
+                // TODO
+                console.log(jObj);
+            }//end error()
         });
     }
 };
