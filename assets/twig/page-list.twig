@@ -6,6 +6,7 @@
 
 
 {% if list|length > 0 %}
+
 	<div id="result">
 		<ul class="table">
 			{% for item in list %}
@@ -13,8 +14,16 @@
 			{% endfor %}
 		</ul>
 	</div>
+
 {% else %}
+
+	<div id="result">
+		<!-- empty result -->
+		<ul class="table"></ul>
+	</div>
+
 	<p>No items found</p>
+
 {% endif %}
 
 

@@ -20,7 +20,8 @@ addons:
 install:
 #  - /home/travis/.phpenv/versions/5.4/bin/composer self-update
   - composer install
-  - pyrus install pear/PHP_CodeSniffer
+# codesniffer installation is included in Makefile
+#  - pyrus install pear/PHP_CodeSniffer
 before_script:
 #  - sudo service apache2 restart
   - phpenv config-add ./dev-tools/travis-php-env.ini

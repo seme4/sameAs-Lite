@@ -74,8 +74,8 @@ class WebApp
         'text/turtle' => 'TTL',
         'application/json' => 'JSON',
         'text/csv' => 'CSV',
-        'text/plain' => 'TXT',
         'text/tab-separated-values' => 'TSV',
+        'text/plain' => 'TXT',
     );
 
     /** @var array $routeInfo Details of the available URL routes */
@@ -370,7 +370,7 @@ class WebApp
             false,
             'text/html,text/plain',
             false,
-            true // pagination
+            false // pagination
         );
 
         // Pairs
@@ -1090,15 +1090,7 @@ class WebApp
         $this->app->view()->set('titleHeader', 'All Canons in this dataset');
         $results = $this->stores[$store]->getAllCanons();
 
-        // pagination check
-        if ($this->stores[$store]->isPaginated()) {
-            // add pagination buttons to the template
-            $this->app->view()->set('currentPage', $this->stores[$store]->getCurrentPage());
-            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
-            $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));
-        }
-
-        $this->outputList($results);
+        $this->outputList($results, true); //numeric list
     }
 
     /**
@@ -1131,6 +1123,9 @@ class WebApp
         $this->app->view()->set('titleHTML', 'Canon query');
         $this->app->view()->set('titleHeader', 'Canon for &ldquo;' . $symbol . '&rdquo;');
         $result = [$this->stores[$store]->getCanon($symbol)];
+        if (!$result[0]) {
+            $result = [];
+        }
         $this->outputList($result);
     }
 
@@ -1148,14 +1143,6 @@ class WebApp
         $this->app->view()->set('titleHeader', 'Contents of the store:');
 
         $result = $this->stores[$store]->dumpPairs();
-
-        // pagination check
-        if ($this->stores[$store]->isPaginated()) {
-            // add pagination buttons to the template
-            $this->app->view()->set('currentPage', $this->stores[$store]->getCurrentPage());
-            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
-            $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));
-        }
 
         $this->outputTable(
             $result,
@@ -1324,7 +1311,7 @@ class WebApp
         // $accept = $this->app->request->headers->get('Accept');
         if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
             // non-HTML output
-            $this->outputList($result, 200, false);
+            $this->outputList($result, false, 200);
         } else {
             // HTML output
 
@@ -1626,14 +1613,22 @@ class WebApp
 
                     $resource = $graph->resource($url);
 
-                    foreach ($arr as $key => $value) {
-
-                        if (strpos($value, 'http') === 0) {
-                            $graph->addResource($resource, $key, $graph->resource(urldecode($value)));
-                        } else {
-                            $graph->addLiteral($resource, $key, $value);
+                    if (is_array($arr)) {
+                        foreach ($arr as $predicate => $value) {
+                            if ($value) {
+                                if (strpos($value, 'http') === 0) {
+                                    $graph->addResource($resource, $predicate, $graph->resource(urldecode($value)));
+                                } else {
+                                    $graph->addLiteral($resource, $predicate, $value);
+                                }
+                            }
                         }
-
+                    } else {
+                            if (strpos($arr, 'http') === 0) {
+                                $graph->addResource($resource, $key, $graph->resource(urldecode($arr)));
+                            } else {
+                                $graph->addLiteral($resource, $key, $arr);
+                            }
                     }
                 }
 
@@ -1692,27 +1687,122 @@ class WebApp
 
 
     /**
-     * Output data which is an unordered list of items, in the most appropriate
-     * MIME type
+     * Output data in RDF and Turtle format
      *
-     * @param array   $list          The items to output
-     * @param integer $status        HTTP status code
-     * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
+     * @param array   $list   The items to output
+     * @param string  $format The output format
+     * @param integer $status HTTP status code
+     *
+     * @uses \EasyRdf_Graph
      *
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputList(array $list = array(), $status = null, $numeric_array = true)
+    protected function outputRDF(array $list = array(), $format = 'list', $status = null)
     {
+        // get the query parameter
+        $symbol = $this->app->request()->params('string');
+        if (!$symbol) {
+            $symbol = $this->app->request()->params('symbol');
+        }//end if
+        $symbol = $symbol ? $symbol : false;
 
-// bug: list contains each item four times!
-// var_dump($list);
-// die;
+        $store = $this->store ? $this->store : false;
 
-        // single results are converted into array
-        // if (!is_array($list)) {
-        //     $list = [$list];
-        // }//end if
+        // meta info
+        $domain = 'http://';
+        if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
+            $domain = "https://";
+        }//end if
+        $domain .= $_SERVER["SERVER_NAME"];
+        if ($_SERVER["SERVER_PORT"] != "80") {
+            $domain .= ":" . $_SERVER["SERVER_PORT"];
+        }//end if
+
+
+        // EASY RDF
+
+        $graph = new \EasyRdf_Graph();
+
+        $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
+        // TODO: maybe also add info about store (storename, URI)?
+        $meta_block->set('dc:creator', 'sameAsLite');
+        // $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
+        if (isset($this->appOptions['license']['url'])) {
+            $meta_block->add('dct:license', $graph->resource($this->appOptions['license']['url']));
+        }
+
+        // list
+        if (!$format === 'list') {
+            //sameAs relationships
+            if (strpos($symbol, 'http') === 0) {
+                $symbol_block = $graph->resource($symbol);
+                $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
+            } else {
+                $symbol_block = $graph->newBNode();
+                $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $symbol_block->getBNodeId()));
+            }
+            foreach ($list as $s) {
+                if (strpos($s, 'http') === 0) {
+                    // resource
+                    $symbol_block->add('owl:sameAs', $graph->resource(urldecode($s)));
+                } else {
+                    // literal values - not technically correct, because sameAs expects a resource
+                    // but validates in W3C Validator
+                    $symbol_block->add('owl:sameAs', $s);
+                }
+            }
+        } else {
+            //simple list
+            \EasyRdf_Namespace::set('sa', 'http://sameas.org/ns/');
+            $symbol_block = $graph->resource($domain . '/datasets/' . $this->store. '/canons/');
+            foreach ($list as $s) {
+                if (strpos($s, 'http') === 0) {
+                    // resource
+                    $symbol_block->add('sa:canon', $graph->resource(urldecode($s)));
+                } else {
+                    // literal values - not technically correct, because sameAs expects a resource
+                    // but validates in W3C Validator
+                    $symbol_block->add('sa:canon', $s);
+                }
+            }
+        }
+
+        if ($this->mimeBest === 'application/rdf+xml') {
+            $outFormat = 'rdf';
+        } else {
+            $outFormat = 'turtle';
+        }
+
+        $data = $graph->serialise($outFormat);
+        if (!is_scalar($data)) {
+            $data = var_export($data, true);
+        }
+        print $data;
+
+        exit;
+    }
+
+    /**
+     * Output data which is an unordered list of items, in the most appropriate
+     * MIME type
+     *
+     * @param array   $list          The items to output
+     * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
+     * @param integer $status        HTTP status code
+     *
+     * @throws \Exception An exception may be thrown if the requested MIME type
+     * is not supported
+     */
+    protected function outputList(array $list = array(), $numeric_array = true, $status = null)
+    {
+        // pagination check
+        if ($this->stores[$this->store]->isPaginated()) {
+            // add pagination buttons to the template
+            $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
+            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
+            $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
+        }
 
         // Convert into numeric array, if required
         if ($numeric_array) {
@@ -1734,31 +1824,20 @@ class WebApp
 
         switch ($this->mimeBest) {
             case 'text/plain':
-            case 'text/tab-separated-values':
                 print join(PHP_EOL, $list);
                 exit;
 
                 break;
 
             case 'text/csv':
-                $csv = '';
-                
-                // the array keys become the header row
-                // $csv .= '"' . implode(array_keys($list), '","') . '"' . PHP_EOL;
-                
-                // the array values become the content columns
-                $vals = array_values($list);
-                $csv_vals = '';
-                foreach ($vals as $v) {
-                    if (is_numeric($v)) {
-                        $csv_vals .= strval($v) . PHP_EOL;
-                    } else {
-                        $csv_vals .= '"' . strval($v) . '"' . PHP_EOL;
-                    }
-                }//end foreach
-                // $csv_vals = rtrim($csv_vals, ',');
-                $csv .= $csv_vals;
-                print $csv;
+            case 'text/tab-separated-values':
+
+                // use fputcsv for escaping
+                $delimiter = PHP_EOL;
+                $out = fopen('php://output', 'w');
+                fputcsv($out, $list, $delimiter);
+                fclose($out);
+
                 exit;
 
                 break;
@@ -1773,129 +1852,10 @@ class WebApp
             case 'application/x-turtle':
             case 'text/turtle':
 
-                // get the parameter
-                $symbol = $this->app->request()->params('string');
-                if (!$symbol) {
-                    $symbol = $this->app->request()->params('symbol');
-                }//end if
-
-
-                // meta info
-                $domain = 'http://';
-                if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
-                    $domain = "https://";
-                }//end if
-                $domain .= $_SERVER["SERVER_NAME"];
-                if ($_SERVER["SERVER_PORT"] != "80") {
-                    $domain .= ":" . $_SERVER["SERVER_PORT"];
-                }//end if
-
-
-// EASY RDF version
-
-                $graph = new \EasyRdf_Graph();
-
-                $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
-                // TODO: maybe also add info about store (storename, URI)?
-                $meta_block->set('dc:creator', 'sameAsLite');
-                // $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
-                if (isset($this->appOptions['license']['url'])) {
-                    $meta_block->add('dct:license', $graph->resource($this->appOptions['license']['url']));
-                }
-
-                if (strpos($symbol, 'http') === 0) {
-                    $symbol_block = $graph->resource($symbol);
-                    $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
-                } else {
-                    $symbol_block = $graph->newBNode();
-                    $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $symbol_block->getBNodeId()));
-                }
-
-                // list
-                foreach ($list as $s) {
-                    // TODO: check if it's a URI or literal
-                    // if it's a URI, add it as a resource
-                    // if it's a text symbol, add it as literal
-
-                    if (strpos($s, 'http') === 0) {
-                        // resource
-                        $symbol_block->add('owl:sameAs', $graph->resource(urldecode($s)));
-                    } else {
-                        // literal values - not technically correct, because sameAs expects a resource
-                        // but validates in W3C Validator
-                        $symbol_block->add('owl:sameAs', $s);
-                    }
-                }
-
-                if ($this->mimeBest === 'application/rdf+xml') {
-                    $format = 'rdf';
-                } else {
-                    $format = 'turtle';
-                }
-
-                $data = $graph->serialise($format);
-                if (!is_scalar($data)) {
-                    $data = var_export($data, true);
-                }
-                print $data;
-
-
-/*
-// plain text version
-
-                // XML output as text/plain
-
-                $out = '<?xml version="1.0" encoding="utf-8" ?>' . PHP_EOL .
-                '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"' . PHP_EOL .
-                '         xmlns:dct="http://purl.org/dc/terms/"' . PHP_EOL .
-                '         xmlns:dc="http://purl.org/dc/elements/1.1/"' . PHP_EOL .
-                '         xmlns:foaf="http://xmlns.com/foaf/0.1/"' . PHP_EOL .
-                '         xmlns:owl="http://www.w3.org/2002/07/owl#">' . PHP_EOL;
-
-
-                $out .= '  <rdf:Description rdf:about="' . $domain . $_SERVER['REQUEST_URI'] . '">' . PHP_EOL;
-
-                $out .= '      <dc:creator>sameAsLite</dc:creator>' . PHP_EOL;
-                $out .= '      <dc:title>Co-references from sameAs.org for ' . $symbol . '</dc:title>' . PHP_EOL;
-
-                if (isset($this->appOptions['license']['url'])) {
-                    $out .= '      <dct:license rdf:resource="' . $this->appOptions['license']['url'] . '"></dct:license>' . PHP_EOL;
-                }
-
-                if (strpos($symbol, 'http') === 0) {
-                    // queried symbol is a URI
-                    $symbol = urldecode($symbol);
-                    $out .= '      <foaf:primaryTopic rdf:resource="' . $symbol . '" />'  . PHP_EOL .
-                            '  </rdf:Description>' . PHP_EOL;
-                    $out .= '  <rdf:Description rdf:about="' . $symbol . '">'  . PHP_EOL;
-                } else {
-                    // queried symbol is a literal
-                    $out .= '      <foaf:primaryTopic rdf:resource="_:genid1" />'  . PHP_EOL .
-                            '  </rdf:Description>' . PHP_EOL;
-                    $out .= '  <rdf:Description rdf:nodeID="genid1">' . PHP_EOL;
-                }
-
-                foreach ($list as $s) {
-                    if (strpos($s, 'http') === 0) {
-                        $out .= '    <owl:sameAs rdf:resource="' . urldecode($s) . '" />' . PHP_EOL;
-                    } else {
-                        $out .= '    <owl:sameAs>' . $s . '</owl:sameAs>' . PHP_EOL;
-                    }
-                }
-
-                $out .= '  </rdf:Description>' . PHP_EOL;
-                $out .= '</rdf:RDF>' . PHP_EOL;
-
-                print $out;
-*/
-
+                $this->outputRDF($list, 'list');
 
                 exit;
 
-                break;
-
-            case 'text/turtle':
-                // TODO ?
                 break;
 
             case 'text/html':
@@ -1927,6 +1887,13 @@ class WebApp
      */
     protected function outputTable(array $data, array $headers = array())
     {
+        // pagination check
+        if ($this->stores[$this->$store]->isPaginated()) {
+            // add pagination buttons to the template
+            $this->app->view()->set('currentPage', $this->stores[$this->$store]->getCurrentPage());
+            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
+            $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
+        }
 
         // 404 header response
         if (empty($data)) {
@@ -1938,11 +1905,31 @@ class WebApp
 
         switch ($this->mimeBest) {
             case 'text/csv':
+            case 'text/tab-separated-values':
+
+                if ($this->mimeBest === 'text/tab-separated-values') {
+                    $delimiter = "\t";
+                } else {
+                    $delimiter = ",";
+                }
 
                 $out = fopen('php://output', 'w');
-                fputcsv($out, $headers);
+                fputcsv($out, $headers, $delimiter);
                 foreach ($data as $i) {
-                    fputcsv($out, $i);
+                    fputcsv($out, $i, $delimiter);
+                }
+                fclose($out);
+
+                exit;
+
+                break;
+
+            case 'text/plain':
+
+                $out = fopen('php://output', 'w');
+                // fwrite($out, implode(' => ', $headers) . PHP_EOL);
+                foreach ($data as $i) {
+                    fwrite($out, implode(' => ', $i) . PHP_EOL);
                 }
                 fclose($out);
 
@@ -1954,19 +1941,6 @@ class WebApp
             case 'text/turtle':
             case 'application/x-turtle':
                 $this->outputArbitrary(array_merge($headers, $data));
-                break;
-
-            case 'text/tab-separated-values':
-
-                $out = fopen('php://output', 'w');
-                // fputcsv($out, $headers, "\t");
-                foreach ($data as $k => $i) {
-                    fputcsv($out, array($headers[$k], $i), "\t");
-                }
-                fclose($out);
-
-                exit;
-
                 break;
 
             case 'application/json':

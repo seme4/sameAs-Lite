@@ -1,4 +1,4 @@
-# sameAs Lite
+# sameAs Lite [![Build Status](https://travis-ci.org/joetm/sameAs-Lite.svg?branch=master)](https://travis-ci.org/joetm/sameAs-Lite)
 
 ### Synopsis
 

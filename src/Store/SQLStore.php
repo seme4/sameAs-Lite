@@ -661,7 +661,6 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     public function statistics()
     {
-
         $stats = [];
         try {
             // get number of symbols
@@ -958,7 +957,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         $limit = intval($limit);
 
         if (!($limit > 0)) {
-            $this->error("Pagination is enabled, but num_per_page options is not valid in config.ini"); // Throws
+            $this->error("Pagination is enabled, but num_per_page option is not valid in config.ini"); // Throws
         }
 
         $this->pagination = true;
@@ -991,6 +990,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         $statement->execute();
         $row = $statement->fetch(\PDO::FETCH_ASSOC);
         $this->maxResults = intval($row['total']);
+
+        // if there are no results, pagination is disabled
+        if (!$this->maxResults > 0) {
+            $this->pagination = false;
+        }
     }
     /**
      * Get the current page
