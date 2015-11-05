@@ -97,13 +97,14 @@ class WebApp
         $this->initialiseServerParameters();
 
         $mode = (isset($options['mode']) ? $options['mode'] : 'production');
-
         if ($mode === 'development') {
             // Dev error reporting
             ini_set('display_errors', 1);
-            ini_set('html_errors', 0); // disable xdebug var-dump formatting
+            // ini_set('html_errors', 0); // disable xdebug var-dump formatting
             ini_set('display_startup_errors', 1);
             error_reporting(-1); // show all errors for development
+        } else {
+            error_reporting(0);
         }
 
         // initialise and configure Slim, using Twig template engine
@@ -120,7 +121,7 @@ class WebApp
         $this->app->view()->parserOptions['autoescape'] = false;
         $this->app->view()->set('path', $this->app->request()->getRootUri());
 
-        // register 404 and error handlers
+        // register 404 and custom error handlers
         $this->app->notFound(array($this, 'outputError404'));
         $this->app->error(array($this, 'outputException'));
         set_exception_handler(array($this, 'outputException'));
@@ -164,14 +165,14 @@ class WebApp
      * @param \SameAsLite\StoreInterface $store   A class implimenting StoreInterface to contain the data
      * @param array                      $options Array of configration options describing the dataset
      *
-     * @throws \SameAsLite\ConfigException if there are problems with arguments in config.ini
+     * @throws \Exception if there are problems with arguments in config.ini
      */
     public function addDataset(\SameAsLite\StoreInterface $store, array $options)
     {
 
         foreach (array('shortName', 'slug') as $configoption) {
             if (!isset($options[$configoption])) {
-                throw new ConfigException('The Store array is missing required key/value "' . $configoption . '" in config.ini');
+                throw new \Exception('The Store array is missing required key/value "' . $configoption . '" in config.ini');
             }
         }
 
@@ -182,13 +183,13 @@ class WebApp
         }
 
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
-            throw new ConfigException(
+            throw new \Exception(
                 'The value for "slug" in config.ini may contain only characters a-z, A-Z, 0-9, hyphen and underscore'
             );
         }
 
         if (isset($this->stores[$options['slug']])) {
-            throw new ConfigException(
+            throw new \Exception(
                 'You have already added a store with "slug" value of ' . $options['slug'] . ' in config.ini.'
             );
         }
@@ -617,7 +618,7 @@ class WebApp
      * Credentials are read from file named auth.htpasswd in the root directory.
      * It is not intended that you call this function yourself.
      *
-     * @throws \SameASLite\AuthException An exception is thrown if the credentials file cannot be opened
+     * @throws \Exception An exception is thrown if the credentials file cannot be opened
      */
     public function callbackCheckAuth()
     {
@@ -630,7 +631,7 @@ class WebApp
             $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
             if ($credentials === false || count($credentials) === 0) {
                 // auth.htpasswd could not be loaded
-                throw new AuthException('Failed to load valid authorization credentials from ' . $filename);
+                throw new \Exception('Failed to load valid authorization credentials from ' . $filename);
             }
             foreach ($credentials as $line) {
                 $line = trim($line);
@@ -727,21 +728,22 @@ class WebApp
     {
         if ($this->app->getMode() == 'development') {
             // show details if we are in dev mode
-            $op  = "\n";
-            $op .= "        <h4>Request details &ndash;</h4>\n";
-            $op .= "        <dl class=\"dl-horizontal\">\n";
+            $op  = PHP_EOL;
+            $op .= "        <h4>Request details &ndash;</h4>" . PHP_EOL;
+            $op .= "        <dl class=\"dl-horizontal\">" . PHP_EOL;
             foreach ($_SERVER as $key => $value) {
                 $key = strtolower($key);
                 $key = str_replace(array('-', '_'), ' ', $key);
                 $key = preg_replace('#^http #', '', $key);
                 $key = ucwords($key);
                 if (is_array($value)) {
-                    $op .= "<dt>$key</dt><dd><pre>" . print_r($value, true) . "</pre></dd>\n";
+                    $op .= "<dt>$key</dt><dd><pre>" . print_r($value, true) . "</pre></dd>" . PHP_EOL;
                 } else {
-                    $op .= "          <dt>$key</dt>\n            <dd>$value</dd>\n";
+                    $op .= "          <dt>$key</dt>" . PHP_EOL .
+                           "          <dd>$value</dd>" . PHP_EOL;
                 }
             }
-            $op .= "        </dl>\n";
+            $op .= "        </dl>" . PHP_EOL;
 
             $msg = $e->getMessage();
             $summary = '';
@@ -755,8 +757,8 @@ class WebApp
                 'Server Error',
                 $summary . '<strong>' . $e->getFile() . '</strong> &nbsp; +' . $e->getLine(),
                 $msg,
-                "<h4>Stack trace &ndash;</h4>\n        "
-                . '<pre class="white">' . $e->getTraceAsString() . '</pre>'
+                "<h4>Stack trace &ndash;</h4>" . PHP_EOL .
+                . '        <pre class="white">' . $e->getTraceAsString() . '</pre>'
                 . $op
             );
         } else {
@@ -1158,7 +1160,7 @@ class WebApp
      *
      * @param string $store The URL slug identifying the store
      *
-     * @throws \SameAsLite\InvalidInputException An exception is thrown if the request body is empty
+     * @throws \Exception An exception is thrown if the request body is empty
      */
     public function assertPairs($store)
     {
@@ -1168,7 +1170,7 @@ class WebApp
         // if request body is empty, there is nothing to assert
         $body = $this->app->request->getBody();
         if (!$body) { // body no longer exists in request obj
-            throw new InvalidInputException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
+            throw new \Exception('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
         } else {
             $this->stores[$store]->assertTSV($body);
 
@@ -1458,7 +1460,7 @@ class WebApp
      *
      * @param string $store The URL slug identifying the store
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
     public function analyse($store)
@@ -1497,7 +1499,7 @@ class WebApp
                 break;
 
             default:
-                throw new ContentTypeException('Could not render analysis as ' . $this->mimeBest);
+                throw new \Exception('Could not render analysis as ' . $this->mimeBest);
         }
     }
 
@@ -1539,7 +1541,7 @@ class WebApp
      *
      * @param string $msg The information to be displayed
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputSuccess($msg)
@@ -1563,7 +1565,7 @@ class WebApp
                 break;
 
             default:
-                throw new ContentTypeException('Could not render success output as ' . $this->mimeBest);
+                throw new \Exception('Could not render success output as ' . $this->mimeBest);
         }
     }
 
@@ -1574,7 +1576,7 @@ class WebApp
      * @param array   $list          The items to output
      * @param integer $status        HTTP status code
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputArbitrary(array $list = array(), $status = null)
@@ -1685,7 +1687,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
+                throw new \Exception('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1792,7 +1794,7 @@ class WebApp
      * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
      * @param integer $status        HTTP status code
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputList(array $list = array(), $numeric_array = true, $status = null)
@@ -1874,7 +1876,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
+                throw new \Exception('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1884,7 +1886,7 @@ class WebApp
      * @param array $data    The rows to output
      * @param array $headers Column headers
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputTable(array $data, array $headers = array())
@@ -2030,7 +2032,7 @@ class WebApp
                 $this->app->contentType('text/html');
 
                 // TODO - this needs response headers that point to available formats
-                throw new ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
+                throw new \Exception('Could not render tabular output as ' . $this->mimeBest);
         }
     }
 
