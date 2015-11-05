@@ -59,6 +59,8 @@ Support info here
 
 ### License and Legal Information
 
-SameAs is released under the [MIT License](./LICENSE).
+SameAs-Lite is released under the [MIT License](./LICENSE).
+
+![Seme4 Ltd](http://www.seme4.com/wp-content/uploads/2015/02/Seme4-Logo.png)
 
 SameAs&trade; is a registered trademark of Seme4 Ltd.
