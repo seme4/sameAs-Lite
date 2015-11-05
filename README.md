@@ -1,6 +1,10 @@
 # sameAs Lite
 
+### Synopsis
+
 sameAs Lite is an open source software to provide sameAs&reg; services.
+
+### Motivation
 
 The sameAs services are motivated by the [Semantic Web](https://en.wikipedia.org/wiki/Semantic_Web) and especially [Linked Data](http://linkeddata.org/), although they have wider uses.
 
@@ -45,12 +49,16 @@ Please refer to the [Github Wiki](wiki) for detailed installation instructions.
 
 ![Retrieving equivalent symbols](/path/to/img.jpg)
 
+### Contributors
+
+Read more on how to [contribute to SameAs-Lite](https://github.com/joetm/sameAs-Lite/wiki/Contributing)...
+
 ### Support
 
 Support info here
 
 ### License and Legal Information
 
-[MIT License](./LICENSE)
+SameAs is released under the [MIT License](./LICENSE).
 
 SameAs&trade; is a registered trademark of Seme4 Ltd.
