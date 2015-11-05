@@ -34,12 +34,14 @@
 
 namespace SameAsLite\Tests;
 
-require_once 'SQLStoreTest.php';
+// require_once 'SQLStoreTest.php';
+// use SQLStoreTest;
+
 
 /**
  * PHPUnit tests for the \SameAsLite\Store\SQLiteStore class.
  */
-class SQLiteStoreTest extends SQLStoreTest
+class SQLiteStoreTest extends \SameAsLite\Tests\SQLStoreTest
 {
 
     /** @var string $location The location of the SQLite database, or null to use :memory: */

@@ -34,12 +34,14 @@
 
 namespace SameAsLite\Tests;
 
-require_once 'SQLStoreTest.php';
+// require_once 'SQLStoreTest.php';
+// use SQLStoreTest;
+
 
 /**
  * PHPUnit tests for the \SameAsLite\Store\MySQLStore class.
  */
-class MySQLStoreTest extends SQLStoreTest
+class MySQLStoreTest extends \SameAsLite\Tests\SQLStoreTest
 {
 
     /** @var string $username The username to use for testing the Store, can be overriden in the xml config */

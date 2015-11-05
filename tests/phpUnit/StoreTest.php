@@ -34,6 +34,7 @@
 
 namespace SameAsLite\Tests;
 
+
 /**
  * PHPUnit tests for the \SameAsLite\Store class.
  */

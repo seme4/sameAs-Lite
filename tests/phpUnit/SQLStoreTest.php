@@ -34,12 +34,14 @@
 
 namespace SameAsLite\Tests;
 
-require_once 'StoreTest.php';
+// require_once 'StoreTest.php';
+// use StoreTest;
+
 
 /**
  * PHPUnit tests for the \SameAsLite\Store\SQLStore subclasses.
  */
-abstract class SQLStoreTest extends StoreTest
+abstract class SQLStoreTest extends \SameAsLite\Tests\StoreTest
 {
 
     /** @var \PDO $pdo The PDO object used by the store */

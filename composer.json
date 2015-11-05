@@ -44,6 +44,9 @@
     },
 
     "autoload": {
-        "psr-4": {"SameAsLite\\": "src/"}
+        "psr-4": {
+            "SameAsLite\\Tests\\": "tests/phpUnit/",
+            "SameAsLite\\": "src/"
+        }
     }
 }
