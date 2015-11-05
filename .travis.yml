@@ -13,10 +13,13 @@ addons:
     packages:
     - php5-xsl
     - php5-curl
-    - sqlite3
-    - php5-sqlite
-    - mysql-server
-    - php5-mysql
+#    - sqlite3
+#    - php5-sqlite
+#    - mysql-server
+#    - php5-mysql
+services:
+  - mysql
+  - sqlite3
 install:
 #  - /home/travis/.phpenv/versions/5.4/bin/composer self-update
   - composer install

@@ -69,7 +69,7 @@ abstract class SQLStoreTest extends \SameAsLite\Tests\StoreTest
     protected function isPairInStore($symbol1, $symbol2)
     {
         $table = $this->store->getTableName();
-        $query = "SELECT COUNT(*) AS 'count' FROM $table WHERE `canon` = :symbol1 AND `symbol` = :symbol2";
+        $query = "SELECT COUNT(*) AS `count` FROM `$table` WHERE `canon` = :symbol1 AND `symbol` = :symbol2";
 
         $statement = $this->pdo->prepare($query);
         $statement->execute([ ':symbol1' => $symbol1, ':symbol2' => $symbol2 ]);
@@ -84,7 +84,7 @@ abstract class SQLStoreTest extends \SameAsLite\Tests\StoreTest
     protected function isSymbolInStore($symbol)
     {
         $table = $this->store->getTableName();
-        $query = "SELECT COUNT(*) as 'count' FROM $table WHERE `symbol` = :symbol";
+        $query = "SELECT COUNT(*) as `count` FROM `$table` WHERE `symbol` = :symbol";
 
         $statement = $this->pdo->prepare($query);
         $statement->execute([ ':symbol' => $symbol ]);
