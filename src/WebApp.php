@@ -165,21 +165,36 @@ class WebApp
      * @param \SameAsLite\StoreInterface $store   A class implimenting StoreInterface to contain the data
      * @param array                      $options Array of configration options describing the dataset
      *
+<<<<<<< HEAD
      * @throws \Exception if there are problems with arguments in config.ini
+=======
+     * @throws \Exception if there are problems with arguments
+>>>>>>> parent of 6ce7805... exceptions
      */
     public function addDataset(\SameAsLite\StoreInterface $store, array $options)
     {
 
+<<<<<<< HEAD
         foreach (array('shortName', 'slug') as $configoption) {
             if (!isset($options[$configoption])) {
                 throw new \Exception('The Store array is missing required key/value "' . $configoption . '" in config.ini');
             }
+=======
+        if (!isset($options['shortName'])) {
+            throw new \Exception('The Store array is missing required key/value "shortName" in config.ini');
+>>>>>>> parent of 6ce7805... exceptions
         }
 
         if (!isset($options['fullName'])) {
+            // throw new \Exception('The Store array is missing required key/value "fullName" in config.ini');
             // as promised in config.ini, if fullName is not defined, it is set to shortName
+
             // $options['fullName'] = ucwords($options['shortName']);
             $options['fullName'] = $options['shortName'];
+        }
+
+        if (!isset($options['slug'])) {
+            throw new \Exception('The Store array is missing required key/value "slug" in config.ini');
         }
 
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
@@ -567,7 +582,6 @@ class WebApp
     /**
      * Middleware callback used to check for valid store.
      * It is not intended that you call this function yourself.
-     *
      * @throws \InvalidArgumentException Exception thrown if callback invoked incorrectly.
      */
     public function callbackCheckDataset()
@@ -617,7 +631,10 @@ class WebApp
      * Middleware callback used to check the HTTP authentication is OK.
      * Credentials are read from file named auth.htpasswd in the root directory.
      * It is not intended that you call this function yourself.
+<<<<<<< HEAD
      *
+=======
+>>>>>>> parent of 6ce7805... exceptions
      * @throws \Exception An exception is thrown if the credentials file cannot be opened
      */
     public function callbackCheckAuth()
@@ -658,7 +675,6 @@ class WebApp
     /**
      * Middleware callback used to check MIME types are OK.
      * It is not intended that you call this function yourself.
-     *
      * @throws \InvalidArgumentException Exception thrown if callback invoked incorrectly.
      */
     public function callbackCheckFormats()
@@ -775,13 +791,12 @@ class WebApp
     /**
      * Output a generic error page
      *
+     * @throws \InvalidArgumentException if the status is not a valid HTTP status code
      * @param string $status          The HTTP status code (eg 401, 404, 500)
      * @param string $title           Optional brief title of the page, used in HTML head etc
      * @param string $summary         Optional summary message describing the error
      * @param string $extendedTitle   Optional extended title, used at top of main content
      * @param string $extendedDetails Optional extended details, conveying more details
-     *
-     * @throws \InvalidArgumentException if the status is not a valid HTTP status code
      */
     protected function outputError($status, $title = null, $summary = '', $extendedTitle = '', $extendedDetails = '')
     {
@@ -1459,9 +1474,12 @@ class WebApp
      * Outputs the results in the format requested
      *
      * @param string $store The URL slug identifying the store
+<<<<<<< HEAD
      *
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
+=======
+>>>>>>> parent of 6ce7805... exceptions
      */
     public function analyse($store)
     {
@@ -1540,7 +1558,10 @@ class WebApp
      * Output a success message, in the most appropriate MIME type
      *
      * @param string $msg The information to be displayed
+<<<<<<< HEAD
      *
+=======
+>>>>>>> parent of 6ce7805... exceptions
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
@@ -1700,6 +1721,9 @@ class WebApp
      * @param integer $status HTTP status code
      *
      * @uses \EasyRdf_Graph
+     *
+     * @throws \Exception An exception may be thrown if the requested MIME type
+     * is not supported
      */
     protected function outputRDF(array $list = array(), $format = 'list', $status = null)
     {
@@ -1885,7 +1909,10 @@ class WebApp
      *
      * @param array $data    The rows to output
      * @param array $headers Column headers
+<<<<<<< HEAD
      *
+=======
+>>>>>>> parent of 6ce7805... exceptions
      * @throws \Exception An exception may be thrown if the requested MIME type
      * is not supported
      */
