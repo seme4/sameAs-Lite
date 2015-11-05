@@ -6,10 +6,10 @@ php:
 #  - hhvm
 #  - nightly
 env:
-  - DB=mysql
-  - DB=sqlite
+#  - DB=mysql
+#  - DB=sqlite
 install:
-  - /home/travis/.phpenv/versions/5.4/bin/composer self-update
+#  - /home/travis/.phpenv/versions/5.4/bin/composer self-update
   - composer install
   - pyrus install pear/PHP_CodeSniffer
 before_script:
