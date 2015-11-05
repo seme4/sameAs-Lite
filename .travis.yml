@@ -8,13 +8,19 @@ php:
 env:
 #  - DB=mysql
 #  - DB=sqlite
+addons:
+  apt:
+    packages:
+    - php5-xsl
+    - php5-curl
+    - sqlite3
+    - php5-sqlite
+#    - mysql-server
+#    - php5-mysql
 install:
 #  - /home/travis/.phpenv/versions/5.4/bin/composer self-update
   - composer install
   - pyrus install pear/PHP_CodeSniffer
-  - sudo apt-get update
-  - sudo apt-get install php5-xsl php5-curl sqlite3 php5-sqlite
-  - sudo apt-get install mysql-server php5-mysql
 before_script:
 #  - sudo service apache2 restart
   - phpenv config-add ./dev-tools/travis-php-env.ini
