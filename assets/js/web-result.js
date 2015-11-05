@@ -6,7 +6,7 @@
 var app = {
     ajaxMimeType: 'application/json', // default mime type
     outputMimeType: 'text/html', // default mime type
-    page: 1, //the current page (default = 1)
+    page: 0, //the current page (default = 0: do not append page parameter to url)
     markCurrent: function ($items, current, attrType) {
         $items.removeClass('current');
         $items.each(function(){
@@ -22,6 +22,21 @@ var app = {
                 }
             }
         });
+    },
+    updateState: function(data) {
+
+        // loop over the mime buttons to mark the current one
+        this.markCurrent($('.label.alternate_format'), this.outputMimeType, 'data');
+
+        // loop over the page buttons to mark the current one
+        this.markCurrent($('.pagination .label.page'), this.page, 'text');
+
+        // update the url
+        //window.location.href.replace(/page=\d+/i, "?page=" + app.page);
+        if (this.page) {
+            window.history.pushState(data, "SameAs-Lite Result Page " + this.page, "?page=" + this.page);
+        }
+
     },
     getPageContents: function() {
         // issue an ajax request to the current page for the selected mime type
@@ -156,26 +171,30 @@ var app = {
 
                         }
 
-                        // loop over the mime buttons to mark the current one
-                        app.markCurrent($('.label.alternate_format'), app.outputMimeType, 'data');
-
-                        // loop over the page buttons to mark the current one
-                        app.markCurrent($('.pagination .label.page'), app.page, 'text');
-
-                        // update the url
-                        //window.location.href.replace(/page=\d+/i, "?page=" + app.page);
-                        window.history.pushState(data, "SameAs-Lite Result Page " + app.page, "?page=" + app.page);
                     }
 
                 } else {
-                    // TODO
-                    console.log(jObj);
+                    var data = jObj.responseText;
+
+                    $('#result').html("");
+
+                    $('#result').html(data);
                 }
+
+                //always update the buttons and the url to reflect the page we are on
+                app.updateState(data);
 
             },//end success()
             error: function (jObj) {
-                // TODO
-                console.log(jObj);
+
+                var data = jObj.responseText;
+
+                app.updateState(data);
+
+                $('#result').html("");
+
+                $('#result').html(data);
+
             }//end error()
         });
     }

@@ -113,8 +113,8 @@ class WebApp
 
         // register 404 and custom error handlers
         $this->app->notFound(array($this, 'outputError404'));
-        $this->app->error(array($this, 'outputException'));
-        set_exception_handler(array($this, 'outputException'));
+        $this->app->error(array($this, 'outputException')); // '\SameAsLite\Exception\Exception::outputException'
+        set_exception_handler(array($this, 'outputException')); // '\SameAsLite\Exception\Exception::outputException'
 
         // Hook to set the api path
         $this->app->hook('slim.before.dispatch', function () {
@@ -162,7 +162,7 @@ class WebApp
 
         foreach (array('shortName', 'slug') as $configoption) {
             if (!isset($options[$configoption])) {
-                throw new ConfigException('The Store array is missing required key/value "' . $configoption . '" in config.ini');
+                throw new Exception\ConfigException('The Store array is missing required key/value "' . $configoption . '" in config.ini');
             }
         }
 
@@ -173,17 +173,17 @@ class WebApp
         }
 
         if (!isset($options['slug'])) {
-            throw new ConfigException('The Store array is missing required key/value "slug" in config.ini');
+            throw new Exception\ConfigException('The Store array is missing required key/value "slug" in config.ini');
         }
 
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
-            throw new ConfigException(
+            throw new Exception\ConfigException(
                 'The value for "slug" in config.ini may contain only characters a-z, A-Z, 0-9, hyphen and underscore'
             );
         }
 
         if (isset($this->stores[$options['slug']])) {
-            throw new ConfigException(
+            throw new Exception\ConfigException(
                 'You have already added a store with "slug" value of ' . $options['slug'] . ' in config.ini.'
             );
         }
@@ -624,7 +624,7 @@ class WebApp
             $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
             if ($credentials === false || count($credentials) === 0) {
                 // auth.htpasswd could not be loaded
-                throw new AuthException('Failed to load valid authorization credentials from ' . $filename);
+                throw new Exception\AuthException('Failed to load valid authorization credentials from ' . $filename);
             }
             foreach ($credentials as $line) {
                 $line = trim($line);
@@ -722,16 +722,26 @@ class WebApp
 
             // this is a client error -> use the correct header in 4XX range
             // $this->app->response->setStatus(406); //406 Not Acceptable
-            $status = 406;
-
-            // header("406 Not Acceptable");
+            $status = 406; // TODO
+            // the above does not work!
+            header($_SERVER['SERVER_PROTOCOL'] . " 406 Not Acceptable");
 
             // TODO:
             // add the available formats in response header
             // see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.7
-            // Unless it was a HEAD request, the response SHOULD include an entity containing a list of available entity characteristics and location(s) from which the user or user agent can choose the one most appropriate. The entity format is specified by the media type given in the Content-Type header field. Depending upon the format and the capabilities of the user agent, selection of the most appropriate choice MAY be performed automatically. However, this specification does not define any standard for such automatic selection.
+            // Unless it was a HEAD request, the response SHOULD include an entity
+            // containing a list of available entity characteristics and location(s)
+            // from which the user or user agent can choose the one most appropriate.
+            // The entity format is specified by the media type given in the Content-Type
+            // header field. Depending upon the format and the capabilities of the user agent,
+            // selection of the most appropriate choice MAY be performed automatically.
+            // However, this specification does not define any standard for such automatic selection.
 
 
+
+
+
+            // $app->response->headers->set('Content-Type', 'application/json');
 
         }
 
@@ -813,7 +823,7 @@ class WebApp
 
         if ($extendedTitle === '') {
             $defaultMsg = \Slim\Http\Response::getMessageForCode($status);
-            if ($defaultMsg != null) {
+            if ($defaultMsg !== null) {
                 $extendedTitle = substr($defaultMsg, 4);
             } else {
                 $extendedTitle = $title;
@@ -1191,7 +1201,7 @@ class WebApp
         // if request body is empty, there is nothing to assert
         $body = $this->app->request->getBody();
         if (!$body) { // body no longer exists in request obj
-            throw new InvalidRequestException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
+            throw new Exception\InvalidRequestException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
         } else {
             $this->stores[$store]->assertTSV($body);
 
