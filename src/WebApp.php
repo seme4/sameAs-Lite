@@ -96,18 +96,8 @@ class WebApp
         // fake $_SERVER parameters if required (eg command line invocation)
         $this->initialiseServerParameters();
 
-        $mode = (isset($options['mode']) ? $options['mode'] : 'production');
-        if ($mode === 'development') {
-            // Dev error reporting
-            ini_set('display_errors', 1);
-            // ini_set('html_errors', 0); // disable xdebug var-dump formatting
-            ini_set('display_startup_errors', 1);
-            error_reporting(-1); // show all errors for development
-        } else {
-            error_reporting(0);
-        }
-
         // initialise and configure Slim, using Twig template engine
+        $mode = (isset($options['mode']) ? $options['mode'] : 'production');
         $this->app = new \Slim\Slim(
             array(
                 'mode' => $mode,
@@ -165,46 +155,35 @@ class WebApp
      * @param \SameAsLite\StoreInterface $store   A class implimenting StoreInterface to contain the data
      * @param array                      $options Array of configration options describing the dataset
      *
-<<<<<<< HEAD
-     * @throws \Exception if there are problems with arguments in config.ini
-=======
-     * @throws \Exception if there are problems with arguments
->>>>>>> parent of 6ce7805... exceptions
+     * @throws \SameAsLite\ConfigException if there are problems with arguments in config.ini
      */
     public function addDataset(\SameAsLite\StoreInterface $store, array $options)
     {
 
-<<<<<<< HEAD
         foreach (array('shortName', 'slug') as $configoption) {
             if (!isset($options[$configoption])) {
-                throw new \Exception('The Store array is missing required key/value "' . $configoption . '" in config.ini');
+                throw new ConfigException('The Store array is missing required key/value "' . $configoption . '" in config.ini');
             }
-=======
-        if (!isset($options['shortName'])) {
-            throw new \Exception('The Store array is missing required key/value "shortName" in config.ini');
->>>>>>> parent of 6ce7805... exceptions
         }
 
         if (!isset($options['fullName'])) {
-            // throw new \Exception('The Store array is missing required key/value "fullName" in config.ini');
             // as promised in config.ini, if fullName is not defined, it is set to shortName
-
             // $options['fullName'] = ucwords($options['shortName']);
             $options['fullName'] = $options['shortName'];
         }
 
         if (!isset($options['slug'])) {
-            throw new \Exception('The Store array is missing required key/value "slug" in config.ini');
+            throw new ConfigException('The Store array is missing required key/value "slug" in config.ini');
         }
 
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
-            throw new \Exception(
+            throw new ConfigException(
                 'The value for "slug" in config.ini may contain only characters a-z, A-Z, 0-9, hyphen and underscore'
             );
         }
 
         if (isset($this->stores[$options['slug']])) {
-            throw new \Exception(
+            throw new ConfigException(
                 'You have already added a store with "slug" value of ' . $options['slug'] . ' in config.ini.'
             );
         }
@@ -631,11 +610,8 @@ class WebApp
      * Middleware callback used to check the HTTP authentication is OK.
      * Credentials are read from file named auth.htpasswd in the root directory.
      * It is not intended that you call this function yourself.
-<<<<<<< HEAD
      *
-=======
->>>>>>> parent of 6ce7805... exceptions
-     * @throws \Exception An exception is thrown if the credentials file cannot be opened
+     * @throws \SameAsLite\AuthException An exception is thrown if the credentials file cannot be opened
      */
     public function callbackCheckAuth()
     {
@@ -648,7 +624,7 @@ class WebApp
             $credentials = @file($filename, FILE_SKIP_EMPTY_LINES | FILE_IGNORE_NEW_LINES);
             if ($credentials === false || count($credentials) === 0) {
                 // auth.htpasswd could not be loaded
-                throw new \Exception('Failed to load valid authorization credentials from ' . $filename);
+                throw new AuthException('Failed to load valid authorization credentials from ' . $filename);
             }
             foreach ($credentials as $line) {
                 $line = trim($line);
@@ -774,8 +750,8 @@ class WebApp
                 $summary . '<strong>' . $e->getFile() . '</strong> &nbsp; +' . $e->getLine(),
                 $msg,
                 "<h4>Stack trace &ndash;</h4>" . PHP_EOL .
-                . '        <pre class="white">' . $e->getTraceAsString() . '</pre>'
-                . $op
+                '        <pre class="white">' . $e->getTraceAsString() . '</pre>' .
+                $op
             );
         } else {
             // show basic message
@@ -791,12 +767,13 @@ class WebApp
     /**
      * Output a generic error page
      *
-     * @throws \InvalidArgumentException if the status is not a valid HTTP status code
      * @param string $status          The HTTP status code (eg 401, 404, 500)
      * @param string $title           Optional brief title of the page, used in HTML head etc
      * @param string $summary         Optional summary message describing the error
      * @param string $extendedTitle   Optional extended title, used at top of main content
      * @param string $extendedDetails Optional extended details, conveying more details
+     *
+     * @throws \InvalidArgumentException if the status is not a valid HTTP status code
      */
     protected function outputError($status, $title = null, $summary = '', $extendedTitle = '', $extendedDetails = '')
     {
@@ -1107,7 +1084,11 @@ class WebApp
         $this->app->view()->set('titleHeader', 'All Canons in this dataset');
         $results = $this->stores[$store]->getAllCanons();
 
-        $this->outputList($results, true); //numeric list
+        if ($this->isRDFRequest()) {
+            $this->outputRDF($list, 'list', 'sa:canon');
+        } else {
+            $this->outputList($results, true); //numeric list
+        }
     }
 
     /**
@@ -1175,7 +1156,7 @@ class WebApp
      *
      * @param string $store The URL slug identifying the store
      *
-     * @throws \Exception An exception is thrown if the request body is empty
+     * @throws \SameAsLite\InvalidRequestException An exception is thrown if the request body is empty
      */
     public function assertPairs($store)
     {
@@ -1185,7 +1166,7 @@ class WebApp
         // if request body is empty, there is nothing to assert
         $body = $this->app->request->getBody();
         if (!$body) { // body no longer exists in request obj
-            throw new \Exception('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
+            throw new InvalidRequestException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
         } else {
             $this->stores[$store]->assertTSV($body);
 
@@ -1474,12 +1455,9 @@ class WebApp
      * Outputs the results in the format requested
      *
      * @param string $store The URL slug identifying the store
-<<<<<<< HEAD
      *
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
-=======
->>>>>>> parent of 6ce7805... exceptions
      */
     public function analyse($store)
     {
@@ -1517,7 +1495,7 @@ class WebApp
                 break;
 
             default:
-                throw new \Exception('Could not render analysis as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render analysis as ' . $this->mimeBest);
         }
     }
 
@@ -1558,11 +1536,8 @@ class WebApp
      * Output a success message, in the most appropriate MIME type
      *
      * @param string $msg The information to be displayed
-<<<<<<< HEAD
      *
-=======
->>>>>>> parent of 6ce7805... exceptions
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputSuccess($msg)
@@ -1586,7 +1561,7 @@ class WebApp
                 break;
 
             default:
-                throw new \Exception('Could not render success output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render success output as ' . $this->mimeBest);
         }
     }
 
@@ -1597,7 +1572,7 @@ class WebApp
      * @param array   $list          The items to output
      * @param integer $status        HTTP status code
      *
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputArbitrary(array $list = array(), $status = null)
@@ -1708,7 +1683,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new \Exception('Could not render list output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1716,16 +1691,17 @@ class WebApp
     /**
      * Output data in RDF and Turtle format
      *
-     * @param array   $list   The items to output
-     * @param string  $format The output format
-     * @param integer $status HTTP status code
+     * @param array   $list      The items to output
+     * @param string  $format    The output format
+     * @param string  $predicate The predicate for the list
+     * @param integer $status    HTTP status code
      *
      * @uses \EasyRdf_Graph
      *
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputRDF(array $list = array(), $format = 'list', $status = null)
+    protected function outputRDF(array $list = array(), $format = 'list', $predicate = 'owl:sameAs', $status = null)
     {
         // get the query parameter
         $symbol = $this->app->request()->params('string');
@@ -1769,28 +1745,37 @@ class WebApp
                 $symbol_block = $graph->newBNode();
                 $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $symbol_block->getBNodeId()));
             }
+            $predicate = 'owl:sameAs';
             foreach ($list as $s) {
                 if (strpos($s, 'http') === 0) {
                     // resource
-                    $symbol_block->add('owl:sameAs', $graph->resource(urldecode($s)));
+                    $symbol_block->add($predicate, $graph->resource(urldecode($s)));
                 } else {
                     // literal values - not technically correct, because sameAs expects a resource
                     // but validates in W3C Validator
-                    $symbol_block->add('owl:sameAs', $s);
+                    $symbol_block->add($predicate, $s);
                 }
             }
         } else {
             //simple list
-            \EasyRdf_Namespace::set('sa', 'http://sameas.org/ns/');
-            $symbol_block = $graph->resource($domain . '/datasets/' . $this->store. '/canons/');
+
+            //create the namespace from the incoming predicate
+            if (strpos($predicate, ':') !== false) {
+                $ns = explode(':', $predicate);
+                \EasyRdf_Namespace::set($ns[0], 'http://sameas.org/' . $ns[0] . '/');
+                $symbol_block = $graph->resource($domain . '/datasets/' . $this->store. '/' . $ns[1] . '/');
+            } else {
+                throw new \Exception("Expecting $predicate parameter to be namespaced");
+            }
+
             foreach ($list as $s) {
                 if (strpos($s, 'http') === 0) {
                     // resource
-                    $symbol_block->add('sa:canon', $graph->resource(urldecode($s)));
+                    $symbol_block->add($predicate, $graph->resource(urldecode($s)));
                 } else {
                     // literal values - not technically correct, because sameAs expects a resource
                     // but validates in W3C Validator
-                    $symbol_block->add('sa:canon', $s);
+                    $symbol_block->add($predicate, $s);
                 }
             }
         }
@@ -1818,7 +1803,7 @@ class WebApp
      * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
      * @param integer $status        HTTP status code
      *
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputList(array $list = array(), $numeric_array = true, $status = null)
@@ -1875,16 +1860,6 @@ class WebApp
 
                 break;
 
-            case 'application/rdf+xml':
-            case 'application/x-turtle':
-            case 'text/turtle':
-
-                $this->outputRDF($list, 'list');
-
-                exit;
-
-                break;
-
             case 'text/html':
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
@@ -1900,7 +1875,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new \Exception('Could not render list output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1909,11 +1884,8 @@ class WebApp
      *
      * @param array $data    The rows to output
      * @param array $headers Column headers
-<<<<<<< HEAD
      *
-=======
->>>>>>> parent of 6ce7805... exceptions
-     * @throws \Exception An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputTable(array $data, array $headers = array())
@@ -2059,7 +2031,7 @@ class WebApp
                 $this->app->contentType('text/html');
 
                 // TODO - this needs response headers that point to available formats
-                throw new \Exception('Could not render tabular output as ' . $this->mimeBest);
+                throw new ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
         }
     }
 
@@ -2131,6 +2103,25 @@ class WebApp
         }
         return $return;
     }
+
+
+    /**
+     * Check if this is a call for RDF or turtle
+     *
+     * @return boolean $isRDFRequest
+     */
+    protected function isRDFRequest()
+    {
+        if (isset($this->mimeBest) && in_array($this->mimeBest, array('application/rdf+xml', 'text/turtle', 'application/x-turtle')))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 }
 
 // vim: set filetype=php expandtab tabstop=4 shiftwidth=4:

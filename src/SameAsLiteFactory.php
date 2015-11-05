@@ -144,6 +144,23 @@ class SameAsLiteFactory
      */
     public static function createWebAppFromArray(array $config)
     {
+
+        /*
+        //has no effect here
+
+        //error reporting - need to have this as early as possible
+        $mode = (isset($config['mode']) ? $config['mode'] : 'production');
+        if ($mode === 'development') {
+            // Dev error reporting
+            ini_set('display_errors', 1);
+            // ini_set('html_errors', 0); // disable xdebug var-dump formatting
+            ini_set('display_startup_errors', 1);
+            error_reporting(-1); // show all errors for development
+        } else {
+            error_reporting(0);
+        }
+        */
+
         if (!isset($config['webapp'])) {
             throw new \InvalidArgumentException('No WebApp Config found, must be under category "[webapp]"' .
                 ' in config.ini');
