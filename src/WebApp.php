@@ -718,6 +718,10 @@ class WebApp
      */
     public function outputException(\Exception $e)
     {
+
+var_dump($e);die;
+
+
         if ($this->app->getMode() == 'development') {
             // show details if we are in dev mode
             $op  = PHP_EOL;
@@ -1085,7 +1089,7 @@ class WebApp
         $results = $this->stores[$store]->getAllCanons();
 
         if ($this->isRDFRequest()) {
-            $this->outputRDF($list, 'list', 'sa:canon');
+            $this->outputRDF($results, 'list', 'sa:canon');
         } else {
             $this->outputList($results, true); //numeric list
         }
@@ -1120,11 +1124,13 @@ class WebApp
     {
         $this->app->view()->set('titleHTML', 'Canon query');
         $this->app->view()->set('titleHeader', 'Canon for &ldquo;' . $symbol . '&rdquo;');
-        $result = [$this->stores[$store]->getCanon($symbol)];
-        if (!$result[0]) {
-            $result = [];
+        $canon = $this->stores[$store]->getCanon($symbol);
+        if (!$canon) {
+            $results = [];
+        } else {
+            $results = [$canon];
         }
-        $this->outputList($result);
+        $this->outputList($results);
     }
 
     /**
@@ -1456,7 +1462,7 @@ class WebApp
      *
      * @param string $store The URL slug identifying the store
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     public function analyse($store)
@@ -1495,7 +1501,7 @@ class WebApp
                 break;
 
             default:
-                throw new ContentTypeException('Could not render analysis as ' . $this->mimeBest);
+                throw new Exception\ContentTypeException('Could not render analysis as ' . $this->mimeBest);
         }
     }
 
@@ -1537,7 +1543,7 @@ class WebApp
      *
      * @param string $msg The information to be displayed
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputSuccess($msg)
@@ -1561,7 +1567,7 @@ class WebApp
                 break;
 
             default:
-                throw new ContentTypeException('Could not render success output as ' . $this->mimeBest);
+                throw new Exception\ContentTypeException('Could not render success output as ' . $this->mimeBest);
         }
     }
 
@@ -1572,7 +1578,7 @@ class WebApp
      * @param array   $list          The items to output
      * @param integer $status        HTTP status code
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputArbitrary(array $list = array(), $status = null)
@@ -1683,7 +1689,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
+                throw new Exception\ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1698,7 +1704,7 @@ class WebApp
      *
      * @uses \EasyRdf_Graph
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputRDF(array $list = array(), $format = 'list', $predicate = 'owl:sameAs', $status = null)
@@ -1803,7 +1809,7 @@ class WebApp
      * @param boolean $numeric_array Convert the array into a numerically-keyed array, if true
      * @param integer $status        HTTP status code
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputList(array $list = array(), $numeric_array = true, $status = null)
@@ -1875,7 +1881,7 @@ class WebApp
 
             default:
                 // TODO - this requires a response header
-                throw new ContentTypeException('Could not render list output as ' . $this->mimeBest);
+                throw new Exception\ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
 
@@ -1885,15 +1891,15 @@ class WebApp
      * @param array $data    The rows to output
      * @param array $headers Column headers
      *
-     * @throws \SameAsLite\ContentTypeException An exception may be thrown if the requested MIME type
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
     protected function outputTable(array $data, array $headers = array())
     {
         // pagination check
-        if ($this->stores[$this->$store]->isPaginated()) {
+        if ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
-            $this->app->view()->set('currentPage', $this->stores[$this->$store]->getCurrentPage());
+            $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
             // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
@@ -2031,7 +2037,7 @@ class WebApp
                 $this->app->contentType('text/html');
 
                 // TODO - this needs response headers that point to available formats
-                throw new ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
+                throw new Exception\ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
         }
     }
 
