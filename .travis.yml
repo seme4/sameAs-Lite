@@ -15,8 +15,8 @@ addons:
     - php5-curl
     - sqlite3
     - php5-sqlite
-#    - mysql-server
-#    - php5-mysql
+    - mysql-server
+    - php5-mysql
 install:
 #  - /home/travis/.phpenv/versions/5.4/bin/composer self-update
   - composer install
