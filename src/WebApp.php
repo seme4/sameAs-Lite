@@ -597,12 +597,6 @@ class WebApp
             // enable pagination in the store
             $this->stores[$this->store]->configurePagination($this->appOptions['num_per_page']);
             $this->app->view->set('pagination', true);
-        /*
-        } else {
-            // disable pagination, since there are either multiple or no stores queried
-            $this->pagination = false;
-            $this->app->view->set('pagination', false);
-        */
         }
     }
 
@@ -643,7 +637,7 @@ class WebApp
         }
 
         // missing or invalid credentials
-        if (!$authorized) { // && (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
+        if (!$authorized) {
             $this->outputError401();
         }
     }
@@ -667,15 +661,10 @@ class WebApp
         // perform MIME-type matching on the requested and available formats
         // note that if there are no q-values, the *LAST* type "wins"
 
-        // bugfix 1: change conneg class from Negotiate to Negotation
-        // $conneg = new \ptlis\ConNeg\Negotiate();
         $conneg = new \ptlis\ConNeg\Negotiation();
 
         $this->mimeBest = $conneg->mimeBest($_SERVER['HTTP_ACCEPT'], $acceptableMime);
 
-        // bugfix 2: $this->mimeBest is a string, not an object
-        // if the quality is zero, no matches between request and available
-        // if ($best->getQualityFactor()->getFactor() == 0) {
         if (!$this->mimeBest) {
             // TODO: need to verify that this is the expected return if there are no matches
             $this->outputError(
@@ -688,19 +677,12 @@ class WebApp
 
         // store alternative MIME types
         foreach ($conneg->mimeAll('*/*', $acceptableMime) as $type) {
-            // bugfix 4
-            // $type = $type->getAppType()->getType();
             $type = $type->getClientPreference();
 
             if ($type != $this->mimeBest) {
                 $this->mimeAlternatives[] = $type;
             }
         }
-
-        // print "<pre>available: $acceptableMime</pre>\n";
-        // print "<pre>requested: {$_SERVER['HTTP_ACCEPT']}</pre>\n";
-        // print "<pre>best: {$this->mimeBest}</pre>\n";
-        // print "<pre>others: " . join(' , ', $this->mimeAlternatives) . "</pre>\n";
 
         // return best match
         return $this->mimeBest;
@@ -833,9 +815,7 @@ class WebApp
             }
         }
 
-        // $this->app->contentType('text/html');
-        $this->app->response->headers->set('Content-Type', 'text/html');
-
+        $this->app->contentType('text/html');
 
         $parsed_template = $this->app->view->render('error.twig', [
             'titleHTML'    => ' - ' . strip_tags($title),
@@ -1383,9 +1363,6 @@ class WebApp
      */
     public function listStores()
     {
-
-        $this->app->contentType($this->mimeBest);
-
         switch ($this->mimeBest) {
             case 'text/plain':
 
@@ -1521,8 +1498,6 @@ class WebApp
 
         $result = $this->stores[$store]->analyse();
 
-        $this->app->contentType($this->mimeBest);
-
         switch ($this->mimeBest) {
 
             case 'text/plain':
@@ -1597,7 +1572,6 @@ class WebApp
      */
     protected function outputSuccess($msg)
     {
-        $this->app->contentType($this->mimeBest);
         switch ($this->mimeBest) {
             case 'text/plain':
             case 'text/csv':
@@ -1639,9 +1613,6 @@ class WebApp
         if (!is_null($status)) {
             $this->app->response->setStatus($status);
         }//end if
-
-        // set the content-type response header
-        $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
 
@@ -1884,9 +1855,6 @@ class WebApp
             $this->app->response->setStatus($status);
         }//end if
 
-        // set the content-type response header
-        $this->app->contentType($this->mimeBest);
-
         switch ($this->mimeBest) {
             case 'text/plain':
 
@@ -1970,8 +1938,6 @@ class WebApp
         //     $status = 404;
         //     $this->app->response->setStatus($status);
         // }
-
-        $this->app->contentType($this->mimeBest);
 
         switch ($this->mimeBest) {
             case 'text/csv':
