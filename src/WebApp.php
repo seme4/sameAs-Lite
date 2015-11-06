@@ -413,7 +413,7 @@ class WebApp
             '/datasets/:store/symbols/:symbol',
             'removeSymbol',
             'Delete symbol',
-            'TBC',
+            'Delete a symbol from the datastore',
             true,
             'text/html,text/plain'
         );
@@ -655,6 +655,7 @@ class WebApp
         $this->mimeBest = $conneg->mimeBest($_SERVER['HTTP_ACCEPT'], $acceptableMime);
 
         if (!$this->mimeBest) {
+
             // TODO: need to verify that this is the expected return if there are no matches
             $this->outputError(
                 406,
@@ -662,6 +663,7 @@ class WebApp
                 '</p><p>This service cannot return information in the format(s) you requested.',
                 'Sorry, we cannot serve you data in your requested format'
             );
+
         }
 
         // store alternative MIME types
