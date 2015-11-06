@@ -655,10 +655,9 @@ class WebApp
      */
     public function callbackCheckFormats()
     {
-
         // get the acceptable MIME type from route info
         $args = func_get_args();
-        if (count($args) == 0 || (!$args[0] instanceof \Slim\Route)) {
+        if (count($args) === 0 || (!$args[0] instanceof \Slim\Route)) {
             throw new \InvalidArgumentException('This method should not be invoked outside of the Slim Framework');
         }
         $route = $args[0];
