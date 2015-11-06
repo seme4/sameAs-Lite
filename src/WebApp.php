@@ -191,7 +191,7 @@ class WebApp
     public function run()
     {
         // homepage and generic functions
-        $this->registerURL(
+        $this->registerURL( // web app
             'GET',
             '/',
             'homepage',
@@ -202,7 +202,7 @@ class WebApp
             true,
             false //no pagination
         );
-        $this->registerURL(
+        $this->registerURL( // web app
             'GET',
             '/api',
             'api',
@@ -213,7 +213,7 @@ class WebApp
             true,
             false //no pagination
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets',
             'listStores',
@@ -222,9 +222,9 @@ class WebApp
             false,
             'application/json,text/html,text/csv',
             false,
-            true // pagination
+            true // enable pagination
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets/:store',
             'storeHomepage',
@@ -235,7 +235,7 @@ class WebApp
             true, // hide from API
             false // no pagination
         );
-        $this->registerURL(
+        $this->registerURL( // web app
             'GET',
             '/datasets/:store/api',
             'api',
@@ -247,7 +247,7 @@ class WebApp
             false // no pagination
         );
 
-        $this->registerURL(
+        $this->registerURL( // web app
             'GET',
             '/about',
             'aboutPage',
@@ -258,7 +258,7 @@ class WebApp
             true, // hide from API
             false // no pagination
         );
-        $this->registerURL(
+        $this->registerURL( // web app
             'GET',
             '/contact',
             'contactPage',
@@ -269,7 +269,7 @@ class WebApp
             true, // hide from API
             false // no pagination
         );
-        $this->registerURL(
+        $this->registerURL( // web app
             'GET',
             '/license',
             'licensePage',
@@ -283,16 +283,16 @@ class WebApp
 
 
         // dataset admin actions
-        $this->registerURL(
+        $this->registerURL( // API
             'DELETE',
             '/datasets/:store',
             'deleteStore',
             'Delete an entire store',
-            'Removes an entire store, deleting the underlying database',
+            'Removes an entire store, deleting the underlying database', // but not the config (TODO)
             true,
             'text/html,text/plain'
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'DELETE',
             '/datasets/:store/admin/empty',
             'emptyStore',
@@ -301,7 +301,7 @@ class WebApp
             true,
             'text/html,text/plain'
         );
-        // $this->registerURL(
+        // $this->registerURL( // web app
         // 'GET',
         // '/datasets/:store/admin/backup/',
         // 'backupStore',
@@ -310,7 +310,7 @@ class WebApp
         // true,
         // 'text/html,text/plain'
         // );
-        $this->registerURL(
+        $this->registerURL( // API
             'PUT',
             '/datasets/:store/admin/restore',
             'restoreStore',
@@ -321,7 +321,7 @@ class WebApp
         );
 
         // Canon work
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/canons',
             'allCanons',
@@ -332,7 +332,7 @@ class WebApp
             false,
             true // pagination
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'PUT',
             '/datasets/:store/canons/:symbol',
             'setCanon',
@@ -341,7 +341,7 @@ class WebApp
             true,
             'text/html,text/plain'
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/canons/:symbol',
             'getCanon',
@@ -354,7 +354,7 @@ class WebApp
         );
 
         // Pairs
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/pairs',
             'dumpStore',
@@ -365,7 +365,7 @@ class WebApp
             false,
             true // pagination
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'PUT',
             '/datasets/:store/pairs',
             'assertPairs',
@@ -374,7 +374,7 @@ class WebApp
             true,
             'text/html,text/plain'
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'PUT',
             '/datasets/:store/pairs/:symbol1/:symbol2',
             'assertPair',
@@ -384,7 +384,7 @@ class WebApp
             'application/json,text/html,text/plain'
         );
 
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/pairs/:string',
             'search',
@@ -397,7 +397,7 @@ class WebApp
         );
 
         // Single symbol stuff
-        $this->registerURL(
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/symbols/:symbol',
             'querySymbol',
@@ -408,7 +408,7 @@ class WebApp
             false,
             true // pagination
         );
-        $this->registerURL(
+        $this->registerURL( // API
             'DELETE',
             '/datasets/:store/symbols/:symbol',
             'removeSymbol',
@@ -418,16 +418,16 @@ class WebApp
             'text/html,text/plain'
         );
 
-        // Simple status
-        $this->registerURL(
+        // Simple status of datastore
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/status',
             'statistics',
             'Returns status of the store'
         );
 
-        // New to the service interaction (not in the Seme4 Platform)
-        $this->registerURL(
+        // Analyse contents of store
+        $this->registerURL( // API
             'GET',
             '/datasets/:store/analysis',
             'analyse',
