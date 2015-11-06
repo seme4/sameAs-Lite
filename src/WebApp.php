@@ -281,26 +281,31 @@ class WebApp
             false // no pagination
         );
 
-
         // dataset admin actions
+
+        // TODO: this would also need to update the config.ini
         $this->registerURL( // API
             'DELETE',
             '/datasets/:store',
             'deleteStore',
             'Delete an entire store',
-            'Removes an entire store, deleting the underlying database', // but not the config (TODO)
+            'Removes an entire store, deleting the underlying database',
             true,
-            'text/html,text/plain'
+            'text/plain,application/json,text/html'
         );
+
+        // Update the store contents
+        // Use a PUT request with empty body to remove the contents of the store
         $this->registerURL( // API
-            'DELETE',
-            '/datasets/:store/admin/empty',
-            'emptyStore',
-            'Delete the contents of a store',
-            'Removes the entire contents of a store, leaving an empty database',
+            'PUT',
+            '/datasets/:store',
+            'updateStore',
+            'Update or delete the contents of a store',
+            'Updates the store with request body or, if the request body is empty, removes the entire contents of a store, leaving an empty database',
             true,
-            'text/html,text/plain'
+            'application/json,text/csv,text/tab-separated-values,text/plain' // TODO: rdf + turtle
         );
+
         // $this->registerURL( // web app
         // 'GET',
         // '/datasets/:store/admin/backup/',
@@ -310,15 +315,15 @@ class WebApp
         // true,
         // 'text/html,text/plain'
         // );
-        $this->registerURL( // API
-            'PUT',
-            '/datasets/:store/admin/restore',
-            'restoreStore',
-            'Restore database backup',
-            'You can use this method to restore a previously downloaded database backup',
-            true,
-            'text/html,text/plain'
-        );
+        // $this->registerURL( // API
+        //    'PUT',
+        //    '/datasets/:store/admin/restore',
+        //    'restoreStore',
+        //    'Restore database backup',
+        //    'You can use this method to restore a previously downloaded database backup',
+        //    true,
+        //    'text/html,text/plain'
+        // );
 
         // Canon work
         $this->registerURL( // API
@@ -339,7 +344,7 @@ class WebApp
             'Set the canon',
             'Invoking this method ensures that the :symbol becomes the canon',
             true,
-            'text/html,text/plain'
+            'text/plain,application/json,text/html'
         );
         $this->registerURL( // API
             'GET',
@@ -348,7 +353,7 @@ class WebApp
             'Get canon',
             'Returns the canon for the given :symbol',
             false,
-            'text/html,text/plain',
+            'text/plain,application/json,text/html',
             false,
             false // pagination
         );
@@ -361,7 +366,7 @@ class WebApp
             'Export list of pairs',
             'This method dumps *all* pairs from the database',
             false,
-            'application/json,text/html,text/csv',
+            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain',
             false,
             true // pagination
         );
@@ -372,7 +377,7 @@ class WebApp
             'Assert multiple pairs',
             'Upload a file of pairs to be inserted into the store',
             true,
-            'text/html,text/plain'
+            'text/plain,application/json,text/html'
         );
         $this->registerURL( // API
             'PUT',
@@ -381,7 +386,7 @@ class WebApp
             'Assert single pair',
             'Asserts sameAs between the given two symbols',
             true,
-            'application/json,text/html,text/plain'
+            'text/plain,application/json,text/html'
         );
 
         $this->registerURL( // API
@@ -391,7 +396,7 @@ class WebApp
             'Search',
             'Find symbols which contain/match the search string/pattern',
             false,
-            'application/json,text/html,text/csv',
+            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain',
             false,
             true // pagination
         );
@@ -415,7 +420,7 @@ class WebApp
             'Delete symbol',
             'Delete a symbol from the datastore',
             true,
-            'text/html,text/plain'
+            'text/plain,application/json,text/html'
         );
 
         // Simple status of datastore
@@ -423,7 +428,9 @@ class WebApp
             'GET',
             '/datasets/:store/status',
             'statistics',
-            'Returns status of the store'
+            'Returns status of the store',
+            true,
+            'text/plain,application/json,text/html'
         );
 
         // Analyse contents of store
@@ -432,6 +439,8 @@ class WebApp
             '/datasets/:store/analysis',
             'analyse',
             'Analyse contents of the store'
+            true,
+            'text/plain,application/json,text/html'
         );
 
         // add datasets to template
@@ -1038,7 +1047,7 @@ class WebApp
             'POST' => 'success'
         );
 
-        if ($method == 'GET') {
+        if ($method === 'GET') {
             $formMethod = 'GET';
         } else {
             $formMethod = 'POST';
@@ -1065,9 +1074,9 @@ class WebApp
 
 
         // auth required?
-        $authString = ($info['authRequired']) ? ' --user username:password' : '';
+        $authString = ($info['authRequired'] ? ' --user username:password' : '');
 
-        if (count($parameters) == 0 && ($method == 'PUT' || $method == 'POST')) {
+        if (count($parameters) === 0 && ($method === 'PUT' || $method === 'POST')) {
             // Upload file command line string
             $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHTML";
         } else {
@@ -1105,6 +1114,34 @@ class WebApp
     {
         $this->stores[$store]->deleteStore();
         $this->outputSuccess('Store deleted');
+    }
+
+    /**
+     * Actions the HTTP PUT service from /datasets/:store
+     *
+     * For non-empty request body:
+     * Updates the store's contents with the data from the request body.
+     * Reports success with HTTP status 204
+     *
+     * For empty request body:
+     * Simply passes the request on to the emptyStore() if the request body is empty.
+     * Reports success with HTTP status 204, since failure will have caused an exception
+     *
+     * @param string $store The URL slug identifying the store
+     */
+    public function updateStore($store)
+    {
+
+        //xxx
+        var_dump($this->app->request);
+        die;
+
+
+
+        $this->stores[$store]->setCanon($symbol);
+
+        $this->stores[$store]->emptyStore();
+        $this->outputSuccess('Store emptied');
     }
 
     /**
@@ -1630,8 +1667,10 @@ class WebApp
      * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputSuccess($msg)
+    protected function outputSuccess($msg, $status = 200)
     {
+        $this->app->response->setStatus($status);
+
         switch ($this->mimeBest) {
             case 'text/plain':
             case 'text/csv':
