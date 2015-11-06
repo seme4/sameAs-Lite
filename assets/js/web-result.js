@@ -183,10 +183,10 @@ var app = {
 
                     }
 
-                    //always update the buttons and the url to reflect the page we are on
-                    app.updateState(data);
-
                 }
+
+                //always update the buttons and the url to reflect the page we are on
+                app.updateState(data);
 
             },//end success()
             error: function (jObj) {
