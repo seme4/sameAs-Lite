@@ -817,15 +817,13 @@ class WebApp
 
         $this->app->contentType('text/html');
 
-        $parsed_template = $this->app->view->render('error.twig', [
+        $this->app->render('error.twig', [
             'titleHTML'    => ' - ' . strip_tags($title),
             'titleHeader'  => 'Error ' . $status,
             'title'        => $extendedTitle,
             'summary'      => $summary,
             'details'      => $extendedDetails
         ]);
-
-        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -890,9 +888,7 @@ class WebApp
             '<script src="'. $this->app->request()->getRootUri() . '/assets/js/homepage-store.js"></script>'
         );
 
-        $parsed_template = $this->app->view->render('homepage-store.twig', $viewData);
-
-        $this->app->response->setBody($parsed_template);
+        $this->app->render('homepage-store.twig', $viewData);
     }
 
     /**
@@ -900,14 +896,12 @@ class WebApp
      */
     public function aboutPage()
     {
-        $parsed_template = $this->app->view->render('page-about.twig', [
+        $this->app->render('page-about.twig', [
             'titleHTML'    => ' - About SameAsLite',
             'titleHeader'  => 'About SameAsLite',
             'storeOptions' => $this->storeOptions
 
         ]);
-
-        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -915,13 +909,11 @@ class WebApp
      */
     public function contactPage()
     {
-        $parsed_template = $this->app->view->render('page-contact.twig', [
+        $this->app->render('page-contact.twig', [
             'titleHTML'    => ' - Contact',
             'titleHeader'  => 'Contact',
             'storeOptions' => $this->storeOptions
         ]);
-
-        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -929,12 +921,10 @@ class WebApp
      */
     public function licensePage()
     {
-        $parsed_template = $this->app->view->render('page-license.twig', [
+        $this->app->render('page-license.twig', [
             'titleHTML'    => ' - SameAsLite License',
             'titleHeader'  => 'SameAsLite License'
         ]);
-
-        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -966,13 +956,11 @@ class WebApp
         );
 
         // render the template
-        $parsed_template = $this->app->view->render('api-index.twig', [
+        $this->app->render('api-index.twig', [
             'titleHTML' => ' - API',
             'titleHeader' => 'API overview',
             'routes' => $routes
         ]);
-
-        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -1287,13 +1275,11 @@ class WebApp
                 $this->prepareWebResultView();
 
                 // render the page
-                $parsed_template = $this->app->view->render('snippet-bundle.twig', [
+                $this->app->render('snippet-bundle.twig', [
                     'symbol' => $symbol,
                     'equiv_symbols' => $results,
                     'canon' => $canon
                 ]);
-
-                $this->app->response->setBody($parsed_template);
 
             } else {
                 $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store", 404);
@@ -1458,13 +1444,11 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                $parsed_template = $this->app->view->render('page-storeList.twig', [
+                $this->app->render('page-storeList.twig', [
                     'titleHTML' => ' ',
                     'titleHeader' => 'Datasets',
                     'stores' => $this->storeOptions
                 ]);
-
-                $this->app->response->setBody($parsed_template);
 
                 break;
 
@@ -1555,11 +1539,10 @@ class WebApp
             $this->app->response->setStatus($status);
         }
 
-        $prepared_template = $this->app->view->render('page.twig', [
+        $this->app->render('page.twig', [
             'body'    => $body
         ]);
 
-        $this->app->response->setBody($prepared_template);
     }
 
     /**
@@ -1698,11 +1681,9 @@ class WebApp
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
-                $prepared_template = $this->app->view->render('page-output.twig', [
+                $this->app->render('page-output.twig', [
                     'list' => '<pre>' . print_r($list, true) . '</pre>'
                 ]);
-
-                $this->app->response->setBody($prepared_template);
 
                 break;
 
@@ -1892,19 +1873,9 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                /*
-                    //app->render will output directly -> not what we want
-                    $this->app->render('page-list.twig', [
-                        'list' => $list
-                    ]);
-                */
-
-                //app->view->render will return the parsed template -> bingo!
-                $parsed_template = $this->app->view->render('page-list.twig', [
+                $this->app->render('page-list.twig', [
                     'list' => $list
                 ]);
-
-                $this->app->response->setBody($parsed_template);
 
                 break;
 
@@ -2061,9 +2032,7 @@ class WebApp
 
                 }
 
-                $parsed_template = $this->app->view->render('page-table.twig', array('tables' => $tables));
-
-                $this->app->response->setBody($parsed_template);
+                $this->app->render('page-table.twig', array('tables' => $tables));
 
                 break;
 
