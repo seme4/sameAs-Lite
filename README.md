@@ -63,4 +63,4 @@ SameAs-Lite is released under the [MIT License](./LICENSE).
 
 [![Seme4 Ltd](http://www.seme4.com/wp-content/uploads/2015/02/Seme4-Logo.png)](http://www.seme4.com/)
 
-SameAs&trade; is a registered trademark of Seme4 Ltd.
+SameAs&reg; is a registered trademark of Seme4 Ltd.

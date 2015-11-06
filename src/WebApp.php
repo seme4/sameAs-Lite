@@ -815,6 +815,8 @@ class WebApp
             throw new \InvalidArgumentException('The $status parameter must be a valid integer HTTP status code');
         }
 
+        $this->app->response->setStatus($status);
+
         if (is_null($title)) {
             $title = 'Error ' . $status;
         }
@@ -836,22 +838,7 @@ class WebApp
         $this->app->response->headers->set('Content-Type', 'text/html');
 
 
-        // this will not set the status in the HTTP response
-        // $this->app->response->setStatus($status);
-        // the issue is:
-        // there is nothing in app->render() that will set the http status
-        // looking at the slim code, I see headers are sent when run() is executed.
-        // that's the way we start the application
-        // so changing the status at run-time has no effect.
-        // a temporary fix is to set the headers manually in the app after we run it.
-        // That could however lead to problems if any parts of the code send output
-        // before setting the status headers.
-        // a solution would be to move all code into middlewares
-
-
-
-
-        $this->app->render('error.twig', [
+        $parsed_template = $this->app->view->render('error.twig', [
             'titleHTML'    => ' - ' . strip_tags($title),
             'titleHeader'  => 'Error ' . $status,
             'title'        => $extendedTitle,
@@ -859,7 +846,7 @@ class WebApp
             'details'      => $extendedDetails
         ]);
 
-        exit; // execution must end here
+        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -879,8 +866,8 @@ class WebApp
      */
     public function outputError401()
     {
-        header('WWW-Authenticate: Basic realm="SameAs Lite"');
-        header($_SERVER["SERVER_PROTOCOL"].' 401 Unauthorized');
+        $this->app->response->headers->set('WWW-Authenticate', 'Basic realm="SameAs Lite"');
+
         $this->outputError(
             401,
             'Access Denied',
@@ -924,7 +911,9 @@ class WebApp
             '<script src="'. $this->app->request()->getRootUri() . '/assets/js/homepage-store.js"></script>'
         );
 
-        $this->app->render('homepage-store.twig', $viewData);
+        $parsed_template = $this->app->view->render('homepage-store.twig', $viewData);
+
+        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -932,13 +921,14 @@ class WebApp
      */
     public function aboutPage()
     {
-
-        $this->app->render('page-about.twig', [
+        $parsed_template = $this->app->view->render('page-about.twig', [
             'titleHTML'    => ' - About SameAsLite',
             'titleHeader'  => 'About SameAsLite',
             'storeOptions' => $this->storeOptions
 
         ]);
+
+        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -946,12 +936,13 @@ class WebApp
      */
     public function contactPage()
     {
-
-        $this->app->render('page-contact.twig', [
+        $parsed_template = $this->app->view->render('page-contact.twig', [
             'titleHTML'    => ' - Contact',
             'titleHeader'  => 'Contact',
             'storeOptions' => $this->storeOptions
         ]);
+
+        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -959,11 +950,12 @@ class WebApp
      */
     public function licensePage()
     {
-
-        $this->app->render('page-license.twig', [
+        $parsed_template = $this->app->view->render('page-license.twig', [
             'titleHTML'    => ' - SameAsLite License',
             'titleHeader'  => 'SameAsLite License'
         ]);
+
+        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -995,11 +987,13 @@ class WebApp
         );
 
         // render the template
-        $this->app->render('api-index.twig', [
+        $parsed_template = $this->app->view->render('api-index.twig', [
             'titleHTML' => ' - API',
             'titleHeader' => 'API overview',
             'routes' => $routes
         ]);
+
+        $this->app->response->setBody($parsed_template);
     }
 
     /**
@@ -1314,11 +1308,13 @@ class WebApp
                 $this->prepareWebResultView();
 
                 // render the page
-                $this->app->render('snippet-bundle.twig', [
+                $parsed_template = $this->app->view->render('snippet-bundle.twig', [
                     'symbol' => $symbol,
                     'equiv_symbols' => $results,
                     'canon' => $canon
                 ]);
+
+                $this->app->response->setBody($parsed_template);
 
             } else {
                 $this->outputHTML("Symbol &ldquo;$symbol&rdquo; not found in the store", 404);
@@ -1394,40 +1390,51 @@ class WebApp
         switch ($this->mimeBest) {
             case 'text/plain':
 
-                $out = fopen('php://output', 'w');
-
-                $url = $this->app->request->getUrl();
-
-                foreach ($this->storeOptions as $i) {
-                    $o = $i['shortName'] . ' => ' . $url . '/datasets/' . $i['slug'] . PHP_EOL;
-                    fwrite($out, $o);
+                ob_start();
+                {
+                    $out = fopen('php://output', 'w');
+                    $url = $this->app->request->getUrl();
+                    foreach ($this->storeOptions as $i) {
+                        $o = $i['shortName'] . ' => ' . $url . '/datasets/' . $i['slug'] . PHP_EOL;
+                        fwrite($out, $o);
+                    }
+                    fclose($out);
                 }
-                fclose($out);
+                $out = ob_get_contents();
+                ob_end_clean();
+
+                $this->app->response->setBody($out);
 
                 break;
 
             case 'text/csv':
             case 'text/tab-separated-values':
-                $out = fopen('php://output', 'w');
-                $url = $this->app->request->getUrl();
 
-                // delimiter for CSV
-                $delimiter = ',';
-                // delimiter for TSV
-                if ($this->mimeBest === 'text/tab-separated-values') {
-                    $delimiter = "\t";
+                ob_start();
+                {
+                    $out = fopen('php://output', 'w');
+                    $url = $this->app->request->getUrl();
+
+                    // delimiter for CSV
+                    $delimiter = ',';
+                    // delimiter for TSV
+                    if ($this->mimeBest === 'text/tab-separated-values') {
+                        $delimiter = "\t";
+                    }
+
+                    fputcsv($out, ['name', 'url'], $delimiter);
+                    foreach ($this->storeOptions as $i) {
+                        $o = [
+                            $i['shortName'],
+                            $url . '/datasets/' . $i['slug']
+                        ];
+                        fputcsv($out, $o, $delimiter);
+                    }
                 }
+                $out = ob_get_contents();
+                ob_end_clean();
 
-                fputcsv($out, ['name', 'url'], $delimiter);
-                foreach ($this->storeOptions as $i) {
-                    $o = [
-                        $i['shortName'],
-                        $url . '/datasets/' . $i['slug']
-                    ];
-                    fputcsv($out, $o, $delimiter);
-                }
-
-                exit;
+                $this->app->response->setBody($out);
 
                 break;
 
@@ -1442,9 +1449,7 @@ class WebApp
                     ];
                 }
 
-                echo json_encode($out, JSON_PRETTY_PRINT); // PHP 5.4+
-
-                exit;
+                $this->app->response->setBody(json_encode($out, JSON_PRETTY_PRINT)); // PHP 5.4+
 
                 break;
 
@@ -1470,8 +1475,6 @@ class WebApp
 
                 $this->outputArbitrary($out);
 
-                exit;
-
                 break;
 
             case 'text/html':
@@ -1479,13 +1482,13 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                $this->app->render('page-storeList.twig', [
+                $parsed_template = $this->app->view->render('page-storeList.twig', [
                     'titleHTML' => ' ',
                     'titleHeader' => 'Datasets',
                     'stores' => $this->storeOptions
                 ]);
 
-                exit;
+                $this->app->response->setBody($parsed_template);
 
                 break;
 
@@ -1524,15 +1527,15 @@ class WebApp
         switch ($this->mimeBest) {
 
             case 'text/plain':
-                print_r($result, false);
 
-                exit;
+                $this->app->response->setBody(print_r($result, true));
+
                 break;
 
             case 'application/json':
-                print json_encode($result, JSON_PRETTY_PRINT) . PHP_EOL;
 
-                exit;
+                $this->app->response->setBody(json_encode($result, JSON_PRETTY_PRINT));
+
                 break;
 
             case 'text/html':
@@ -1543,7 +1546,6 @@ class WebApp
                 // $this->outputHTML('<pre>' . print_r($result, true) . '</pre>');
                 $this->outputTable($result); // headers are contained in the multidimensional array
 
-                exit;
                 break;
 
             default:
@@ -1579,9 +1581,11 @@ class WebApp
             $this->app->response->setStatus($status);
         }
 
-        $this->app->render('page.twig', [
+        $prepared_template = $this->app->view->render('page.twig', [
             'body'    => $body
         ]);
+
+        $this->app->response->setBody($prepared_template);
     }
 
     /**
@@ -1598,18 +1602,21 @@ class WebApp
         switch ($this->mimeBest) {
             case 'text/plain':
             case 'text/csv':
-                print $msg . PHP_EOL;
-                exit;
+
+                $this->app->response->setBody($msg . PHP_EOL);
+
                 break;
 
             case 'application/json':
-                print json_encode(array('ok' => $msg)) . PHP_EOL;
-                exit;
+
+                $this->app->response->setBody(json_encode(array('ok' => $msg)) . PHP_EOL);
+
                 break;
 
             case 'text/html':
+
                 $this->outputHTML('<h2>Success!</h2><p>' . $msg . '</p>') . PHP_EOL;
-                exit;
+
                 break;
 
             default:
@@ -1696,26 +1703,21 @@ class WebApp
                 //if (!is_scalar($data)) {
                 //    $data = var_export($data, true);
                 //}
-                print trim($data);
 
-                exit;
+                $this->app->response->setBody(trim($data));
 
                 break;
 
 
             case 'text/plain':
 
-                    echo print_r($list, true);
-
-                exit;
+                $this->app->response->setBody(print_r($list, true));
 
                 break;
 
             case 'application/json':
 
-                    print json_encode($list, JSON_PRETTY_PRINT); // PHP 5.4+
-
-                exit;
+                $this->app->response->setBody(json_encode($list, JSON_PRETTY_PRINT)); // PHP 5.4+
 
                 break;
 
@@ -1726,10 +1728,11 @@ class WebApp
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
-                $this->app->render('page-output.twig', [
+                $prepared_template = $this->app->view->render('page-output.twig', [
                     'list' => '<pre>' . print_r($list, true) . '</pre>'
                 ]);
-                exit;
+
+                $this->app->response->setBody($prepared_template);
 
                 break;
 
@@ -1842,9 +1845,8 @@ class WebApp
         if (!is_scalar($data)) {
             $data = var_export($data, true);
         }
-        print $data;
 
-        exit;
+        $this->app->response->setBody($data);
     }
 
     /**
@@ -1888,27 +1890,32 @@ class WebApp
 
         switch ($this->mimeBest) {
             case 'text/plain':
-                print join(PHP_EOL, $list);
-                exit;
+
+                $this->app->response->setBody(join(PHP_EOL, $list));
 
                 break;
 
             case 'text/csv':
             case 'text/tab-separated-values':
 
+                ob_start();
                 // use fputcsv for escaping
-                $delimiter = PHP_EOL;
-                $out = fopen('php://output', 'w');
-                fputcsv($out, $list, $delimiter);
-                fclose($out);
+                {
+                    $delimiter = PHP_EOL;
+                    $out = fopen('php://output', 'w');
+                    fputcsv($out, $list, $delimiter);
+                    fclose($out);
+                    $out = ob_get_contents();
+                }
+                ob_end_clean();
 
-                exit;
+                $this->app->response->setBody(join(PHP_EOL, $list));
 
                 break;
 
             case 'application/json':
-                print json_encode($list, JSON_PRETTY_PRINT); // PHP 5.4+
-                exit;
+
+                $this->app->response->setBody(json_encode($list, JSON_PRETTY_PRINT)); // PHP 5.4+
 
                 break;
 
@@ -1918,10 +1925,19 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                $this->app->render('page-list.twig', [
+                /*
+                    //app->render will output directly -> not what we want
+                    $this->app->render('page-list.twig', [
+                        'list' => $list
+                    ]);
+                */
+
+                //app->view->render will return the parsed template -> bingo!
+                $parsed_template = $this->app->view->render('page-list.twig', [
                     'list' => $list
                 ]);
-                exit;
+
+                $this->app->response->setBody($parsed_template);
 
                 break;
 
@@ -1951,10 +1967,10 @@ class WebApp
         }
 
         // 404 header response
-        if (empty($data)) {
-            $status = 404;
-            $this->app->response->setStatus($status);
-        }
+        // if (empty($data)) {
+        //     $status = 404;
+        //     $this->app->response->setStatus($status);
+        // }
 
         $this->app->contentType($this->mimeBest);
 
@@ -1968,27 +1984,37 @@ class WebApp
                     $delimiter = ",";
                 }
 
-                $out = fopen('php://output', 'w');
-                fputcsv($out, $headers, $delimiter);
-                foreach ($data as $i) {
-                    fputcsv($out, $i, $delimiter);
+                ob_start();
+                {
+                    $out = fopen('php://output', 'w');
+                    fputcsv($out, $headers, $delimiter);
+                    foreach ($data as $i) {
+                        fputcsv($out, $i, $delimiter);
+                    }
+                    fclose($out);
                 }
-                fclose($out);
+                $out = ob_get_contents();
+                ob_end_clean();
 
-                exit;
+                $this->app->response->setBody($out);
 
                 break;
 
             case 'text/plain':
 
-                $out = fopen('php://output', 'w');
-                // fwrite($out, implode(' => ', $headers) . PHP_EOL);
-                foreach ($data as $i) {
-                    fwrite($out, implode(' => ', $i) . PHP_EOL);
+                ob_start();
+                {
+                    $out = fopen('php://output', 'w');
+                    // fwrite($out, implode(' => ', $headers) . PHP_EOL);
+                    foreach ($data as $i) {
+                        fwrite($out, implode(' => ', $i) . PHP_EOL);
+                    }
+                    fclose($out);
                 }
-                fclose($out);
+                $out = ob_get_contents();
+                ob_end_clean();
 
-                exit;
+                $this->app->response->setBody($out);
 
                 break;
 
@@ -2003,9 +2029,8 @@ class WebApp
                 foreach ($data as $row) {
                     $op[] = array_combine($headers, $row);
                 }
-                print json_encode($op, JSON_PRETTY_PRINT); // PHP 5.4+
 
-                exit;
+                $this->app->response->setBody(json_encode($op, JSON_PRETTY_PRINT)); // PHP 5.4+
 
                 break;
 
@@ -2071,17 +2096,13 @@ class WebApp
 
                 }
 
+                $parsed_template = $this->app->view->render('page-table.twig', array('tables' => $tables));
 
-
-                $this->app->render('page-table.twig', array('tables' => $tables));
-
-                exit;
+                $this->app->response->setBody($parsed_template);
 
                 break;
 
             default:
-                $this->app->contentType('text/html');
-
                 // TODO - this needs response headers that point to available formats
                 throw new Exception\ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
         }
