@@ -1372,25 +1372,47 @@ class WebApp
         $result = $this->stores[$store]->statistics();
 
         // content negotiation
-        // $accept = $this->app->request->headers->get('Accept');
-        if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
-            // non-HTML output
-            $this->outputList($result, false, 200);
-        } else {
-            // HTML output
+        switch ($this->mimeBest) {
+            case 'text/html':
 
-            // add the alternate formats for ajax query and pagination buttons
-            $this->prepareWebResultView();
+                // add the alternate formats for ajax query and pagination buttons
+                $this->prepareWebResultView();
 
-            $res = array();
-            foreach ($result as $header => $value) {
-                $res[] = $value;
-                $headers[] = $header;
-            }
+                // fall through
 
-            $this->outputTable(array($res), $headers);
+            case 'text/tab-separated-values':
+            case 'text/csv':
 
-        }//end if
+                // output as a table
+
+                $res = array();
+                foreach ($result as $header => $value) {
+                    $res[] = $value;
+                    $headers[] = $header;
+                }
+
+                $this->outputTable(array($res), $headers);
+
+                break;
+
+            case 'text/plain':
+
+                $out = '';
+                foreach ($result as $header => $value) {
+                    $out .= $header . " => " . $value . PHP_EOL;
+                }
+
+                $this->app->response->setBody($out);
+
+                break;
+
+            default:
+
+                // non-HTML output
+                $this->outputList($result, false, 200);
+
+                break;
+        }
 
     }//end statistics()
 

@@ -1,6 +1,6 @@
 C=/usr/bin/composer.phar
 
-.PHONY: docs dev libs tests
+.PHONY: docs tests
 
 default:
 	##
