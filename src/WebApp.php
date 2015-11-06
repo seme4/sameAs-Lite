@@ -191,7 +191,8 @@ class WebApp
     public function run()
     {
         // homepage and generic functions
-        $this->registerURL( // web app
+        // access: webapp only
+        $this->registerURL(
             'GET',
             '/',
             'homepage',
@@ -202,7 +203,8 @@ class WebApp
             true,
             false //no pagination
         );
-        $this->registerURL( // web app
+        // access: webapp only
+        $this->registerURL(
             'GET',
             '/api',
             'api',
@@ -213,7 +215,8 @@ class WebApp
             true,
             false //no pagination
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets',
             'listStores',
@@ -224,7 +227,8 @@ class WebApp
             false,
             true // enable pagination
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store',
             'storeHomepage',
@@ -235,7 +239,8 @@ class WebApp
             true, // hide from API
             false // no pagination
         );
-        $this->registerURL( // web app
+        // access: webapp only
+        $this->registerURL(
             'GET',
             '/datasets/:store/api',
             'api',
@@ -247,7 +252,8 @@ class WebApp
             false // no pagination
         );
 
-        $this->registerURL( // web app
+        // access: webapp only
+        $this->registerURL(
             'GET',
             '/about',
             'aboutPage',
@@ -258,7 +264,8 @@ class WebApp
             true, // hide from API
             false // no pagination
         );
-        $this->registerURL( // web app
+        // access: webapp only
+        $this->registerURL(
             'GET',
             '/contact',
             'contactPage',
@@ -269,7 +276,8 @@ class WebApp
             true, // hide from API
             false // no pagination
         );
-        $this->registerURL( // web app
+        // access: webapp only
+        $this->registerURL(
             'GET',
             '/license',
             'licensePage',
@@ -284,29 +292,36 @@ class WebApp
         // dataset admin actions
 
         // TODO: this would also need to update the config.ini
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'DELETE',
             '/datasets/:store',
             'deleteStore',
             'Delete an entire store',
             'Removes an entire store, deleting the underlying database',
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
 
         // Update the store contents
         // Use a PUT request with empty body to remove the contents of the store
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'PUT',
             '/datasets/:store',
             'updateStore',
             'Update or delete the contents of a store',
             'Updates the store with request body or, if the request body is empty, removes the entire contents of a store, leaving an empty database',
             true,
-            'application/json,text/csv,text/tab-separated-values,text/plain' // TODO: rdf + turtle
+            'application/json,text/csv,text/tab-separated-values,text/plain', // TODO: rdf + turtle
+            false,
+            false //no pagination
         );
 
-        // $this->registerURL( // web app
+        // access: webapp only
+        // $this->registerURL(
         // 'GET',
         // '/datasets/:store/admin/backup/',
         // 'backupStore',
@@ -315,7 +330,9 @@ class WebApp
         // true,
         // 'text/html,text/plain'
         // );
-        // $this->registerURL( // API
+
+        // access: API + webapp
+        // $this->registerURL(
         //    'PUT',
         //    '/datasets/:store/admin/restore',
         //    'restoreStore',
@@ -326,7 +343,8 @@ class WebApp
         // );
 
         // Canon work
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/canons',
             'allCanons',
@@ -337,7 +355,8 @@ class WebApp
             false,
             true // pagination
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'PUT',
             '/datasets/:store/canons/:symbol',
             'setCanon',
@@ -346,7 +365,8 @@ class WebApp
             true,
             'text/plain,application/json,text/html'
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/canons/:symbol',
             'getCanon',
@@ -359,7 +379,8 @@ class WebApp
         );
 
         // Pairs
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/pairs',
             'dumpStore',
@@ -370,7 +391,8 @@ class WebApp
             false,
             true // pagination
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'PUT',
             '/datasets/:store/pairs',
             'assertPairs',
@@ -379,7 +401,8 @@ class WebApp
             true,
             'text/plain,application/json,text/html'
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'PUT',
             '/datasets/:store/pairs/:symbol1/:symbol2',
             'assertPair',
@@ -389,7 +412,8 @@ class WebApp
             'text/plain,application/json,text/html'
         );
 
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/pairs/:string',
             'search',
@@ -402,7 +426,8 @@ class WebApp
         );
 
         // Single symbol stuff
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/symbols/:symbol',
             'querySymbol',
@@ -413,7 +438,8 @@ class WebApp
             false,
             true // pagination
         );
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'DELETE',
             '/datasets/:store/symbols/:symbol',
             'removeSymbol',
@@ -424,24 +450,31 @@ class WebApp
         );
 
         // Simple status of datastore
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/status',
             'statistics',
             'Returns status of the store',
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
 
         // Analyse contents of store
-        $this->registerURL( // API
+        // access: API + webapp
+        $this->registerURL(
             'GET',
             '/datasets/:store/analysis',
             'analyse',
-            'Analyse contents of the store'
+            'Analyse contents of the store',
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
+
 
         // add datasets to template
         $this->app->view()->set('datasets', $this->storeOptions);
@@ -500,7 +533,6 @@ class WebApp
         } else {
             $this->app->view->set('pagination', false);
         }
-
 
 
         // initialise route
@@ -625,8 +657,15 @@ class WebApp
                 }
                 list($u, $p) = explode(':', $line, 2);
 
+                // salt check
+                if (strpos($p, '$') === false) {
+                    // no salt present in password
+                    // password must be invalid
+                    continue;
+                }
+
                 // Check plaintext password against an APR1-MD5 hash
-                // if ($u === $_SERVER['PHP_AUTH_USER'] && crypt($_SERVER['PHP_AUTH_PW'], $p) === $p) {
+                // TODO: get rid of the WhiteHat101 package
                 if (true === \WhiteHat101\Crypt\APR1_MD5::check($_SERVER['PHP_AUTH_PW'], $p)) {
                     $authorized = true;
                     break;
@@ -720,6 +759,13 @@ class WebApp
 
 
             // $app->response->headers->set('Content-Type', 'application/json');
+
+        } elseif ($e instanceof Exception\AuthException) {
+
+            // TODO
+
+
+
 
         }
 
@@ -868,6 +914,7 @@ class WebApp
                 break;
 
             case 'text/html':
+            case 'application/xhtml+xml':
             default:
 
                 $summary .= '</p>' . PHP_EOL . PHP_EOL . '<p>Please try returning to <a href="' .
@@ -875,7 +922,7 @@ class WebApp
                     $this->app->request()->getRootUri() . '">the homepage</a>.';
 
                 // overwrite the previous content type definition
-                $this->app->contentType('text/html');
+                $this->app->contentType($this->mimeBest);
 
                 $this->app->render('error/error-html.twig', [
                     'titleHTML'    => ' - ' . strip_tags($title),
@@ -1413,6 +1460,7 @@ class WebApp
         // content negotiation
         switch ($this->mimeBest) {
             case 'text/html':
+            case 'application/xhtml+xml':
 
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
@@ -1424,13 +1472,13 @@ class WebApp
 
                 // output as a table
 
-                $res = array();
+                $rows = $headers = array();
                 foreach ($result as $header => $value) {
-                    $res[] = $value;
+                    $rows[] = $value;
                     $headers[] = $header;
                 }
 
-                $this->outputTable(array($res), $headers);
+                $this->outputTable(array($rows), $headers);
 
                 break;
 
@@ -1447,7 +1495,6 @@ class WebApp
 
             default:
 
-                // non-HTML output
                 $this->outputList($result, false, 200);
 
                 break;
@@ -1554,6 +1601,7 @@ class WebApp
                 break;
 
             case 'text/html':
+            case 'application/xhtml+xml':
 
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
@@ -1611,6 +1659,7 @@ class WebApp
                 break;
 
             case 'text/html':
+            case 'application/xhtml+xml':
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
@@ -1686,6 +1735,7 @@ class WebApp
                 break;
 
             case 'text/html':
+            case 'application/xhtml+xml':
 
                 $this->outputHTML('<h2>Success!</h2><p>' . $msg . '</p>') . PHP_EOL;
 
@@ -1791,6 +1841,7 @@ class WebApp
                 break;
 
             case 'text/html':
+            case 'application/xhtml+xml':
 
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
@@ -1978,11 +2029,20 @@ class WebApp
 
             case 'application/json':
 
+                // convert numbers
+                foreach ($list as &$v) {
+                    if (is_numeric($v)) {
+                        $v = intval($v);
+                    }
+                }
+
                 $this->app->response->setBody(json_encode($list, JSON_PRETTY_PRINT)); // PHP 5.4+
 
                 break;
 
             case 'text/html':
+            case 'application/xhtml+xml':
+
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
                 // add the alternate formats for ajax query and pagination buttons
@@ -2086,6 +2146,7 @@ class WebApp
 
             // full webpage output
             case 'text/html':
+            case 'application/xhtml+xml':
 
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
