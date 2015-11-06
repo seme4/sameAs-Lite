@@ -112,9 +112,9 @@ class WebApp
         $this->app->view()->set('path', $this->app->request()->getRootUri());
 
         // register 404 and custom error handlers
-        $this->app->notFound(array($this, 'outputError404'));
-        $this->app->error(array($this, 'outputException')); // '\SameAsLite\Exception\Exception::outputException'
-        set_exception_handler(array($this, 'outputException')); // '\SameAsLite\Exception\Exception::outputException'
+        $this->app->notFound(array(&$this, 'outputError404'));
+        $this->app->error(array(&$this, 'outputException')); // '\SameAsLite\Exception\Exception::outputException'
+        set_exception_handler(array(&$this, 'outputException')); // '\SameAsLite\Exception\Exception::outputException'
 
         // Hook to set the api path
         $this->app->hook('slim.before.dispatch', function () {
@@ -722,9 +722,11 @@ class WebApp
 
             // this is a client error -> use the correct header in 4XX range
             // $this->app->response->setStatus(406); //406 Not Acceptable
-            $status = 406; // TODO
-            // the above does not work!
-            header($_SERVER['SERVER_PROTOCOL'] . " 406 Not Acceptable");
+
+            $status = 406; // TODO - does not work!
+            
+            // manual headers work
+            // header($_SERVER['SERVER_PROTOCOL'] . " 406 Not Acceptable");
 
             // TODO:
             // add the available formats in response header
@@ -813,7 +815,7 @@ class WebApp
             throw new \InvalidArgumentException('The $status parameter must be a valid integer HTTP status code');
         }
 
-        if ($title === null) {
+        if (is_null($title)) {
             $title = 'Error ' . $status;
         }
 
@@ -830,9 +832,24 @@ class WebApp
             }
         }
 
-        $this->app->response->setStatus($status);
+        // $this->app->contentType('text/html');
+        $this->app->response->headers->set('Content-Type', 'text/html');
 
-        $this->app->contentType('text/html');
+
+        // this will not set the status in the HTTP response
+        // $this->app->response->setStatus($status);
+        // the issue is:
+        // there is nothing in app->render() that will set the http status
+        // looking at the slim code, I see headers are sent when run() is executed.
+        // that's the way we start the application
+        // so changing the status at run-time has no effect.
+        // a temporary fix is to set the headers manually in the app after we run it.
+        // That could however lead to problems if any parts of the code send output
+        // before setting the status headers.
+        // a solution would be to move all code into middlewares
+
+
+
 
         $this->app->render('error.twig', [
             'titleHTML'    => ' - ' . strip_tags($title),
