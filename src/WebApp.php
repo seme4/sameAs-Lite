@@ -1980,7 +1980,11 @@ class WebApp
     protected function outputList(array $list = array(), $numeric_array = true, $status = null)
     {
         // pagination check
-        if ($this->stores[$this->store]->isPaginated()) {
+        if (empty($list)) {
+
+            $this->app->view->set('pagination', false);
+
+        } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
             // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
@@ -2071,7 +2075,11 @@ class WebApp
     protected function outputTable(array $data, array $headers = array())
     {
         // pagination check
-        if ($this->stores[$this->store]->isPaginated()) {
+        if (empty($data)) {
+
+            $this->app->view()->set('pagination', false);
+
+        } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
             // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
