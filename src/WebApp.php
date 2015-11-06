@@ -693,13 +693,8 @@ class WebApp
         if ($e instanceof Exception\ContentTypeException) {
 
             // this is a client error -> use the correct header in 4XX range
-            // $this->app->response->setStatus(406); //406 Not Acceptable
-
-            $status = 406; // TODO - does not work!
+            $status = 406;
             
-            // manual headers work
-            // header($_SERVER['SERVER_PROTOCOL'] . " 406 Not Acceptable");
-
             // TODO:
             // add the available formats in response header
             // see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.7
@@ -1748,7 +1743,6 @@ class WebApp
                 break;
 
             default:
-                // TODO - this requires a response header
                 throw new Exception\ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
@@ -1940,7 +1934,6 @@ class WebApp
                 break;
 
             default:
-                // TODO - this requires a response header
                 throw new Exception\ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
     }
@@ -2097,7 +2090,6 @@ class WebApp
                 break;
 
             default:
-                // TODO - this needs response headers that point to available formats
                 throw new Exception\ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
         }
     }

@@ -72,6 +72,9 @@ var app = {
             app.ajaxMimeType = app.outputMimeType;
         }
 
+        var $result = $('#result');
+        $result.html('');
+
         $.ajax({
             url: (app.page > 1 ? '?page=' + app.page : ''),
             dataType: "text",
@@ -82,8 +85,6 @@ var app = {
                 xhr.overrideMimeType(app.ajaxMimeType);
             },
             success: function (data, textStatus, jObj) {
-
-                $result = $('#result');
 
                 if (data) {
                     // clear
@@ -194,11 +195,27 @@ var app = {
 
                 app.updateState(data);
 
-                $result = $('#result');
-
                 app.unwrap($result);
 
-                data = data.replace("\n", "<br />");
+                switch (app.ajaxMimeType) {
+
+                    case 'application/rdf+xml':
+                    case 'text/turtle':
+
+                        data = JSON.parse(data);
+                        data = JSON.stringify(data);
+                        data = data.replace('\n', '');
+                        data = data.replace("\n", "<br />");
+
+                        break;
+
+                    default:
+
+                        data = data.replace("\n", "<br />");
+
+                        break;
+
+                }//end switch
 
                 $result.html(data);
 
