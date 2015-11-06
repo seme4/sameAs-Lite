@@ -133,15 +133,6 @@ class WebApp
 
         $this->appOptions = $options;
 
-        // This takes the options that should be passed to the view directly
-
-        /*
-            Thinking about this, so for now not used
-            $viewOptions = array_intersect_key($options, array_flip([
-            'footerText'
-            ]));
-        */
-
         // apply options
         foreach ($options as $k => $v) {
             $this->app->view->set($k, $v);
@@ -802,10 +793,6 @@ class WebApp
             $title = 'Error ' . $status;
         }
 
-        $summary .= '</p>' . PHP_EOL . PHP_EOL . '<p>Please try returning to <a href="' .
-            $this->app->request()->getURL() .
-            $this->app->request()->getRootUri() . '">the homepage</a>.';
-
         if ($extendedTitle === '') {
             $defaultMsg = \Slim\Http\Response::getMessageForCode($status);
             if ($defaultMsg !== null) {
@@ -815,15 +802,88 @@ class WebApp
             }
         }
 
-        $this->app->contentType('text/html');
+        // content negotiation for the error message
+        switch ($this->mimeBest) {
+            case 'text/plain':
 
-        $this->app->render('error.twig', [
-            'titleHTML'    => ' - ' . strip_tags($title),
-            'titleHeader'  => 'Error ' . $status,
-            'title'        => $extendedTitle,
-            'summary'      => $summary,
-            'details'      => $extendedDetails
-        ]);
+                $error  = "status  => $status" . PHP_EOL;
+                $error .= "title   => $extendedTitle" . PHP_EOL;
+                $error .= "summary => $summary" . PHP_EOL;
+                $error .= "details => " . preg_replace('~[\n]+|[\s]{2,}~', ' ', $extendedDetails);
+
+                $this->app->response->setBody($error);
+
+                break;
+
+            case 'text/csv':
+            case 'text/tab-separated-values':
+
+                if ($this->mimeBest === 'text/csv') {
+                    $delimiter = ',';
+                } else {
+                    $delimiter = "\t";
+                }
+
+                $error = array(
+                    array("status",  $status),
+                    array("title",   $extendedTitle),
+                    array("summary", $summary),
+                    array("details", preg_replace('~[\n]+|[\s]{2,}~', ' ', $extendedDetails)),
+                );
+
+                ob_start();
+                // use fputcsv for escaping
+                {
+                    $out = fopen('php://output', 'w');
+                    foreach ($error as $err) {
+                        fputcsv($out, $err, $delimiter);
+                    }
+                    fclose($out);
+                    $out = ob_get_contents();
+                }
+                ob_end_clean();
+
+                $this->app->response->setBody($out);
+
+                break;
+
+            case 'application/rdf+xml':
+            case 'application/x-turtle':
+            case 'text/turtle':
+            case 'application/json':
+
+                $json_error = array(
+                    'status'  => $status,
+                    'title'   => $extendedTitle,
+                    'summary' => $summary,
+                    'details' => $extendedDetails,
+                );
+
+                $this->app->response->setBody(json_encode($json_error, JSON_PRETTY_PRINT));
+
+                break;
+
+            case 'text/html':
+            default:
+
+                $summary .= '</p>' . PHP_EOL . PHP_EOL . '<p>Please try returning to <a href="' .
+                    $this->app->request()->getURL() .
+                    $this->app->request()->getRootUri() . '">the homepage</a>.';
+
+                // overwrite the previous content type definition
+                $this->app->contentType('text/html');
+
+                $this->app->render('error/error-html.twig', [
+                    'titleHTML'    => ' - ' . strip_tags($title),
+                    'titleHeader'  => 'Error ' . $status,
+                    'title'        => $extendedTitle,
+                    'summary'      => $summary,
+                    'details'      => $extendedDetails
+                ]);
+
+                break;
+        }
+
     }
 
     /**

@@ -7,6 +7,24 @@ var app = {
     ajaxMimeType: 'application/json', // default mime type
     outputMimeType: 'text/html', // default mime type
     page: 0, //the current page (default = 0: do not append page parameter to url)
+    wrap: function ($result, pre) {
+        if (pre === undefined) {
+            pre = 'pre';
+        }
+        // do not wrap if wrap already exists
+        if ($result.parent(pre).length === 0) {
+            $result.wrap('<' + pre + '></' + pre + '>');
+        }
+    },
+    unwrap: function ($result, pre) {
+        if (pre === undefined) {
+            pre = 'pre';
+        }
+        // for html table output, we do not want <pre> tags
+        if ($result.parent(pre).length) {
+            $result.unwrap();
+        }
+    },
     markCurrent: function ($items, current, attrType) {
         $items.removeClass('current');
         $items.each(function(){
@@ -65,124 +83,109 @@ var app = {
             },
             success: function (data, textStatus, jObj) {
 
-                if (jObj.status == 200) {
+                $result = $('#result');
 
-                    $result = $('#result');
+                if (data) {
+                    // clear
+                    // $result.html("");
 
-                    if (data) {
-                        // clear
-                        // $result.html("");
+                    if (app.outputMimeType !== 'text/html') {
 
-                        if (app.outputMimeType !== 'text/html') {
+                        $result.text(data);
+                        // wrap pre tags around result (only once)
+                        app.wrap($result);
 
-                            $result.text(data);
-                            // wrap pre tags around result (only once)
-                            if ($result.parent('pre').length === 0) {
-                                $result.wrap('<pre></pre>');
+                    } else {
 
-                            }
+                        // build a table from the incoming json data
+                        // and replace the contents of the div container
+
+                        data = $.parseJSON(data);
+                        //console.log(data);
+
+                        var header_values = [],
+                            $header = '',
+                            $body = '',
+                            $row = '',
+                            data_rows = [],
+                            i = 0,
+                            s = data.length;
+
+                        // is this tabular data or a simple list of values?
+                        if (typeof data[0] === 'string') {
+
+                            // no headers
+                            header_values = false;
+                            data_rows = data;
+
+                            // add results as an unordered list
+                            $ul = $('<ul></ul>').addClass('table');
+                            $.each(data_rows, function(index, row) {
+                                $row = $('<li></li>').append(row);
+                                $ul.append($row);
+                            });
+                            $result.html($ul);
+
                         } else {
-                            // build a table from the incoming json data
-                            // and replace the contents of the div container
 
-                            data = $.parseJSON(data);
-                            //console.log(data);
+                            $table = $('<table></table>').addClass('table');
 
-                            var header_values = [],
-                                $header = '',
-                                $body = '',
-                                $row = '',
-                                data_rows = [],
-                                i = 0,
-                                s = data.length;
+                            // if the first element is an object,
+                            // then there are several levels to the array
+                            // see for example analysis output
 
-                            // is this tabular data or a simple list of values?
-                            if (typeof data[0] === 'string') {
-
-                                // no headers
-                                header_values = false;
-                                data_rows = data;
-
-                                // add results as an unordered list
-                                $ul = $('<ul></ul>').addClass('table');
-                                $.each(data_rows, function(index, row) {
-                                    $row = $('<li></li>').append(row);
-                                    $ul.append($row);
-                                });
-                                $result.html('');
-
-                                $result.append($ul);
-
-                            } else {
-
-                                $table = $('<table></table>').addClass('table');
-
-                                // if the first element is an object,
-                                // then there are several levels to the array
-                                // see for example analysis output
-
-                                // get the table header from the first element
-                                if (data[0]) {
-                                    header_values = Object.keys(data[0]);
-                                }
-
-                                // get the table rows
-                                for (i = 0; i < s; i++){
-                                    data_rows[i] = [];
-                                    $.each(header_values, function() {
-                                        data_rows[i].push(data[i][this]);
-                                    });
-                                }
-
-                                // add the processed data to a table
-                                // headers
-                                if (header_values) {
-                                    $header = $('<thead></thead>');
-                                    $header_row = $('<tr></tr>');
-                                    $.each(header_values, function() {
-                                        $header_row.append('<th class="w50">' + this + '</th>');
-                                    });
-                                    $header.append($header_row);
-                                    $table.append($header);
-                                }
-                                // rows
-                                $body = $('<tbody></tbody>');
-                                $.each(data_rows, function(index, row) {
-                                    $row = $('<tr></tr>');
-                                    if (typeof row === 'string') {
-                                        $row.append('<td>' + row + '</td>');
-                                    } else {
-                                        $.each(row, function() {
-                                            $row.append('<td>' + this + '</td>');
-                                        });
-                                    }
-                                    $body.append($row);
-                                });
-                                $table.append($body);
-
-                                $result.html($table);
-
+                            // get the table header from the first element
+                            if (data[0]) {
+                                header_values = Object.keys(data[0]);
                             }
 
-                            // for html table output, we do not want <pre> tags
-                            if ($result.parent('pre').length) {
-                                $result.unwrap();
+                            // get the table rows
+                            for (i = 0; i < s; i++){
+                                data_rows[i] = [];
+                                $.each(header_values, function() {
+                                    data_rows[i].push(data[i][this]);
+                                });
                             }
+
+                            // add the processed data to a table
+                            // headers
+                            if (header_values) {
+                                $header = $('<thead></thead>');
+                                $header_row = $('<tr></tr>');
+                                $.each(header_values, function() {
+                                    $header_row.append('<th class="w50">' + this + '</th>');
+                                });
+                                $header.append($header_row);
+                                $table.append($header);
+                            }
+                            // rows
+                            $body = $('<tbody></tbody>');
+                            $.each(data_rows, function(index, row) {
+                                $row = $('<tr></tr>');
+                                if (typeof row === 'string') {
+                                    $row.append('<td>' + row + '</td>');
+                                } else {
+                                    $.each(row, function() {
+                                        $row.append('<td>' + this + '</td>');
+                                    });
+                                }
+                                $body.append($row);
+                            });
+                            $table.append($body);
+
+                            $result.html($table);
 
                         }
 
+                        // for html table output, we do not want <pre> tags
+                        app.unwrap($result);
+
                     }
 
-                } else {
-                    var data = jObj.responseText;
+                    //always update the buttons and the url to reflect the page we are on
+                    app.updateState(data);
 
-                    $('#result').html("");
-
-                    $('#result').html(data);
                 }
-
-                //always update the buttons and the url to reflect the page we are on
-                app.updateState(data);
 
             },//end success()
             error: function (jObj) {
@@ -191,9 +194,13 @@ var app = {
 
                 app.updateState(data);
 
-                $('#result').html("");
+                $result = $('#result');
 
-                $('#result').html(data);
+                app.unwrap($result);
+
+                data = data.replace("\n", "<br />");
+
+                $result.html(data);
 
             }//end error()
         });
