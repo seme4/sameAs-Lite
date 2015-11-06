@@ -53,6 +53,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     /** @var string $storeName The name of this store, also the name of the SQL table */
     protected $dbName;
 
+    /** @var string $slug The slug of the store */
+    protected $slug;
+
     /** @var integer $pagination Pagination is disabled, unless configured in config.ini */
     protected $pagination = false;
     /** @var integer $offset The offset to start the query (for pagination) */
@@ -716,13 +719,14 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         $output = [];
 
         $output["meta"] = [
-            'store_name'     => $this->storeName,
-            // dbName is n/a
-            // 'database_name'  => $this->dbName
+            'store_name' => $this->storeName,
+            'slug'       => $this->slug,
+            // 'database_name'  => $this->dbName // dbName is n/a
         ];
 
         try {
             // Just get the whole store into an array to work on
+            // TODO: [Performance issue]
             $sql = $this->getAnalyseAllRowsString();
             $statement = $this->pdoObject->prepare($sql);
             $statement->execute();
@@ -1014,6 +1018,21 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     {
         return $this->pagination;
     }
+
+
+    /**
+     * Save the store's slug for the analysis output
+     *
+     * @param string $slug Store slug
+     */
+    public function storeSlug($slug)
+    {
+        if ($slug) {
+            $this->slug = $slug;
+        }
+    }
+
+
 
 
     /**

@@ -163,16 +163,11 @@ class WebApp
             $options['fullName'] = $options['shortName'];
         }
 
-        if (!isset($options['slug'])) {
-            throw new Exception\ConfigException('The Store array is missing required key/value "slug" in config.ini');
-        }
-
         if (!preg_match('/^[A-Za-z0-9_\-]*$/', $options['slug'])) {
             throw new Exception\ConfigException(
                 'The value for "slug" in config.ini may contain only characters a-z, A-Z, 0-9, hyphen and underscore'
             );
         }
-
         if (isset($this->stores[$options['slug']])) {
             throw new Exception\ConfigException(
                 'You have already added a store with "slug" value of ' . $options['slug'] . ' in config.ini.'
@@ -184,6 +179,9 @@ class WebApp
 
         $this->stores[$options['slug']] = $store;
         $this->storeOptions[$options['slug']] = $options;
+
+        // store the slug for analysis output
+        $this->stores[$options['slug']]->storeSlug($options['slug']);
     }
 
     /**
