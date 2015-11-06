@@ -999,7 +999,7 @@ class WebApp
             '<script src="'. $this->app->request()->getRootUri() . '/assets/js/homepage-store.js"></script>'
         );
 
-        $this->app->render('homepage-store.twig', $viewData);
+        $this->app->render('page/homepage-store.twig', $viewData);
     }
 
     /**
@@ -1007,7 +1007,7 @@ class WebApp
      */
     public function aboutPage()
     {
-        $this->app->render('page-about.twig', [
+        $this->app->render('page/about.twig', [
             'titleHTML'    => ' - About SameAsLite',
             'titleHeader'  => 'About SameAsLite',
             'storeOptions' => $this->storeOptions
@@ -1020,7 +1020,7 @@ class WebApp
      */
     public function contactPage()
     {
-        $this->app->render('page-contact.twig', [
+        $this->app->render('page/contact.twig', [
             'titleHTML'    => ' - Contact',
             'titleHeader'  => 'Contact',
             'storeOptions' => $this->storeOptions
@@ -1032,7 +1032,7 @@ class WebApp
      */
     public function licensePage()
     {
-        $this->app->render('page-license.twig', [
+        $this->app->render('page/license.twig', [
             'titleHTML'    => ' - SameAsLite License',
             'titleHeader'  => 'SameAsLite License'
         ]);
@@ -1067,7 +1067,7 @@ class WebApp
         );
 
         // render the template
-        $this->app->render('api-index.twig', [
+        $this->app->render('page/api-index.twig', [
             'titleHTML' => ' - API',
             'titleHeader' => 'API overview',
             'routes' => $routes
@@ -1075,7 +1075,7 @@ class WebApp
     }
 
     /**
-     * Returns the information needed to render a route in api-index.twig
+     * Returns the information needed to render a route in page/api-index.twig
      *
      * @param array       $info  The routeInfo for the route being described
      * @param string|null $store Optional specific store slug
@@ -1414,7 +1414,7 @@ class WebApp
                 $this->prepareWebResultView();
 
                 // render the page
-                $this->app->render('snippet-bundle.twig', [
+                $this->app->render('snippet/bundle.twig', [
                     'symbol' => $symbol,
                     'equiv_symbols' => $results,
                     'canon' => $canon
@@ -1606,7 +1606,7 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                $this->app->render('page-storeList.twig', [
+                $this->app->render('page/storeList.twig', [
                     'titleHTML' => ' ',
                     'titleHeader' => 'Datasets',
                     'stores' => $this->storeOptions
@@ -1848,7 +1848,7 @@ class WebApp
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
-                $this->app->render('page-output.twig', [
+                $this->app->render('page/output.twig', [
                     'list' => '<pre>' . print_r($list, true) . '</pre>'
                 ]);
 
@@ -2048,7 +2048,7 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                $this->app->render('page-list.twig', [
+                $this->app->render('page/list.twig', [
                     'list' => $list
                 ]);
 
@@ -2207,7 +2207,7 @@ class WebApp
 
                 }
 
-                $this->app->render('page-table.twig', array('tables' => $tables));
+                $this->app->render('page/table.twig', array('tables' => $tables));
 
                 break;
 
