@@ -379,11 +379,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
 
         $sql = $this->getRemoveSymbolString(':symbol');
         $statement = $this->pdoObject->prepare($sql);
-        $statement->execute([ ':symbol' => $symbol ]);
+        $statement->execute([':symbol' => $symbol]);
     }
-
-
-
 
     /**
      * Gets the SQL query string that when run removes the symbol given in { @link removeSymbol() }
@@ -397,7 +394,6 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     {
         return "DELETE FROM {$this->getTableName()} WHERE symbol = {$symbolId}";
     }
-
 
     /**
      * {@inheritDoc}

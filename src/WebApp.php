@@ -1286,6 +1286,8 @@ class WebApp
     public function setCanon($store, $symbol)
     {
         $this->stores[$store]->setCanon($symbol);
+        // escaping for output
+        $symbol = htmlspecialchars($symbol);
         $this->outputSuccess("Canon set to '$symbol'");
     }
 
@@ -1378,6 +1380,10 @@ class WebApp
 
         $this->app->view()->set('titleHTML', 'Pair asserted');
         $this->app->view()->set('titleHeader', 'Pair asserted');
+
+        // escaping for output
+        $symbol1 = htmlspecialchars($symbol1);
+        $symbol2 = htmlspecialchars($symbol2);
 
         $this->outputSuccess("The pair ($symbol1, $symbol2) has been asserted");
     }
@@ -2104,6 +2110,33 @@ class WebApp
     }
 
     /**
+     * All incoming data must be escaped for output on the webpage
+     *
+     * @param array $data    The rows to output
+     * @param array $headers Column headers
+     *
+     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
+     * is not supported
+     */
+    protected function escapeInputArray(&$value, $key) {
+        // value(s)
+        if (!is_array($value)) {
+            $value = htmlspecialchars($value);
+        } else {
+            foreach ($value as $k => &$v) {
+                $v = htmlspecialchars($v);
+                if (!is_numeric($k)) {
+                    $k = htmlspecialchars($k);
+                }
+            }
+        }
+        // key
+        if (!is_numeric($key)) {
+            $key = htmlspecialchars($key);
+        }
+    }
+
+    /**
      * Output tabular data, in the most appropriate MIME type
      *
      * @param array $data    The rows to output
@@ -2130,6 +2163,11 @@ class WebApp
         //     $status = 404;
         //     $this->app->response->setStatus($status);
         // }
+
+        // escaping for output
+        array_walk($headers, 'self::escapeInputArray');
+        array_walk($data, 'self::escapeInputArray');
+
 
         switch ($this->mimeBest) {
             case 'text/csv':

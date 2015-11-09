@@ -7,7 +7,7 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1">
 
-      <title>SameAs Lite{{titleHTML}}</title>
+      <title>SameAs Lite {{titleHTML|e('html')}}</title>
 
       <!-- stylesheets -->
       <link rel="stylesheet" href="{{path}}/vendor/twbs/bootstrap/dist/css/bootstrap.min.css">
@@ -27,7 +27,7 @@
 
     <header>
       <div class="container">
-        <h1>{{titleHeader}}</h1>
+        <h1>{{titleHeader|e('html')}}</h1>
         {{summaryHeader}}
       </div>
     </header>
