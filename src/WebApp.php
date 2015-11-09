@@ -1092,7 +1092,6 @@ class WebApp
      */
     protected function getRouteInfoForTemplate(array $info, $store = null)
     {
-
         $rootURI = $this->app->request()->getRootUri();
         $host = $this->app->request()->getUrl();
         $method = $info['httpMethod'];
@@ -1115,7 +1114,7 @@ class WebApp
         // ensure all variables are in {foo} format, rather than :foo
         $endpointURL = $rootURI . $info['urlPath'];
         $endpointURL = preg_replace('@:([^/]*)@', '{\1}', $endpointURL);
-        if ($store != null) {
+        if ($store !== null) {
             $endpointURL = str_replace('{store}', $store, $endpointURL);
         }
 
@@ -1152,7 +1151,7 @@ class WebApp
             'commandLine'   => $cmdLine,
             'endpointURL'   => $endpointURL,
             'endpointHTML'  => $endpointHTML,
-            'parameters'    => $parameters
+            'parameters'    => $parameters,
         ];
     }
 
@@ -1304,7 +1303,7 @@ class WebApp
     public function getCanon($store, $symbol)
     {
         $this->app->view()->set('titleHTML', 'Canon query');
-        $this->app->view()->set('titleHeader', 'Canon for &ldquo;' . $symbol . '&rdquo;');
+        $this->app->view()->set('titleHeader', 'Canon for \'' . $symbol . '\'');
         $canon = $this->stores[$store]->getCanon($symbol);
         if (!$canon) {
             $results = [];

@@ -230,7 +230,9 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
      */
     protected function replaceQueryOrdering($string)
     {
-         return preg_replace('~(ORDER\s+BY\s+`?.+`?)\s+([ASC|DESC]?)~iU', '$1 COLLATE NOCASE $2', $string);
+         // return preg_replace('~(ORDER\s+BY\s+`?.+`?)\s+([ASC|DESC]?)~iU', '$1 COLLATE NOCASE $2', $string);
+        $string = preg_replace('~(ORDER BY|,)(\s+\S+)\s+(?=ASC|DESC)~iU', ' $1$2 COLLATE NOCASE ', $string);
+        return $string;
     }
 
     /**
