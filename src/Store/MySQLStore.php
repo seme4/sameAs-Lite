@@ -131,9 +131,7 @@ class MySQLStore extends \SameAsLite\Store\SQLStore
         $o = array_merge($defaults, $o);
 
         if (!isset($o['username']) || !isset($o['password'])) {
-            throw new \InvalidArgumentException(
-                'No username or password given'
-            );
+            throw new \InvalidArgumentException('No username or password given');
         }
 
 
