@@ -64,7 +64,7 @@
 									<input class="form-control" type="text" name="{{ param }}" placeholder="{{ param }}">
 								{% endfor %}
 
-								{% if (route.method|upper == "PUT" or route.method|upper == "POST") and route.parameters|length == 0 %}
+								{% if ((route.method|upper == "PUT" or route.method|upper == "POST") and route.parameters|length == 0) %}
 									<textarea class="form-control" name="body" placeholder="Request body..."></textarea>
 								{% endif %}
 

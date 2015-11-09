@@ -1989,7 +1989,6 @@ class WebApp
         } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
-            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
 
@@ -2084,7 +2083,6 @@ class WebApp
         } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
-            // var_dump(ceil($this->stores[$store]->getMaxResults() / $this->appOptions['num_per_page']));die;
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
 
