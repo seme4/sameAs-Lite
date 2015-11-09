@@ -211,7 +211,7 @@ class WebApp
             'Overview of the API',
             'Lists all methods available via this API',
             false,
-            'application/json,text/html',
+            'text/html',
             true,
             false //no pagination
         );
@@ -223,7 +223,7 @@ class WebApp
             'Lists available datasets',
             'Returns the available datasets hosted by this service',
             false,
-            'application/json,text/html,text/csv',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             true // enable pagination
         );
@@ -235,7 +235,7 @@ class WebApp
             'Store homepage',
             'Gives an overview of the specific store',
             false,
-            'application/json,text/html',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             true, // hide from API
             false // no pagination
         );
@@ -247,7 +247,7 @@ class WebApp
             'Overview of API for specific store',
             'Gives an API overview of the specific store',
             false,
-            'application/json,text/html',
+            'text/html',
             true, // hide from API
             false // no pagination
         );
@@ -315,7 +315,7 @@ class WebApp
             'Update or delete the contents of a store',
             'Updates the store with request body or, if the request body is empty, removes the entire contents of a store, leaving an empty database',
             true,
-            'application/json,text/csv,text/tab-separated-values,text/plain', // TODO: rdf + turtle
+            'text/plain,application/json,text/html',
             false,
             false //no pagination
         );
@@ -351,9 +351,21 @@ class WebApp
             'Returns a list of all canons',
             null,
             false,
-            'text/plain,application/json,text/html',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             true // pagination
+        );
+        // access: API + webapp
+        $this->registerURL(
+            'GET',
+            '/datasets/:store/canons/:symbol',
+            'getCanon',
+            'Get canon',
+            'Returns the canon for the given :symbol',
+            false,
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
+            false,
+            false // pagination
         );
         // access: API + webapp
         $this->registerURL(
@@ -365,18 +377,7 @@ class WebApp
             true,
             'text/plain,application/json,text/html'
         );
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/canons/:symbol',
-            'getCanon',
-            'Get canon',
-            'Returns the canon for the given :symbol',
-            false,
-            'text/plain,application/json,text/html',
-            false,
-            false // pagination
-        );
+
 
         // Pairs
         // access: API + webapp
@@ -387,7 +388,7 @@ class WebApp
             'Export list of pairs',
             'This method dumps *all* pairs from the database',
             false,
-            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             true // pagination
         );
@@ -401,6 +402,7 @@ class WebApp
             true,
             'text/plain,application/json,text/html'
         );
+
         // access: API + webapp
         $this->registerURL(
             'PUT',
@@ -420,7 +422,7 @@ class WebApp
             'Search',
             'Find symbols which contain/match the search string/pattern',
             false,
-            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             true // pagination
         );
@@ -434,7 +436,7 @@ class WebApp
             'Retrieve symbol',
             'Return details of the given symbol',
             false,
-            'text/html,application/rdf+xml,text/turtle,application/json,text/csv,text/plain',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             true // pagination
         );
@@ -457,7 +459,7 @@ class WebApp
             'statistics',
             'Returns status of the store',
             true,
-            'text/plain,application/json,text/html',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             false // no pagination
         );
@@ -470,7 +472,7 @@ class WebApp
             'analyse',
             'Analyse contents of the store',
             true,
-            'text/plain,application/json,text/html',
+            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
             false // no pagination
         );
@@ -1179,7 +1181,7 @@ class WebApp
     public function updateStore($store)
     {
 
-        //xxx
+        // TODO
         var_dump($this->app->request);
         die;
 
@@ -2260,7 +2262,8 @@ class WebApp
      */
     protected function prepareWebResultView()
     {
-        $formats = $this->mimeLabels;
+        $formats = (isset($this->routeInfo->mimeTypes) ? $this->routeInfo->mimeTypes : $this->mimeLabels);
+
         // we are viewing a html page, so remove this result format
         // unset($formats['text/html']);
         $this->app->view()->set('alternate_formats', $formats);

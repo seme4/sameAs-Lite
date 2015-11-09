@@ -8,7 +8,7 @@
 
 	<div id="result" class="list-group">
 		{% for store in stores %}
-			<a class="list-group-item" href="/datasets/{{ store.slug }}">
+			<a class="list-group-item" href="{{ path }}/datasets/{{ store.slug }}">
                 <p class="h3">{{ store.shortName }}</p>
                 <p style="text-indent: 1em;">{{ store.fullName }}</p>
             </a>
