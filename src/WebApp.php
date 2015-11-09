@@ -464,6 +464,7 @@ class WebApp
             'GET',
             '/datasets/:store/status',
             'statistics',
+            'Statistics',
             'Returns status of the store',
             true,
             'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
@@ -477,6 +478,7 @@ class WebApp
             'GET',
             '/datasets/:store/analysis',
             'analyse',
+            'Analyse store',
             'Analyse contents of the store',
             true,
             'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
@@ -2124,17 +2126,15 @@ class WebApp
         if (!is_array($value)) {
             $value = htmlspecialchars($value);
         } else {
+            // clean recursively
             foreach ($value as $k => &$v) {
-                $v = htmlspecialchars($v);
-                if (!is_numeric($k)) {
-                    $k = htmlspecialchars($k);
-                }
+                $this->escapeInputArray($v, $k);
             }
         }
         // key
-        if (!is_numeric($key)) {
-            $key = htmlspecialchars($key);
-        }
+        // if (!is_numeric($key)) {
+        //     $key = htmlspecialchars($key);
+        // }
     }
 
     /**
