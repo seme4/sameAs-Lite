@@ -1805,6 +1805,8 @@ class WebApp
      */
     protected function outputArbitrary(array $list = array(), $status = null)
     {
+        // escaping for output
+        array_walk($list, 'self::escapeInputArray');
 
         if (!is_null($status)) {
             $this->app->response->setStatus($status);
@@ -1922,6 +1924,10 @@ class WebApp
      */
     protected function outputRDF(array $list = array(), $format = 'list', $predicate = 'owl:sameAs', $status = null)
     {
+
+        // escaping for output
+        array_walk($list, 'self::escapeInputArray');
+
         // get the query parameter
         $symbol = $this->app->request()->params('string');
         if (!$symbol) {
@@ -2042,11 +2048,8 @@ class WebApp
             $list = array_values($list);
         }//end if
 
-        // open world assumption (unRESTful)
-        // 404 header response
-        // if (empty($list)) {
-        // $status = 404;
-        // }//end if
+        // escaping for output
+        array_walk($list, 'self::escapeInputArray');
 
         if (!is_null($status)) {
             $this->app->response->setStatus($status);
