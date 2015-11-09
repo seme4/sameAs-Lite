@@ -1188,16 +1188,40 @@ class WebApp
     public function updateStore($store)
     {
 
-        // TODO
-        var_dump($this->app->request);
-        die;
+        $body = $this->app->request->getBody();
+
+        // from web query, the body is this: string(17) "_METHOD=PUT&body="
+
+        // filter out the _METHOD parameter
+
+        $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
+
+        if (empty($body)) {
+            // PUT request with empty body => remove the contents of the store
+            $this->emptyStore($store);
+        } else {
+            // PUT request with non-empty body => update (replace) the contents of the store
+
+            // TODO
+            die;
 
 
 
-        $this->stores[$store]->setCanon($symbol);
 
-        $this->stores[$store]->emptyStore();
-        $this->outputSuccess('Store emptied');
+
+
+
+            // determine the type of incoming data
+            $contentType = $this->app->request->getContentType(); // from web: application/x-www-form-urlencoded"
+            var_dump($contentType);die;
+
+
+            $body = json_decode($body);
+
+
+
+        }
+
     }
 
     /**
@@ -1223,11 +1247,11 @@ class WebApp
      * @param string $store The URL slug identifying the store
      * @param string $file  The local (server) filename to get the previous dump from
      */
-    public function restoreStore($store, $file)
-    {
-        $this->stores[$store]->restoreStore($file);
-        $this->outputSuccess("Store restored from file '$file'");
-    }
+    // public function restoreStore($store, $file)
+    // {
+    //     $this->stores[$store]->restoreStore($file);
+    //     $this->outputSuccess("Store restored from file '$file'");
+    // }
 
     /**
      * Actions the HTTP GET service from /canons
@@ -1732,6 +1756,10 @@ class WebApp
     protected function outputSuccess($msg, $status = 200)
     {
         $this->app->response->setStatus($status);
+
+        // headline for template
+        $this->app->view()->set('titleHTML', ' - Result');
+        $this->app->view()->set('titleHeader', 'Result of operation on ' . $this->storeOptions[$this->store]['shortName']);
 
         switch ($this->mimeBest) {
             case 'text/plain':
