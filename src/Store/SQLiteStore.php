@@ -221,4 +221,24 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
         */
 
     }
+
+
+    /**
+     * Gets the SQL query string that when run returns the expected result of { @link dumpPairs() }
+     * @see dumpPairs()
+     * Overwrites getDumpPairsString() in SQLStore class to implement the alphabetical order of results
+     *
+     * @return string The SQL string for the query
+     */
+    protected function getDumpPairsString()
+    {
+        $sql = "SELECT `canon`, `symbol` FROM `{$this->getTableName()}` ORDER BY `canon` COLLATE NOCASE ASC, `symbol` COLLATE NOCASE ASC";
+
+        if ($this->pagination == true) {
+            // if we are paginating, we limit the results
+            $sql .= " LIMIT " . intval($this->offset) . ", " . intval($this->limit);
+        }
+
+        return $sql;
+    }
 }

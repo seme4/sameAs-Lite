@@ -282,38 +282,49 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
             // These now have the canons, or null if the symbol wasn't in the store
 
             if ($canon1 === null && $canon2 === null) {
+
                 // Both symbols are new - create a new bundle
                 // And make the Canon $symbol1
                 // REPLACE handles the case where they are the same - for neatness
-                $sql = "REPLACE INTO $this->storeName VALUES (:symbol1, :symbol1), (:symbol1, :symbol2)";
+                $sql = "REPLACE INTO `$this->storeName` VALUES (:symbol1, :symbol1), (:symbol1, :symbol2)";
                 $statement = $this->pdoObject->prepare($sql);
                 $statement->execute(array(':symbol1' => $symbol1, ':symbol2' => $symbol2));
+
             } elseif ($canon1 === $canon2) {
+
                 // They were both already in the same bundle
                 // Do nothing
+
             } elseif ($canon1 === null) {
+
                 // Insert new $symbol1 into existing bundle for $symbol2
                 // No need to do anything about canons
-                $sql = "INSERT INTO $this->storeName VALUES (:canon2, :symbol1)";
+                $sql = "INSERT INTO `$this->storeName` VALUES (:canon2, :symbol1)";
                 $statement = $this->pdoObject->prepare($sql);
                 $statement->execute(array(':symbol1' => $symbol1, ':canon2' => $canon2));
+
             } elseif ($canon2 === null) {
+
                 // Insert new $symbol2 into existing bundle for $symbol1
                 // No need to do anything about canons
-                $sql = "INSERT INTO $this->storeName VALUES (:canon1, :symbol2)";
+                $sql = "INSERT INTO `$this->storeName` VALUES (:canon1, :symbol2)";
                 $statement = $this->pdoObject->prepare($sql);
                 $statement->execute(array(':canon1' => $canon1, ':symbol2' => $symbol2));
+
             } else {
+
                 // They are in different bundles
                 // So join the two bundles - set all of bundle 2 to be in bundle 1
                 // Canon will be the canon of bundle 1
                 // TODO Performance? Doesn't need protection since they came out of the table?
-                $sql = "UPDATE $this->storeName SET canon = :canon1 WHERE canon = :canon2";
+                $sql = "UPDATE `$this->storeName` SET `canon` = :canon1 WHERE `canon` = :canon2";
                 $statement = $this->pdoObject->prepare($sql);
                 $statement->execute(array(':canon1' => $canon1, ':canon2' => $canon2));
+
             }
 
             return true;
+
         } catch (\PDOException $e) {
             $this->error("Unable to assert pair ($symbol1, $symbol2)", $e);
         }

@@ -200,7 +200,7 @@ class WebApp
             'Renders the main application homepage',
             false,
             'text/html',
-            true,
+            true, // hide from API
             false //no pagination
         );
         // access: webapp only
@@ -212,7 +212,7 @@ class WebApp
             'Lists all methods available via this API',
             false,
             'text/html',
-            true,
+            true, // hide from API
             false //no pagination
         );
         // access: API + webapp
@@ -227,7 +227,7 @@ class WebApp
             false,
             true // enable pagination
         );
-        // access: API + webapp
+        // access: webapp only
         $this->registerURL(
             'GET',
             '/datasets/:store',
@@ -235,8 +235,8 @@ class WebApp
             'Store homepage',
             'Gives an overview of the specific store',
             false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            true, // hide from API
+            'text/html',
+            false,
             false // no pagination
         );
         // access: webapp only
@@ -365,19 +365,20 @@ class WebApp
             false,
             'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
             false,
-            false // pagination
+            false // no pagination
         );
         // access: API + webapp
         $this->registerURL(
             'PUT',
             '/datasets/:store/canons/:symbol',
             'setCanon',
-            'Set the canon',
-            'Invoking this method ensures that the :symbol becomes the canon',
+            'Set the canon', // TODO: Update text
+            'Invoking this method ensures that the :symbol becomes the canon', // TODO: Update text
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
-
 
         // Pairs
         // access: API + webapp
@@ -400,7 +401,9 @@ class WebApp
             'Assert multiple pairs',
             'Upload a file of pairs to be inserted into the store',
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
 
         // access: API + webapp
@@ -411,7 +414,9 @@ class WebApp
             'Assert single pair',
             'Asserts sameAs between the given two symbols',
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
 
         // access: API + webapp
@@ -448,7 +453,9 @@ class WebApp
             'Delete symbol',
             'Delete a symbol from the datastore',
             true,
-            'text/plain,application/json,text/html'
+            'text/plain,application/json,text/html',
+            false,
+            false // no pagination
         );
 
         // Simple status of datastore
@@ -1567,11 +1574,15 @@ class WebApp
                 $out = [];
                 $url = $this->app->request->getUrl();
 
-                foreach ($this->storeOptions as $i) {
-                    $out[] = [
+                foreach ($this->storeOptions as $k => $i) {
+                    $out[$k] = [
                         'name' => $i['shortName'],
-                        'url' => $url . '/datasets/' . $i['slug']
+                        'url' => htmlspecialchars($url . '/datasets/' . $i['slug'])
                     ];
+                    // only add the full store name if it differs from the short name 
+                    if ($i['shortName'] !== $i['fullName']) {
+                        $out[$k]['description'] = $i['fullName'];
+                    }
                 }
 
                 $this->app->response->setBody(json_encode($out, JSON_PRETTY_PRINT)); // PHP 5.4+
@@ -1588,7 +1599,7 @@ class WebApp
                 foreach ($this->storeOptions as $i) {
                     $out[$i['shortName']] = [
                         'dc:type' => 'Store',
-                        'dc:title' => $i['shortName'],
+                        'rdfs:label' => $i['shortName'],
                         'url' => $url . '/datasets/' . $i['slug']
                     ];
 
