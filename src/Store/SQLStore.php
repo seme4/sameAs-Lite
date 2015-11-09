@@ -512,7 +512,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getCanonString($symbolId)
     {
-        return "SELECT canon FROM {$this->getTableName()} WHERE symbol = {$symbolId} LIMIT 1";
+        return "SELECT `canon` FROM `{$this->getTableName()}` WHERE `symbol` = {$symbolId} LIMIT 1";
     }
 
 
@@ -553,7 +553,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getAllCanonsString()
     {
-        $sql = "SELECT DISTINCT canon FROM $this->storeName ORDER BY symbol ASC";
+        $sql = "SELECT DISTINCT `canon` FROM `{$this->storeName}` ORDER BY `symbol` ASC";
 
         if ($this->pagination == true) {
             // if we are paginating, we limit the results
@@ -570,7 +570,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getAllCanonsStringMax()
     {
-        return "SELECT COUNT(DISTINCT canon) AS total FROM $this->storeName";
+        return "SELECT COUNT(DISTINCT `canon`) AS `total` FROM `{$this->storeName}`";
     }
 
 
@@ -704,7 +704,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getStatisticsSymbolNumberString()
     {
-        return "SELECT COUNT(DISTINCT symbol) FROM {$this->getTableName()}";
+        return "SELECT COUNT(DISTINCT `symbol`) FROM `{$this->getTableName()}`";
     }
     /**
      * Returns the SQL that gets the number of canons in the store
@@ -713,7 +713,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getStatisticsCanonNumberString()
     {
-        return "SELECT COUNT(DISTINCT canon) FROM {$this->getTableName()}";
+        return "SELECT COUNT(DISTINCT `canon`) FROM `{$this->getTableName()}`";
     }
 
 
@@ -946,7 +946,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getAnalyseAllRowsString()
     {
-        return "SELECT * FROM {$this->getTableName()} ORDER BY canon ASC, symbol ASC";
+        return "SELECT * FROM `{$this->getTableName()}` ORDER BY `canon` ASC, `symbol` ASC";
     }
     /**
      * Gets the SQL query string that when run returns unqiue rows where the canon does not have a symbol
@@ -956,7 +956,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     protected function getAnalyseCanonsNotSymbolsString()
     {
-        return "SELECT DISTINCT canon FROM {$this->getTableName()} WHERE canon != symbol ORDER BY canon ASC";
+        return "SELECT DISTINCT `canon` FROM `{$this->getTableName()}` WHERE `canon` != `symbol` ORDER BY `canon` ASC";
     }
 
 

@@ -1202,7 +1202,7 @@ class WebApp
         } else {
             // PUT request with non-empty body => update (replace) the contents of the store
 
-            // TODO
+            // TODO - need to detect the type of the incoming data
             die;
 
 

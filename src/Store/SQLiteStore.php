@@ -223,22 +223,43 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
     }
 
 
+
     /**
-     * Gets the SQL query string that when run returns the expected result of { @link dumpPairs() }
-     * @see dumpPairs()
-     * Overwrites getDumpPairsString() in SQLStore class to implement the alphabetical order of results
-     *
-     * @return string The SQL string for the query
+     * To order the results alphabetically, irregardless of the case,
+     * SQLite requires the COLLATE NOCASE keyword in the query
+     */
+    protected function replaceQueryOrdering($string)
+    {
+         return preg_replace('~(ORDER\s+BY\s+`?.+`?)\s+([ASC|DESC]?)~iU', '$1 COLLATE NOCASE $2', $string);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function getQuerySymbolString($symbolId)
+    {
+        return $this->replaceQueryOrdering(parent::getQuerySymbolString());
+    }
+    /**
+     * {@inheritDoc}
+     */
+    protected function getSearchString($string)
+    {
+        return $this->replaceQueryOrdering(parent::getSearchString());
+    }
+    /**
+     * {@inheritDoc}
+     */
+    protected function getAllCanonsString()
+    {
+        return $this->replaceQueryOrdering(parent::getAllCanonsString());
+    }
+    /**
+     * {@inheritDoc}
      */
     protected function getDumpPairsString()
     {
-        $sql = "SELECT `canon`, `symbol` FROM `{$this->getTableName()}` ORDER BY `canon` COLLATE NOCASE ASC, `symbol` COLLATE NOCASE ASC";
-
-        if ($this->pagination == true) {
-            // if we are paginating, we limit the results
-            $sql .= " LIMIT " . intval($this->offset) . ", " . intval($this->limit);
-        }
-
-        return $sql;
+        return $this->replaceQueryOrdering(parent::getDumpPairsString());
     }
+
 }
