@@ -73,6 +73,8 @@ var app = {
         }
 
         var $result = $('#result');
+
+        // clear
         $result.html('');
 
         $.ajax({
@@ -87,12 +89,10 @@ var app = {
             success: function (data, textStatus, jObj) {
 
                 if (data) {
-                    // clear
-                    // $result.html("");
 
                     if (app.outputMimeType !== 'text/html') {
 
-                        $result.html(data);
+                        $result.text(data);
                         // wrap pre tags around result (only once)
                         app.wrap($result);
 
@@ -198,6 +198,17 @@ var app = {
                 app.unwrap($result);
 
                 switch (app.ajaxMimeType) {
+
+// TODO: add other mime types here
+
+
+
+
+
+
+
+
+
 
                     case 'application/rdf+xml':
                     case 'text/turtle':

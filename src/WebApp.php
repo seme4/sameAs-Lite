@@ -151,7 +151,7 @@ class WebApp
     public function addDataset(\SameAsLite\StoreInterface $store, array $options)
     {
 
-        foreach (array('shortName', 'slug') as $configoption) {
+        foreach (array('slug', 'shortName') as $configoption) {
             if (!isset($options[$configoption])) {
                 throw new Exception\ConfigException('The Store array is missing required key/value "' . $configoption . '" in config.ini');
             }
@@ -1416,7 +1416,6 @@ class WebApp
      */
     public function querySymbol($store, $symbol)
     {
-        // bugfix
         $accept = $this->app->request->headers->get('Accept');
 
         if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
@@ -2339,13 +2338,15 @@ class WebApp
      */
     protected function prepareWebResultView()
     {
+        // mime type buttons
         $formats = (isset($this->routeInfo->mimeTypes) ? $this->routeInfo->mimeTypes : $this->mimeLabels);
-
         // we are viewing a html page, so remove this result format
         // unset($formats['text/html']);
         $this->app->view()->set('alternate_formats', $formats);
+
         //set the current selected mime type
         $this->app->view()->set('current_mime', $this->mimeBest);
+
         // inject javascript
         $this->app->view()->set(
             'javascript',

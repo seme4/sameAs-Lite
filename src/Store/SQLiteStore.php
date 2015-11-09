@@ -240,14 +240,14 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore
      */
     protected function getQuerySymbolString($symbolId)
     {
-        return $this->replaceQueryOrdering(parent::getQuerySymbolString());
+        return $this->replaceQueryOrdering(parent::getQuerySymbolString($symbolId));
     }
     /**
      * {@inheritDoc}
      */
     protected function getSearchString($string)
     {
-        return $this->replaceQueryOrdering(parent::getSearchString());
+        return $this->replaceQueryOrdering(parent::getSearchString($string));
     }
     /**
      * {@inheritDoc}

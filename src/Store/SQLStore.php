@@ -227,6 +227,14 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     public function search($string)
     {
         try {
+
+            if ($this->pagination == true) {
+                $maxsql = $this->getSearchStringMax(':search');
+                $string = str_replace('%', '\%', $string);
+                $filter = [ array(':search', "%$string%", \PDO::PARAM_STR) ];
+                $this->prepareMaxResults($maxsql, $filter);
+            }
+
             $sql = $this->getSearchString(':search');
             $statement = $this->pdoObject->prepare($sql);
             // PDO->bindValue does not escape % and _
@@ -248,7 +256,6 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         return $output;
     }
 
-
     /**
      * Gets the SQL query string that when run returns the expected result of { @link search() }
      * @see search()
@@ -264,6 +271,21 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
                 FROM `{$tn}` AS t1, `{$tn}` AS t2
                 WHERE `t1`.`canon` = `t2`.`canon` AND `t2`.`symbol` LIKE {$string}
                 ORDER BY `t1`.`canon` DESC, `t1`.`symbol` ASC";
+    }
+    /**
+     * Gets the SQL query string that when run returns the expected result of { @link search() }
+     * @see search()
+     *
+     * @param string $string The string to be placed where the symbol would go in the query
+     *
+     * @return string The SQL string for the query
+     */
+    protected function getSearchStringMax($string)
+    {
+        $tn = $this->getTableName();
+        return "SELECT COUNT(DISTINCT `t1`.`canon`) AS `total`
+                FROM `{$tn}` AS `t1`, `{$tn}` AS `t2`
+                WHERE `t1`.`canon` = `t2`.`canon` AND `t2`.`symbol` LIKE {$string}";
     }
 
 
@@ -992,18 +1014,26 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     /**
      * Set the maximum number of results for the query
      *
-     * @param string $sql SQL query string
+     * @param string $sql    SQL query string
+     * @param array  $filter Binding to be applied to the query
      */
-    protected function prepareMaxResults($sql)
+    protected function prepareMaxResults($sql, array $filter = array())
     {
         // get the maximum number of results for pagination
         $statement = $this->pdoObject->prepare($sql);
+
+        if ($filter) {
+            foreach ($filter as $arr) {
+                $statement->bindValue($arr[0], $arr[1], $arr[2]);
+            }
+        } 
+
         $statement->execute();
         $row = $statement->fetch(\PDO::FETCH_ASSOC);
         $this->maxResults = intval($row['total']);
 
         // if there are no results, pagination is disabled
-        if (!$this->maxResults > 0) {
+        if (!($this->maxResults > 0)) {
             $this->pagination = false;
         }
     }
