@@ -92,7 +92,7 @@ var app = {
 
                     if (app.outputMimeType !== 'text/html') {
 
-                        $result.text(data);
+                        $result.html(data);
                         // wrap pre tags around result (only once)
                         app.wrap($result);
 
