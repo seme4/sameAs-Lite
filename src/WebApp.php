@@ -1062,7 +1062,12 @@ class WebApp
         // iterate over all routes
         foreach ($this->routeInfo as $info) {
             if (!isset($info['hidden']) || !$info['hidden']) {
-                $routes[] = $this->getRouteInfoForTemplate($info, $store);
+                $ri = $this->getRouteInfoForTemplate($info, $store);
+                //do not show /datasets on store api page
+                if ($store !== null && $info['urlPath'] === '/datasets') {
+                    continue;
+                }
+                $routes[] = $ri;
             }
         }
 
@@ -1080,7 +1085,7 @@ class WebApp
         // render the template
         $this->app->render('page/api-index.twig', [
             'titleHTML' => ' - API',
-            'titleHeader' => 'API overview',
+            'titleHeader' => 'API overview' . ($this->storeOptions[$store]['shortName'] ? ' for ' . $this->storeOptions[$store]['shortName'] : ''),
             'routes' => $routes
         ]);
     }
@@ -2032,6 +2037,11 @@ class WebApp
      */
     protected function outputList(array $list = array(), $numeric_array = true, $status = null)
     {
+        // Convert into numeric array, if required
+        if ($numeric_array) {
+            $list = array_values($list);
+        }//end if
+
         // pagination check
         if (empty($list)) {
 
@@ -2040,13 +2050,9 @@ class WebApp
         } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
+            $this->app->view()->set('numResults', count($list));
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
-
-        // Convert into numeric array, if required
-        if ($numeric_array) {
-            $list = array_values($list);
-        }//end if
 
         // escaping for output
         array_walk($list, 'self::escapeInputArray');
@@ -2156,6 +2162,7 @@ class WebApp
         } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
+            $this->app->view()->set('numResults', count($data));
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
 

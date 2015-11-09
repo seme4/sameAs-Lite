@@ -37,12 +37,15 @@
 
         {% if (alternate_formats or pagination) %}
           <div class="pageActions">
+
             {% if alternate_formats %}
               {% include 'snippet/altformats.twig' %}
             {% endif %}
-            {% if pagination %}
+
+            {% if numResults and pagination and numResults > pagination %}
               {% include 'snippet/pagination.twig' %}
             {% endif %}
+
           </div>
         {% endif %}
 

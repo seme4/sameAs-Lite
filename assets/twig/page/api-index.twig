@@ -4,7 +4,7 @@
 
 {% block body %}
 
-<h3>You can use the following methods {% if shortName %}with {{shortName}}{% endif %}</h3>
+<h3>You can use the following methods{# if shortName %} with {{shortName}}{% endif #}</h3>
 
 {% for route in routes %}
 

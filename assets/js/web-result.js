@@ -215,6 +215,7 @@ var app = {
 
                         data = JSON.parse(data);
                         data = JSON.stringify(data);
+                        data = data.replace("\\n", '');
                         data = data.replace('\n', '');
                         data = data.replace("\n", "<br />");
 
