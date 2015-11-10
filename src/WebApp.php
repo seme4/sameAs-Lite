@@ -1203,13 +1203,15 @@ class WebApp
         $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
 
         if (empty($body)) {
+
             // PUT request with empty body => remove the contents of the store
             $this->emptyStore($store);
+
         } else {
             // PUT request with non-empty body => update (replace) the contents of the store
 
             // TODO - need to detect the type of the incoming data
-            die;
+            die('TODO (no data inserted)');
 
 
 
