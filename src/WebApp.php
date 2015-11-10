@@ -766,11 +766,6 @@ class WebApp
             // However, this specification does not define any standard for such automatic selection.
 
 
-
-
-
-            // $app->response->headers->set('Content-Type', 'application/json');
-
         } elseif ($e instanceof Exception\AuthException) {
 
             // TODO
@@ -849,6 +844,12 @@ class WebApp
         }
 
         $this->app->response->setStatus($status);
+
+        // slim does not set the response code in this function
+        // setting it manually
+        if (!headers_sent()) {
+            http_response_code($status); // PHP 5.4+
+        }
 
         if (is_null($title)) {
             $title = 'Error ' . $status;
@@ -947,7 +948,6 @@ class WebApp
         }
 
     }
-
     /**
      * Output a 404 (not found) error
      */
@@ -959,7 +959,6 @@ class WebApp
             'Sorry, the page you were looking for does not exist.'
         );
     }
-
     /**
      * Output a 401 (unauthorized) error
      */
@@ -974,6 +973,7 @@ class WebApp
             'Access Denied'
         );
     }
+
 
     /**
      * Application homepage
@@ -1335,10 +1335,7 @@ class WebApp
 
         $result = $this->stores[$store]->dumpPairs();
 
-        $this->outputTable(
-            $result,
-            array('canon', 'symbol')
-        );
+        $this->outputTable($result, array('canon', 'symbol'));
     }
 
     /**
@@ -1929,9 +1926,8 @@ class WebApp
      */
     protected function outputRDF(array $list = array(), $format = 'list', $predicate = 'owl:sameAs', $status = null)
     {
-
         // escaping for output
-        array_walk($list, 'self::escapeInputArray');
+        // array_walk($list, 'self::escapeInputArray');
 
         // get the query parameter
         $symbol = $this->app->request()->params('string');
@@ -2068,7 +2064,7 @@ class WebApp
         } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
-            $this->app->view()->set('numResults', count($list));
+            // $this->app->view()->set('numResults', count($list));
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
 
@@ -2180,15 +2176,9 @@ class WebApp
         } elseif ($this->stores[$this->store]->isPaginated()) {
             // add pagination buttons to the template
             $this->app->view()->set('currentPage', $this->stores[$this->store]->getCurrentPage());
-            $this->app->view()->set('numResults', count($data));
+            // $this->app->view()->set('numResults', count($data));
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
-
-        // 404 header response
-        // if (empty($data)) {
-        //     $status = 404;
-        //     $this->app->response->setStatus($status);
-        // }
 
 
         switch ($this->mimeBest) {
