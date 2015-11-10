@@ -362,7 +362,8 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         foreach ($data as $pair) {
             $this->assertPair($pair[0], $pair[1]);
         }
-        return true;
+
+        return true; // TODO: improve return
     }
 
 
@@ -372,11 +373,12 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     public function assertTSV($tsv)
     {
+
         $data = str_getcsv($tsv, "\n"); // parse the rows
         foreach ($data as &$row) {
             $row = str_getcsv($row, "\t"); // parse the items in rows
         }
-        
+
         return $this->assertPairs($data);
     }
 

@@ -238,14 +238,27 @@ var app = {
 
 
 
+                    case 'application/json':
+
+                        $result.text(data);
+                        // wrap pre tags around result (only once)
+                        app.wrap($result);
+
+                        break;
+
                     case 'application/rdf+xml':
                     case 'text/turtle':
+                    case 'application/x-turtle':
 
                         data = JSON.parse(data);
                         data = JSON.stringify(data);
-                        data = data.replace("\\n", '');
-                        data = data.replace('\n', '');
-                        data = data.replace("\n", "<br />");
+
+                        data = data.replace("\/", '/');
+                        data = data.replace('\\n', '');
+                        
+                        $result.text(data);
+                        // wrap pre tags around result (only once)
+                        app.wrap($result);
 
                         break;
 

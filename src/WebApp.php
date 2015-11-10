@@ -1416,6 +1416,15 @@ class WebApp
         if (!$body) { // body no longer exists in request obj
             throw new Exception\InvalidRequestException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
         } else {
+
+            // body may contain "_METHOD=PUT&body="
+            $body = preg_replace('~^_METHOD=(PUT|POST)&body=~i', '', $body);
+            // convert the url encoded body
+            // $body = str_replace('%09', "\t", $body)
+            $body = urldecode($body);
+
+            // TODO: this should also be possible with other content formats, not only TSV
+
             $this->stores[$store]->assertTSV($body);
 
             // $after = $this->stores[$store]->statistics();
