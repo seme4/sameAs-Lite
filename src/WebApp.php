@@ -94,7 +94,7 @@ class WebApp
     public function __construct(array $options = array())
     {
         // fake $_SERVER parameters if required (eg command line invocation)
-        $this->initialiseServerParameters();
+        \SameAsLite\Helper::initialiseServerParameters();
 
         // set the default format of acceptable parameters
         // see http://docs.slimframework.com/routing/conditions/#application-wide-route-conditions
@@ -578,32 +578,6 @@ class WebApp
         );
     }
 
-    /**
-     * Initialise dummy $_SERVER parameters if not set (ie command line).
-     */
-    protected function initialiseServerParameters()
-    {
-        global $argv;
-
-        if (!isset($_SERVER['REQUEST_METHOD'])) {
-            $_SERVER['REQUEST_METHOD'] = 'GET';
-        }
-        if (!isset($_SERVER['REMOTE_ADDR'])) {
-            $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        }
-        if (!isset($_SERVER['REQUEST_URI'])) {
-            $_SERVER['REQUEST_URI'] = (isset($argv[1])) ? $argv[1] : '/';
-        }
-        if (!isset($_SERVER['SERVER_NAME'])) {
-            $_SERVER['SERVER_NAME'] = getHostByAddr('127.0.0.1');
-        }
-        if (!isset($_SERVER['SERVER_PORT'])) {
-            $_SERVER['SERVER_PORT'] = 80;
-        }
-        if (!isset($_SERVER['HTTP_ACCEPT'])) {
-            $_SERVER['HTTP_ACCEPT'] = 'text/html';
-        }
-    }
 
     /**
      * Middleware callback used to check for valid store.
@@ -1374,7 +1348,7 @@ class WebApp
         $this->app->view()->set('titleHeader', 'All Canons in this dataset');
         $results = $this->stores[$store]->getAllCanons();
 
-        if ($this->isRDFRequest()) {
+        if (\SameAsLite\Helper::isRDFRequest($this->mimeBest)) {
             $this->outputRDF($results, 'list', 'ns:canon');
         } else {
             $this->outputList($results, true); //numeric list
@@ -1516,7 +1490,12 @@ class WebApp
         $this->app->view()->set('titleHeader', 'Search: "' . $string . '"');
 
         $results = $this->stores[$store]->search($string);
-        $this->outputList($results);
+
+        if (\SameAsLite\Helper::isRDFRequest($this->mimeBest)) {
+            $this->outputRDF($results, 'list', 'ns:searchResult');
+        } else {
+            $this->outputList($results);
+        }
     }
 
     /**
@@ -1530,7 +1509,7 @@ class WebApp
      */
     public function querySymbol($store, $symbol)
     {
-        $accept = $this->app->request->headers->get('Accept');
+        // $accept = $this->app->request->headers->get('Accept');
 
         if (isset($this->mimeBest) && $this->mimeBest !== 'text/html') {
             // non-HTML output
@@ -1538,8 +1517,14 @@ class WebApp
             $results = $this->stores[$store]->querySymbol($symbol);
             $results = array_diff($results, [ $symbol ]);
 
-            $this->mimeBest = $accept;
-            $this->outputList($results);
+            // $this->mimeBest = $accept;
+
+            if (\SameAsLite\Helper::isRDFRequest($this->mimeBest)) {
+                $this->outputRDF($results, 'list', 'owl:sameAs');
+            } else {
+                $this->outputList($results);
+            }
+
         } else {
             // HTML output
 
@@ -1558,7 +1543,7 @@ class WebApp
 
                 // Linkify the results
                 foreach ($results as &$result) {
-                    $result = $this->linkify($result);
+                    $result = \SameAsLite\Helper::linkify($result);
                 }
 
                 // add the alternate formats for ajax query and pagination buttons
@@ -1613,7 +1598,7 @@ class WebApp
         $this->app->view()->set('titleHTML', ' - Statistics ' . $shortName);
         $this->app->view()->set('titleHeader', 'Statistics ' . $shortName);
 
-        $result = $this->stores[$store]->statistics();
+        $results = $this->stores[$store]->statistics();
 
         // content negotiation
         switch ($this->mimeBest) {
@@ -1631,7 +1616,7 @@ class WebApp
                 // output as a table
 
                 $rows = $headers = array();
-                foreach ($result as $header => $value) {
+                foreach ($results as $header => $value) {
                     $rows[] = $value;
                     $headers[] = $header;
                 }
@@ -1643,7 +1628,7 @@ class WebApp
             case 'text/plain':
 
                 $out = '';
-                foreach ($result as $header => $value) {
+                foreach ($results as $header => $value) {
                     $out .= $header . " => " . $value . PHP_EOL;
                 }
 
@@ -1653,7 +1638,7 @@ class WebApp
 
             default:
 
-                $this->outputList($result, false, 200);
+                $this->outputList($results, false, 200);
 
                 break;
         }
@@ -1925,7 +1910,7 @@ class WebApp
     protected function outputArbitrary(array $list = array(), $status = null)
     {
         // escaping for output
-        array_walk($list, 'self::escapeInputArray');
+        array_walk($list, '\SameAsLite\Helper::escapeInputArray');
 
         if (!is_null($status)) {
             $this->app->response->setStatus($status);
@@ -2014,7 +1999,7 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
+                $list = array_map('\SameAsLite\Helper::linkify', $list); // Map array to linkify the contents
 
                 $this->app->render('page/output.twig', [
                     'list' => '<pre>' . print_r($list, true) . '</pre>'
@@ -2044,17 +2029,23 @@ class WebApp
     protected function outputRDF(array $list = array(), $format = 'list', $predicate = 'owl:sameAs', $status = null)
     {
         // escaping for output
-        // array_walk($list, 'self::escapeInputArray');
+        // array_walk($list, '\SameAsLite\Helper::escapeInputArray');
 
-        // get the query parameter
+        if (!is_null($status)) {
+            $this->app->response->setStatus($status);
+        }//end if
+
+
+        // get the query parameters
         $symbol = $this->app->request()->params('string');
         if (!$symbol) {
             $symbol = $this->app->request()->params('symbol');
         }//end if
-        $symbol = $symbol ? $symbol : false;
+        $symbol = ($symbol ? $symbol : false);
+        $store = ($this->store ? $this->store : false);
 
-        $store = $this->store ? $this->store : false;
 
+        /*
         // meta info
         $domain = 'http://';
         if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
@@ -2064,39 +2055,47 @@ class WebApp
         if ($_SERVER["SERVER_PORT"] != "80") {
             $domain .= ":" . $_SERVER["SERVER_PORT"];
         }//end if
+        */
 
 
         // EASY RDF
 
         $graph = new \EasyRdf_Graph();
 
-        $meta_block = $graph->resource($domain . $_SERVER['REQUEST_URI']);
-        // TODO: maybe also add info about store (storename, URI)?
+        $result_block = $graph->newBNode();
+
+        //$meta_block = $graph->resource($this->app->request()->getURL() . $_SERVER['REQUEST_URI']);
+        $meta_block = $graph->resource($graph->resource('_:' . $result_block->getBNodeId()));
+
         $meta_block->set('dc:creator', 'sameAsLite');
+        // TODO: maybe also add info about store (storename, URI)?
+        if ($store) {
+            $meta_block->set('dc:source', $graph->resource($this->app->request()->getURL() . $this->app->request()->getRootUri().'/datasets/'.urlencode($store)));
+        }
         // $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
         if (isset($this->appOptions['license']['url'])) {
             $meta_block->add('dct:license', $graph->resource($this->appOptions['license']['url']));
         }
 
         // list
-        if (!$format === 'list') {
+        if ($format !== 'list') {
             //sameAs relationships
             if (strpos($symbol, 'http') === 0) {
-                $symbol_block = $graph->resource($symbol);
+                $result_block = $graph->resource($symbol);
                 $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
             } else {
-                $symbol_block = $graph->newBNode();
-                $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $symbol_block->getBNodeId()));
+                $result_block = $graph->newBNode();
+                $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $result_block->getBNodeId()));
             }
             $predicate = 'owl:sameAs';
             foreach ($list as $s) {
                 if (strpos($s, 'http') === 0) {
                     // resource
-                    $symbol_block->add($predicate, $graph->resource(urldecode($s)));
+                    $result_block->add($predicate, $graph->resource(urldecode($s)));
                 } else {
                     // literal values - not technically correct, because sameAs expects a resource
                     // but validates in W3C Validator
-                    $symbol_block->add($predicate, $s);
+                    $result_block->add($predicate, $s);
                 }
             }
         } else {
@@ -2126,17 +2125,18 @@ class WebApp
 
 
             \EasyRdf_Namespace::set($ns['ns'], 'http://sameas.org/' . $ns['slug'] . '/');
-            $symbol_block = $graph->resource($domain . '/datasets/' . $this->store. '/' . $ns['slug'] . '/');
+            // $result_block = $graph->resource($this->app->request()->getURL() . '/datasets/' . $this->store. '/' . $ns['slug'] . '/');
+
 
 
             foreach ($list as $s) {
                 if (strpos($s, 'http') === 0) {
                     // resource
-                    $symbol_block->add($predicate, $graph->resource(urldecode($s)));
+                    $result_block->add($predicate, $graph->resource(urldecode($s)));
                 } else {
                     // literal values - not technically correct, because sameAs expects a resource
                     // but validates in W3C Validator
-                    $symbol_block->add($predicate, $s);
+                    $result_block->add($predicate, $s);
                 }
             }
         }
@@ -2153,6 +2153,8 @@ class WebApp
         }
 
         $this->app->response->setBody($data);
+
+        $this->app->stop();
     }
 
     /**
@@ -2231,9 +2233,9 @@ class WebApp
             case 'application/xhtml+xml':
 
                 // escaping for output
-                array_walk($list, 'self::escapeInputArray');
+                array_walk($list, '\SameAsLite\Helper::escapeInputArray');
 
-                $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
+                $list = array_map('\SameAsLite\Helper::linkify', $list); // Map array to linkify the contents
 
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
@@ -2247,32 +2249,10 @@ class WebApp
             default:
                 throw new Exception\ContentTypeException('Could not render list output as ' . $this->mimeBest);
         }
+
+        $this->app->stop();
     }
 
-    /**
-     * All incoming data must be escaped for output on the webpage
-     *
-     * @param array $data    The rows to output
-     * @param array $headers Column headers
-     *
-     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
-     * is not supported
-     */
-    protected function escapeInputArray(&$value, $key) {
-        // value(s)
-        if (!is_array($value)) {
-            $value = htmlspecialchars($value);
-        } else {
-            // clean recursively
-            foreach ($value as $k => &$v) {
-                $this->escapeInputArray($v, $k);
-            }
-        }
-        // key
-        // if (!is_numeric($key)) {
-        //     $key = htmlspecialchars($key);
-        // }
-    }
 
     /**
      * Output tabular data, in the most appropriate MIME type
@@ -2366,8 +2346,8 @@ class WebApp
                 $this->prepareWebResultView();
 
                 // escaping for output
-                array_walk($headers, 'self::escapeInputArray');
-                array_walk($data, 'self::escapeInputArray');
+                array_walk($headers, '\SameAsLite\Helper::escapeInputArray');
+                array_walk($data, '\SameAsLite\Helper::escapeInputArray');
 
                 $tables = array();
 
@@ -2375,7 +2355,7 @@ class WebApp
                 // turn the array keys into table headlines
                 // use the sub-keys in the first column
                 // and the array values in the second column
-                if (!$headers && $this->countdim($data) === 2) {
+                if (!$headers && \SameAsLite\Helper::countdim($data) === 2) {
 
                     foreach ($data as $hdr => $dat) {
 
@@ -2418,8 +2398,8 @@ class WebApp
                     );
                     foreach ($data as &$d) {
                         if (!is_array($d)) {
-                            $d = array_map([ $this, 'linkify' ], $d);
-                            // $d = $this->linkify($d);
+                            $d = array_map('\SameAsLite\Helper::linkify', $d);
+                            // $d = \SameAsLite\Helper::linkify($d);
                         }
                     }
 
@@ -2432,36 +2412,10 @@ class WebApp
             default:
                 throw new Exception\ContentTypeException('Could not render tabular output as ' . $this->mimeBest);
         }
+
+        $this->app->stop();
     }
 
-    /**
-     * This function turns strings into HTML links, if appropriate
-     *
-     * @param string $item The item to convert
-     * @return string The original item, or a linkified version of the item
-     */
-    protected function linkify($item)
-    {
-        // what if the item is a symbol 'http'?
-        // if (substr($item, 0, 4) === 'http') {
-        if (
-            !is_array($item) &&
-            (
-                //URL
-                filter_var($item, FILTER_VALIDATE_URL)
-                //email and some other linkable url schemes
-                || strpos($item, 'mailto:') === 0
-                || strpos($item, 'ftp:') === 0
-                || strpos($item, 'news:') === 0
-                || strpos($item, 'nntp:') === 0
-                || strpos($item, 'telnet:') === 0
-                || strpos($item, 'wais:') === 0
-            )
-        ) {
-            return '<a href="' . $item . '">' . $item . '</a>';
-        }
-        return $item;
-    }
 
     /**
      * This function adds the clickable labels with alternate formats to the results webpage
@@ -2490,44 +2444,6 @@ class WebApp
             'javascript',
             '<script src="'. $this->app->request()->getRootUri() . '/assets/js/web-result.js" type="text/javascript"></script>'
         );
-    }
-
-    /**
-     * Count array dimensions
-     *
-     * @param array $array Array
-     *
-     * @return integer $return Number of dimensions of the array
-     */
-    protected function countdim(array $array)
-    {
-        if (is_array(reset($array)))
-        {
-            $return = $this->countdim(reset($array)) + 1;
-        }
-        else
-        {
-            $return = 1;
-        }
-        return $return;
-    }
-
-
-    /**
-     * Check if this is a call for RDF or turtle
-     *
-     * @return boolean $isRDFRequest
-     */
-    protected function isRDFRequest()
-    {
-        if (isset($this->mimeBest) && in_array($this->mimeBest, array('application/rdf+xml', 'text/turtle', 'application/x-turtle')))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }
 
 }
