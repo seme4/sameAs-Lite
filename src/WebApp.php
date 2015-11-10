@@ -1274,7 +1274,7 @@ class WebApp
         $results = $this->stores[$store]->getAllCanons();
 
         if ($this->isRDFRequest()) {
-            $this->outputRDF($results, 'list', 'sa:canon');
+            $this->outputRDF($results, 'list', 'ns:canon');
         } else {
             $this->outputList($results, true); //numeric list
         }
@@ -1989,14 +1989,32 @@ class WebApp
         } else {
             //simple list
 
-            //create the namespace from the incoming predicate
+
+            $ns = array();
             if (strpos($predicate, ':') !== false) {
+
+                // create the namespace from the incoming predicate (<ns>:<predicate>)
                 $ns = explode(':', $predicate);
-                \EasyRdf_Namespace::set($ns[0], 'http://sameas.org/' . $ns[0] . '/');
-                $symbol_block = $graph->resource($domain . '/datasets/' . $this->store. '/' . $ns[1] . '/');
+                $ns['ns'] = $ns[0];
+                $ns['slug'] = $ns[1];
+
+            } elseif (isset($this->appOptions['namespace']['prefix']) && isset($this->appOptions['namespace']['slug'])) {
+            // fallback: namespace from config.ini
+
+                $ns['ns'] = $this->appOptions['namespace']['prefix'];
+                // remove slashes
+                $ns['slug'] = trim($this->appOptions['namespace']['slug'], '/ ');
+
             } else {
-                throw new \Exception("Expecting $predicate parameter to be namespaced");
+
+                throw new \Exception("Expecting namespace setting in config.ini or $predicate parameter to be namespaced as <ns>:<predicate>");
+
             }
+
+
+            \EasyRdf_Namespace::set($ns['ns'], 'http://sameas.org/' . $ns['slug'] . '/');
+            $symbol_block = $graph->resource($domain . '/datasets/' . $this->store. '/' . $ns['slug'] . '/');
+
 
             foreach ($list as $s) {
                 if (strpos($s, 'http') === 0) {

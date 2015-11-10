@@ -122,6 +122,8 @@ var app = {
                             // add results as an unordered list
                             $ul = $('<ul></ul>').addClass('table');
                             $.each(data_rows, function(index, row) {
+                                // html special char escaping
+                                row = row.replace('<', '&lt;').replace('>', '&gt;');
                                 $row = $('<li></li>').append(row);
                                 $ul.append($row);
                             });
@@ -148,13 +150,16 @@ var app = {
                                 });
                             }
 
+                            var val;
+
                             // add the processed data to a table
                             // headers
                             if (header_values) {
                                 $header = $('<thead></thead>');
                                 $header_row = $('<tr></tr>');
                                 $.each(header_values, function() {
-                                    $header_row.append('<th class="w50">' + this + '</th>');
+                                    val = this.replace('<', '&lt;').replace('>', '&gt;');
+                                    $header_row.append('<th class="w50">' + val + '</th>');
                                 });
                                 $header.append($header_row);
                                 $table.append($header);
@@ -164,10 +169,12 @@ var app = {
                             $.each(data_rows, function(index, row) {
                                 $row = $('<tr></tr>');
                                 if (typeof row === 'string') {
+                                    row = row.replace('<', '&lt;').replace('>', '&gt;');
                                     $row.append('<td>' + row + '</td>');
                                 } else {
                                     $.each(row, function() {
-                                        $row.append('<td>' + this + '</td>');
+                                        val = this.replace('<', '&lt;').replace('>', '&gt;');
+                                        $row.append('<td>' + val + '</td>');
                                     });
                                 }
                                 $body.append($row);
