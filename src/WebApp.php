@@ -619,11 +619,11 @@ class WebApp
         }
 
         // display name of store in titlebar
-        $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
+        $u = $this->app->request()->getRootUri() . '/datasets/' . htmlspecialchars($this->store, ENT_QUOTES);
         $this->app->view()->set(
             'titleSupplementary',
             '<a href="'.$u.'" class="navbar-brand supplementary">' .
-                $this->storeOptions[$this->store]['shortName'] . '</a>'
+                htmlspecialchars($this->storeOptions[$this->store]['shortName']) . '</a>'
         );
     }
 
@@ -875,6 +875,17 @@ class WebApp
         // But it was not executed, yet. Call it now to get the mime type.
         $route = $this->app->router()->getCurrentRoute();
         $this->mimeBest = $this->callbackCheckFormats($route);
+
+
+        // display name of store in titlebar
+        if (isset($this->storeOptions[$this->store]['shortName'])) {
+            $u = $this->app->request()->getRootUri() . '/datasets/' . htmlspecialchars($this->store, ENT_QUOTES);
+            $this->app->view()->set(
+                'titleSupplementary',
+                '<a href="'.$u.'" class="navbar-brand supplementary">' .
+                    htmlspecialchars($this->storeOptions[$this->store]['shortName']) . '</a>'
+            );
+        }
 
 
         // content negotiation for the error message
