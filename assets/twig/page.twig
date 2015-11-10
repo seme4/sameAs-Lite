@@ -42,7 +42,8 @@
               {% include 'snippet/altformats.twig' %}
             {% endif %}
 
-            {% if numResults and pagination and numResults > pagination %}
+            {# if numResults and pagination and numResults > pagination #}
+            {% if pagination %}
               {% include 'snippet/pagination.twig' %}
             {% endif %}
 
