@@ -1253,10 +1253,9 @@ class WebApp
         $body = $this->app->request->getBody();
 
         // from web query, the body is this: string(17) "_METHOD=PUT&body="
-
         // filter out the _METHOD parameter
-
         $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
+        $body = urldecode($body);
 
         if (empty($body)) {
 
@@ -1268,6 +1267,9 @@ class WebApp
 
             // TODO - need to detect the type of the incoming data
             die('TODO (no data inserted)');
+
+
+
 
 
 
@@ -1796,10 +1798,10 @@ class WebApp
     /**
      * Output an HTML page
      *
-     * @param mixed   $body   The information to be displayed
-     * @param integer $status The HTTP status to return with the HTML
+     * @param mixed   $content The information to be displayed
+     * @param integer $status  The HTTP status to return with the HTML
      */
-    protected function outputHTML($body, $status = null)
+    protected function outputHTML($content, $status = null)
     {
         // set default template values if not present
         $defaults = array(
@@ -1813,8 +1815,8 @@ class WebApp
         }
 
         // fold arrays into PRE blocks
-        if (is_array($body)) {
-            $body = '<pre>' . join("\n", $body) . "</pre>\n";
+        if (is_array($content)) {
+            $content = '<pre>' . join("\n", $content) . "</pre>\n";
         }
 
         if (!is_null($status)) {
@@ -1822,7 +1824,7 @@ class WebApp
         }
 
         $this->app->render('page.twig', [
-            'body'    => $body
+            'body'    => $content
         ]);
 
     }
