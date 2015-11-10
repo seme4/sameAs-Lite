@@ -766,6 +766,8 @@ class WebApp
 
             // this is a client error -> use the correct header in 4XX range
             $status = 406;
+            $title = 'Not Acceptable';
+            $summary = 'Could not render list output in requested format';
             
             // TODO:
             // add the available formats in response header
@@ -781,7 +783,27 @@ class WebApp
 
         } elseif ($e instanceof Exception\AuthException) {
 
-            // TODO
+            $status = 401;
+            $title = 'Unauthorized';
+            $summary = ''; // TODO
+
+
+
+
+        } elseif ($e instanceof Exception\InvalidRequestException) {
+
+            $status = 400;
+            $title = 'Bad Request';
+            $summary = ''; // TODO
+
+
+
+
+        } elseif ($e instanceof Exception\ConfigException) {
+
+            $status = 500;
+            $title = 'Server Error';
+            $summary = ''; // TODO
 
 
 
@@ -789,7 +811,9 @@ class WebApp
         }
 
 
-        if ($this->app->getMode() == 'development') {
+
+
+        if ($this->app->getMode() === 'development') {
 
             // show details if we are in dev mode
             $op  = PHP_EOL;
@@ -828,12 +852,23 @@ class WebApp
 
         } else {
 
+            if (!isset($title)) {
+                $title = 'Unexpected Error';
+            }
+            if (!isset($summary)) {
+                $summary = '</p><p>Apologies for any inconvenience, the problem has been logged and we\'ll get on to it ASAP.';
+            }
+            if (!isset($extendedTitle)) {
+            //    $extendedTitle = 'Whoops! An unexpected error has occured...';
+                $extendedTitle = '';
+            }
+
             // show basic message
             $this->outputError(
                 $status,
-                'Unexpected Error',
-                '</p><p>Apologies for any inconvenience, the problem has been logged and we\'ll get on to it ASAP.',
-                'Whoops! An unexpected error has occured...'
+                $title,
+                $summary,
+                $extendedTitle
             );
 
         }
