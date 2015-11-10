@@ -877,6 +877,20 @@ class WebApp
         }
 
 
+        // Content negotiation for the error message
+        // callbackCheckFormats() middleware does the content negotiation.
+        // But it was not executed, yet. Call it now to get the mime type.
+        $route = $this->app->router()->getCurrentRoute();
+        if ($route) {
+            $this->mimeBest = $this->callbackCheckFormats($route);
+        }
+
+
+        // if (!$this->store) {
+            // $this->store = $route->getParam('store');
+        // }
+
+
         // display name of store in titlebar
         if (isset($this->storeOptions[$this->store]['shortName'])) {
             $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
@@ -887,14 +901,6 @@ class WebApp
             );
         }
 
-
-        // Content negotiation for the error message
-        // callbackCheckFormats() middleware does the content negotiation.
-        // But it was not executed, yet. Call it now to get the mime type.
-        $route = $this->app->router()->getCurrentRoute();
-        if ($route) {
-            $this->mimeBest = $this->callbackCheckFormats($route);
-        }
 
         switch ($this->mimeBest) {
             case 'text/plain':
@@ -1140,7 +1146,7 @@ class WebApp
         // render the template
         $this->app->render('page/api-index.twig', [
             'titleHTML' => ' - API',
-            'titleHeader' => 'API overview' . ($this->storeOptions[$store]['shortName'] ? ' for ' . $this->storeOptions[$store]['shortName'] : ''),
+            'titleHeader' => 'API overview' . ($store && isset($this->storeOptions[$store]['shortName']) ? ' for ' . $this->storeOptions[$store]['shortName'] : ''),
             'routes' => $routes
         ]);
     }
@@ -1843,7 +1849,7 @@ class WebApp
 
         // headline for template
         $this->app->view()->set('titleHTML', ' - Result');
-        $this->app->view()->set('titleHeader', 'Result of operation on ' . $this->storeOptions[$this->store]['shortName']);
+        $this->app->view()->set('titleHeader', 'Result of operation' . (isset($this->storeOptions[$this->store]['shortName']) ? ' on ' . $this->storeOptions[$this->store]['shortName'] : ''));
 
         switch ($this->mimeBest) {
             case 'text/plain':
