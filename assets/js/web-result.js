@@ -60,12 +60,12 @@ var app = {
         // issue an ajax request to the current page for the selected mime type
         // then replace the content of the page with the result
 
-        // if this is a call with mime type text/html
+        // If this is a call with mime type text/html
         // we run into the problem that it would load
-        // the full wepage instead of a fragment
-        // so we cheat and execute a call for json
+        // the full wepage instead of a fragment.
+        // So we cheat and execute a call for json,
         // then process the result on the client side
-        // to update the table on the page
+        // to update the table on the page with html.
         if (app.outputMimeType === 'text/html') {
             app.ajaxMimeType = 'application/json';
         } else {
@@ -110,18 +110,17 @@ var app = {
                             $row = '',
                             data_rows = [],
                             i = 0,
-                            s = data.length;
+                            s;
 
                         // is this tabular data or a simple list of values?
                         if (typeof data[0] === 'string') {
 
                             // no headers
                             header_values = false;
-                            data_rows = data;
 
                             // add results as an unordered list
                             $ul = $('<ul></ul>').addClass('table');
-                            $.each(data_rows, function(index, row) {
+                            $.each(data, function(index, row) {
                                 // html special char escaping
                                 row = row.replace('<', '&lt;').replace('>', '&gt;');
                                 $row = $('<li></li>').append(row);
@@ -140,15 +139,37 @@ var app = {
                             // get the table header from the first element
                             if (data[0]) {
                                 header_values = Object.keys(data[0]);
+                            } else {
+                                header_values = Object.keys(data);
                             }
 
                             // get the table rows
-                            for (i = 0; i < s; i++){
-                                data_rows[i] = [];
-                                $.each(header_values, function() {
-                                    data_rows[i].push(data[i][this]);
+
+                            if (typeof data === 'object') {
+                                Object.size = function(obj) {
+                                    var size = 0, key;
+                                    for (key in obj) {
+                                        if (obj.hasOwnProperty(key)) size++;
+                                    }
+                                    return size;
+                                };
+                                s = Object.size(data);
+
+                                data_rows[0] = [];
+                                $.each(data, function() {
+                                    data_rows[0].push(this.toString());
                                 });
+
+                            } else {
+                                s = data.length;
+                                for (i = 0; i < s; i++){
+                                    data_rows[i] = [];
+                                    $.each(header_values, function() {
+                                        data_rows[i].push(data[i][this]);
+                                    });
+                                }
                             }
+
 
                             var val;
 
