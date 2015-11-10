@@ -2172,10 +2172,6 @@ class WebApp
         //     $this->app->response->setStatus($status);
         // }
 
-        // escaping for output
-        array_walk($headers, 'self::escapeInputArray');
-        array_walk($data, 'self::escapeInputArray');
-
 
         switch ($this->mimeBest) {
             case 'text/csv':
@@ -2243,6 +2239,10 @@ class WebApp
 
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
+
+                // escaping for output
+                array_walk($headers, 'self::escapeInputArray');
+                array_walk($data, 'self::escapeInputArray');
 
                 $tables = array();
 
