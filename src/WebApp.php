@@ -136,10 +136,10 @@ class WebApp
             $this->app->view()->set('apiPath', $apiPath);
         });
 
-
+        // save the options
         $this->appOptions = $options;
 
-        // apply options
+        // apply options to template
         foreach ($options as $k => $v) {
             $this->app->view->set($k, $v);
         }
@@ -196,302 +196,9 @@ class WebApp
      */
     public function run()
     {
-        // homepage and generic functions
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/',
-            'homepage',
-            'Application homepage',
-            'Renders the main application homepage',
-            false,
-            'text/html',
-            true, // hide from API
-            false //no pagination
-        );
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/api',
-            'api',
-            'Overview of the API',
-            'Lists all methods available via this API',
-            false,
-            'text/html',
-            true, // hide from API
-            false //no pagination
-        );
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets',
-            'listStores',
-            'Lists available datasets',
-            'Returns the available datasets hosted by this service',
-            false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            true // enable pagination
-        );
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/datasets/:store',
-            'storeHomepage',
-            'Store homepage',
-            'Gives an overview of the specific store',
-            false,
-            'text/html',
-            false,
-            false // no pagination
-        );
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/api',
-            'api',
-            'Overview of API for specific store',
-            'Gives an API overview of the specific store',
-            false,
-            'text/html',
-            true, // hide from API
-            false // no pagination
-        );
 
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/about',
-            'aboutPage',
-            'About sameAsLite',
-            'Renders the about page',
-            false,
-            'text/html',
-            true, // hide from API
-            false // no pagination
-        );
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/contact',
-            'contactPage',
-            'Contact page',
-            'Renders the contact page',
-            false,
-            'text/html',
-            true, // hide from API
-            false // no pagination
-        );
-        // access: webapp only
-        $this->registerURL(
-            'GET',
-            '/license',
-            'licensePage',
-            'License page',
-            'Renders the SameAsLite license',
-            false,
-            'text/html',
-            true, // hide from API
-            false // no pagination
-        );
-
-        // dataset admin actions
-
-        // TODO: this would also need to update the config.ini
-        // access: API + webapp
-        $this->registerURL(
-            'DELETE',
-            '/datasets/:store',
-            'deleteStore',
-            'Delete an entire store',
-            'Removes an entire store, deleting the underlying database',
-            true,
-            'text/plain,application/json,text/html',
-            false,
-            false // no pagination
-        );
-
-        // Update the store contents
-        // Use a PUT request with empty body to remove the contents of the store
-        // access: API + webapp
-        $this->registerURL(
-            'PUT',
-            '/datasets/:store',
-            'updateStore',
-            'Update or delete the contents of a store',
-            'Updates the store with request body or, if the request body is empty, removes the entire contents of a store, leaving an empty database',
-            true,
-            'text/plain,application/json,text/html',
-            false,
-            false //no pagination
-        );
-
-        // access: webapp only
-        // $this->registerURL(
-        // 'GET',
-        // '/datasets/:store/admin/backup/',
-        // 'backupStore',
-        // 'Backup the database contents',
-        // 'You can use this method to download a database backup file',
-        // true,
-        // 'text/html,text/plain'
-        // );
-
-        // access: API + webapp
-        // $this->registerURL(
-        //    'PUT',
-        //    '/datasets/:store/admin/restore',
-        //    'restoreStore',
-        //    'Restore database backup',
-        //    'You can use this method to restore a previously downloaded database backup',
-        //    true,
-        //    'text/html,text/plain'
-        // );
-
-        // Canon work
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/canons',
-            'allCanons',
-            'Returns a list of all canons',
-            null,
-            false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            true // pagination
-        );
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/canons/:symbol',
-            'getCanon',
-            'Get canon',
-            'Returns the canon for the given :symbol',
-            false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            false // no pagination
-        );
-        // access: API + webapp
-        $this->registerURL(
-            'PUT',
-            '/datasets/:store/canons/:symbol',
-            'setCanon',
-            'Set the canon', // TODO: Update text
-            'Invoking this method ensures that the :symbol becomes the canon', // TODO: Update text
-            true,
-            'text/plain,application/json,text/html',
-            false,
-            false // no pagination
-        );
-
-        // Pairs
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/pairs',
-            'dumpStore',
-            'Export list of pairs',
-            'This method dumps *all* pairs from the database',
-            false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            true // pagination
-        );
-        // access: API + webapp
-        $this->registerURL(
-            'PUT',
-            '/datasets/:store/pairs',
-            'assertPairs',
-            'Assert multiple pairs',
-            'Upload a file of pairs to be inserted into the store',
-            true,
-            'text/plain,application/json,text/html',
-            false,
-            false // no pagination
-        );
-
-        // access: API + webapp
-        $this->registerURL(
-            'PUT',
-            '/datasets/:store/pairs/:symbol1/:symbol2',
-            'assertPair',
-            'Assert single pair',
-            'Asserts sameAs between the given two symbols',
-            true,
-            'text/plain,application/json,text/html',
-            false,
-            false // no pagination
-        );
-
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/pairs/:string',
-            'search',
-            'Search',
-            'Find symbols which contain/match the search string/pattern',
-            false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            true // pagination
-        );
-
-        // Single symbol stuff
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/symbols/:symbol',
-            'querySymbol',
-            'Retrieve symbol',
-            'Return details of the given symbol',
-            false,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            true // pagination
-        );
-        // access: API + webapp
-        $this->registerURL(
-            'DELETE',
-            '/datasets/:store/symbols/:symbol',
-            'removeSymbol',
-            'Delete symbol',
-            'Delete a symbol from the datastore',
-            true,
-            'text/plain,application/json,text/html',
-            false,
-            false // no pagination
-        );
-
-        // Simple status of datastore
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/status',
-            'statistics',
-            'Statistics',
-            'Returns status of the store',
-            true,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            false // no pagination
-        );
-
-        // Analyse contents of store
-        // access: API + webapp
-        $this->registerURL(
-            'GET',
-            '/datasets/:store/analysis',
-            'analyse',
-            'Analyse store',
-            'Analyse contents of the store',
-            true,
-            'text/html,application/json,text/csv,text/tab-separated-values,text/plain, application/rdf+xml,text/turtle,application/x-turtle',
-            false,
-            false // no pagination
-        );
-
+        $r = new \SameAsLite\RouteConfig($this);
+        $r->setup();
 
         // add datasets to template
         $this->app->view()->set('datasets', $this->storeOptions);
@@ -513,69 +220,58 @@ class WebApp
      * @param boolean $hidden       Indicates whether this URL should be hidden on the API index
      */
     protected function registerURL(
-        $httpMethod,
-        $urlPath,
-        $funcName,
-        $summary,
-        $details = null,
-        $authRequired = false,
-        $mimeTypes = 'text/html',
-        $hidden = false,
-        $paginate = false
+        $r_info
     ) {
 
-        // ensure the URL path has a leading slash
-        if (substr($urlPath, 0, 1) !== '/') {
-            $urlPath  = '/' . $urlPath;
-        }
+        // default values
+        if (!$r_info['details']) {$r_info['details'] = null;}
+        if (!$r_info['authRequired']) {$r_info['authRequired'] = false;}
+        if (!$r_info['mimeTypes']) {$r_info['mimeTypes'] = 'text/html';}
+        if (!$r_info['hidden']) {$r_info['hidden'] = false;}
+        if (!$r_info['paginate']) {$r_info['paginate'] = false;}
 
+
+        // ensure the URL path has a leading slash
+        if (substr($r_info['urlPath'], 0, 1) !== '/') {
+            $r_info['urlPath']  = '/' . $r_info['urlPath'];
+        }
         // ensure there are no trailing slashes
-        if (strlen($urlPath) > 1 && substr($urlPath, -1) === '/') {
-            $urlPath = substr($urlPath, 0, -1);
+        if (strlen($r_info['urlPath']) > 1 && substr($r_info['urlPath'], -1) === '/') {
+            $r_info['urlPath'] = substr($r_info['urlPath'], 0, -1);
         }
 
         // do we need to check Auth or MIME types?
         $callbacks = array();
-        if (strpos($urlPath, ':store') !== false) {
+        if (strpos($r_info['urlPath'], ':store') !== false) {
             $callbacks[] = array($this, 'callbackCheckDataset');
         }
-        if ($authRequired) {
+        if ($r_info['authRequired']) {
             $callbacks[] = array($this, 'callbackCheckAuth');
         }
-        if ($mimeTypes !== null) {
+        if ($r_info['mimeTypes'] !== null) {
             $callbacks[] = array($this, 'callbackCheckFormats');
         }
-        if ($paginate === true) {
+        if ($r_info['paginate'] === true) {
             $callbacks[] = array($this, 'callbackCheckPagination');
-        } else {
-            $this->app->view->set('pagination', false);
         }
 
-
         // initialise route
-        $httpMethod = strToUpper($httpMethod);
-        $route = new \Slim\Route($urlPath, array($this, $funcName));
+        $r_info['httpMethod'] = strToUpper($r_info['httpMethod']);
+        $route = new \Slim\Route($r_info['urlPath'], array($this, $r_info['funcName']));
         $this->app->router()->map($route);
         if (count($callbacks) > 0) {
             $route->setMiddleware($callbacks);
         }
-        $route->via($httpMethod);
+        $route->via($r_info['httpMethod']);
 
         // save route data, setting defaults on optional arguments if they are not set
-        if ($details === null) {
-            $details = $summary;
+        if ($r_info['details'] === null) {
+            $r_info['details'] = $r_info['summary'];
         }
-        $this->routeInfo[$httpMethod . $urlPath] = compact(
-            'httpMethod',
-            'urlPath',
-            'funcName',
-            'summary',
-            'details',
-            'authRequired',
-            'mimeTypes',
-            'hidden',
-            'route' // The slim route object
-        );
+
+        // $r_info['route'] = $route; // the slim route object
+
+        $this->routeInfo[$r_info['httpMethod'] . $r_info['urlPath']] = $r_info;
     }
 
 
