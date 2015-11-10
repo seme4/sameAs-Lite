@@ -2054,9 +2054,6 @@ class WebApp
             $this->app->view()->set('maxPageNum', (int) ceil($this->stores[$this->store]->getMaxResults() / $this->appOptions['num_per_page']));
         }
 
-        // escaping for output
-        array_walk($list, 'self::escapeInputArray');
-
         if (!is_null($status)) {
             $this->app->response->setStatus($status);
         }//end if
@@ -2101,6 +2098,9 @@ class WebApp
 
             case 'text/html':
             case 'application/xhtml+xml':
+
+                // escaping for output
+                array_walk($list, 'self::escapeInputArray');
 
                 $list = array_map([ $this, 'linkify' ], $list); // Map array to linkify the contents
 
