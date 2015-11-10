@@ -96,6 +96,12 @@ class WebApp
         // fake $_SERVER parameters if required (eg command line invocation)
         $this->initialiseServerParameters();
 
+        // set the default format of acceptable parameters
+        // see http://docs.slimframework.com/routing/conditions/#application-wide-route-conditions
+        \Slim\Route::setDefaultConditions(array(
+            'store' => '[a-zA-Z0-9_-]+'
+        ));
+
         // initialise and configure Slim, using Twig template engine
         $mode = (isset($options['mode']) ? $options['mode'] : 'production');
         $this->app = new \Slim\Slim(
@@ -619,10 +625,10 @@ class WebApp
         }
 
         // display name of store in titlebar
-        $u = $this->app->request()->getRootUri() . '/datasets/' . htmlspecialchars($this->store, ENT_QUOTES);
+        $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
         $this->app->view()->set(
             'titleSupplementary',
-            '<a href="'.$u.'" class="navbar-brand supplementary">' .
+            '<a href="'.htmlspecialchars($u, ENT_QUOTES).'" class="navbar-brand supplementary">' .
                 htmlspecialchars($this->storeOptions[$this->store]['shortName']) . '</a>'
         );
     }
@@ -874,15 +880,16 @@ class WebApp
         // callbackCheckFormats() middleware does the content negotiation.
         // But it was not executed, yet. Call it now to get the mime type.
         $route = $this->app->router()->getCurrentRoute();
-        $this->mimeBest = $this->callbackCheckFormats($route);
-
+        if ($route) {
+            $this->mimeBest = $this->callbackCheckFormats($route);
+        }
 
         // display name of store in titlebar
         if (isset($this->storeOptions[$this->store]['shortName'])) {
-            $u = $this->app->request()->getRootUri() . '/datasets/' . htmlspecialchars($this->store, ENT_QUOTES);
+            $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
             $this->app->view()->set(
                 'titleSupplementary',
-                '<a href="'.$u.'" class="navbar-brand supplementary">' .
+                '<a href="'.htmlspecialchars($u, ENT_QUOTES).'" class="navbar-brand supplementary">' .
                     htmlspecialchars($this->storeOptions[$this->store]['shortName']) . '</a>'
             );
         }
@@ -1527,7 +1534,14 @@ class WebApp
     public function removeSymbol($store, $symbol)
     {
         $result = $this->stores[$store]->removeSymbol($symbol);
-        $this->outputSuccess($result);
+        if ($result === true) {
+            $this->outputSuccess('Symbol deleted');
+        } else {
+            $this->outputError(
+                400,
+                'Symbol not deleted'
+            );
+        }
     }
 
     /**
@@ -1657,7 +1671,7 @@ class WebApp
                 foreach ($this->storeOptions as $k => $i) {
                     $out[$k] = [
                         'name' => $i['shortName'],
-                        'url' => htmlspecialchars($url . '/datasets/' . $i['slug'])
+                        'url' => $url . '/datasets/' . $i['slug']
                     ];
                     // only add the full store name if it differs from the short name 
                     if ($i['shortName'] !== $i['fullName']) {

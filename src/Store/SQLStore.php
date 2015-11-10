@@ -402,6 +402,9 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         $sql = $this->getRemoveSymbolString(':symbol');
         $statement = $this->pdoObject->prepare($sql);
         $statement->execute([':symbol' => $symbol]);
+
+        // TODO: better error handling
+        return true;
     }
 
     /**
