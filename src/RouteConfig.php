@@ -42,7 +42,7 @@ class RouteConfig extends \SameAsLite\WebApp
 {
     protected $app; // slim app object
 
-    private $routes = array(
+    private $routes = [
         // homepage and generic functions
         // access: webapp only
         [
@@ -338,10 +338,10 @@ class RouteConfig extends \SameAsLite\WebApp
             false,
             false // no pagination
         ]
-    );
+    ];
 
     public function __construct(& $app) {
-        $this->app = $app;
+        $this->app = &$app;
     }
 
     public function setup() {
