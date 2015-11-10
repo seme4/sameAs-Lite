@@ -99,7 +99,7 @@ class WebApp
         // set the default format of acceptable parameters
         // see http://docs.slimframework.com/routing/conditions/#application-wide-route-conditions
         \Slim\Route::setDefaultConditions(array(
-            'store' => '[a-zA-Z0-9_-]+'
+            'store' => '[a-zA-Z0-9_\-\.]+'
         ));
 
         // initialise and configure Slim, using Twig template engine
@@ -877,13 +877,6 @@ class WebApp
         }
 
 
-        // callbackCheckFormats() middleware does the content negotiation.
-        // But it was not executed, yet. Call it now to get the mime type.
-        $route = $this->app->router()->getCurrentRoute();
-        if ($route) {
-            $this->mimeBest = $this->callbackCheckFormats($route);
-        }
-
         // display name of store in titlebar
         if (isset($this->storeOptions[$this->store]['shortName'])) {
             $u = $this->app->request()->getRootUri() . '/datasets/' . $this->store;
@@ -895,7 +888,14 @@ class WebApp
         }
 
 
-        // content negotiation for the error message
+        // Content negotiation for the error message
+        // callbackCheckFormats() middleware does the content negotiation.
+        // But it was not executed, yet. Call it now to get the mime type.
+        $route = $this->app->router()->getCurrentRoute();
+        if ($route) {
+            $this->mimeBest = $this->callbackCheckFormats($route);
+        }
+
         switch ($this->mimeBest) {
             case 'text/plain':
 
@@ -909,9 +909,9 @@ class WebApp
                 }
 
                 // setBody does not work in this function
-                // $this->app->response->setBody($error);
+                $this->app->response->setBody($error);
                 // render a blank template instead
-                $this->app->render('blank.twig', [ 'content' => $error ] );
+                // $this->app->render('blank.twig', [ 'content' => $error ] );
 
                 break;
 
@@ -948,9 +948,9 @@ class WebApp
                 ob_end_clean();
 
                 // setBody does not work in this function
-                // $this->app->response->setBody($out);
+                $this->app->response->setBody($out);
                 // render a blank template instead
-                $this->app->render('blank.twig', [ 'content' => $out ] );
+                // $this->app->render('blank.twig', [ 'content' => $out ] );
 
                 break;
 
@@ -971,9 +971,9 @@ class WebApp
                 }
 
                 // setBody does not work in this function
-                // $this->app->response->setBody(json_encode($json_error, JSON_PRETTY_PRINT)); // PHP 5.4+
+                $this->app->response->setBody(json_encode($json_error, JSON_PRETTY_PRINT)); // PHP 5.4+
                 // render a blank template instead
-                $this->app->render('blank.twig', [ 'content' => json_encode($json_error, JSON_PRETTY_PRINT) ] );
+                // $this->app->render('blank.twig', [ 'content' => json_encode($json_error, JSON_PRETTY_PRINT) ] );
 
                 break;
 
@@ -998,6 +998,9 @@ class WebApp
 
                 break;
         }
+
+        // execution stops here
+        $this->app->stop();
 
     }
     /**
