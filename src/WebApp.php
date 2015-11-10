@@ -698,12 +698,14 @@ class WebApp
     public function callbackCheckFormats()
     {
         // get the acceptable MIME type from route info
+
         $args = func_get_args();
         if (count($args) === 0 || (!$args[0] instanceof \Slim\Route)) {
             throw new \InvalidArgumentException('This method should not be invoked outside of the Slim Framework');
         }
         $route = $args[0];
         $id = $this->app->request()->getMethod() . $route->getPattern();
+
         $acceptableMime = $this->routeInfo[$id]['mimeTypes'];
 
         // perform MIME-type matching on the requested and available formats
@@ -727,11 +729,16 @@ class WebApp
 
         // store alternative MIME types
         foreach ($conneg->mimeAll('*/*', $acceptableMime) as $type) {
+
             $type = $type->getClientPreference();
+
+            // TODO: this stores objects of type ptlis\ConNeg\Preference\Preference
+            // but we want to have a list of content types
 
             if ($type != $this->mimeBest) {
                 $this->mimeAlternatives[] = $type;
             }
+
         }
 
         // return best match
@@ -844,7 +851,6 @@ class WebApp
         }
 
         $this->app->response->setStatus($status);
-
         // slim does not set the response code in this function
         // setting it manually
         if (!headers_sent()) {
@@ -864,16 +870,30 @@ class WebApp
             }
         }
 
+
+        // callbackCheckFormats() middleware does the content negotiation.
+        // But it was not executed, yet. Call it now to get the mime type.
+        $route = $this->app->router()->getCurrentRoute();
+        $this->mimeBest = $this->callbackCheckFormats($route);
+
+
         // content negotiation for the error message
         switch ($this->mimeBest) {
             case 'text/plain':
 
                 $error  = "status  => $status" . PHP_EOL;
                 $error .= "title   => $extendedTitle" . PHP_EOL;
-                $error .= "summary => $summary" . PHP_EOL;
-                $error .= "details => " . preg_replace('~[\n]+|[\s]{2,}~', ' ', $extendedDetails);
+                if ($summary) {
+                    $error .= "summary => $summary" . PHP_EOL;
+                }
+                if ($extendedDetails) {
+                    $error .= "details => " . preg_replace('~[\n]+|[\s]{2,}~', ' ', $extendedDetails);
+                }
 
-                $this->app->response->setBody($error);
+                // setBody does not work in this function
+                // $this->app->response->setBody($error);
+                // render a blank template instead
+                $this->app->render('blank.twig', [ 'content' => $error ] );
 
                 break;
 
@@ -886,12 +906,16 @@ class WebApp
                     $delimiter = "\t";
                 }
 
-                $error = array(
+                $error = [
                     array("status",  $status),
-                    array("title",   $extendedTitle),
-                    array("summary", $summary),
-                    array("details", preg_replace('~[\n]+|[\s]{2,}~', ' ', $extendedDetails)),
-                );
+                    array("title",   $extendedTitle)
+                ];
+                if ($summary) {
+                    $error[] = array("summary", $summary);
+                }
+                if ($extendedDetails) {
+                    $error[] = array("details", preg_replace('~[\n]+|[\s]{2,}~', ' ', $extendedDetails));
+                }
 
                 ob_start();
                 // use fputcsv for escaping
@@ -905,7 +929,10 @@ class WebApp
                 }
                 ob_end_clean();
 
-                $this->app->response->setBody($out);
+                // setBody does not work in this function
+                // $this->app->response->setBody($out);
+                // render a blank template instead
+                $this->app->render('blank.twig', [ 'content' => $out ] );
 
                 break;
 
@@ -916,12 +943,19 @@ class WebApp
 
                 $json_error = array(
                     'status'  => $status,
-                    'title'   => $extendedTitle,
-                    'summary' => $summary,
-                    'details' => $extendedDetails,
+                    'title'   => $extendedTitle
                 );
+                if ($summary) {
+                    $json_error['summary'] = $summary;
+                }
+                if ($extendedDetails) {
+                    $json_error['details'] = $extendedDetails;
+                }
 
-                $this->app->response->setBody(json_encode($json_error, JSON_PRETTY_PRINT));
+                // setBody does not work in this function
+                // $this->app->response->setBody(json_encode($json_error, JSON_PRETTY_PRINT)); // PHP 5.4+
+                // render a blank template instead
+                $this->app->render('blank.twig', [ 'content' => json_encode($json_error, JSON_PRETTY_PRINT) ] );
 
                 break;
 
@@ -1095,6 +1129,7 @@ class WebApp
      *
      * @param array       $info  The routeInfo for the route being described
      * @param string|null $store Optional specific store slug
+     *
      * @return array                Array describing this route for the template
      */
     protected function getRouteInfoForTemplate(array $info, $store = null)
@@ -2356,7 +2391,13 @@ class WebApp
     protected function prepareWebResultView()
     {
         // mime type buttons
-        $formats = (isset($this->routeInfo->mimeTypes) ? $this->routeInfo->mimeTypes : $this->mimeLabels);
+        // TODO:
+        // get mimetypes of the current route and
+        // only output the buttons for the allowed mimetypes of that route
+        // $currentRouteAcceptableMimeTypes = $this->app->router()->getCurrentRoute();
+
+        // $formats = (isset($this->routeInfo->mimeTypes) ? $this->routeInfo->mimeTypes : $this->mimeLabels);
+        $formats = $this->mimeLabels;
         // we are viewing a html page, so remove this result format
         // unset($formats['text/html']);
         $this->app->view()->set('alternate_formats', $formats);
