@@ -359,6 +359,11 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
      */
     public function assertPairs(array $data)
     {
+        // 'undefined offset' error be gone!
+        if (!$data || count($data[0]) !== 2) {
+            throw new \SameAsLite\Exception\InvalidRequestException('Invalid Request. Wrong delimiter?');
+        }
+
         foreach ($data as $pair) {
             $this->assertPair($pair[0], $pair[1]);
         }
@@ -371,12 +376,12 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
     /**
      * {@inheritDoc}
      */
-    public function assertTSV($tsv)
+    public function assertDelimited($input, $delimiter = ',')
     {
 
-        $data = str_getcsv($tsv, "\n"); // parse the rows
+        $data = str_getcsv($input, "\n"); // parse the rows
         foreach ($data as &$row) {
-            $row = str_getcsv($row, "\t"); // parse the items in rows
+            $row = str_getcsv($row, $delimiter); // parse the items in rows
         }
 
         return $this->assertPairs($data);

@@ -43,7 +43,7 @@
             {% endif %}
 
             {# if numResults and pagination and numResults > pagination #}
-            {% if pagination %}
+            {% if maxPageNum and pagination %}
               {% include 'snippet/pagination.twig' %}
             {% endif %}
 

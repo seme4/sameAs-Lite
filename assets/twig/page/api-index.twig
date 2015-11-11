@@ -57,6 +57,7 @@
 									<a class="btn btn-{{ route.methodClass }} get-btn" href="{{ route.endpointURL }}">{{ route.method }}</a>
 								</p>
 							{% else %}
+
 								{# Most routes need method spoofing. See: http://docs.slimframework.com/routing/put/#method-override #}
 								<input type="hidden" name="_METHOD" value="{{ route.method }}">
 
@@ -65,6 +66,17 @@
 								{% endfor %}
 
 								{% if ((route.method|upper == "PUT" or route.method|upper == "POST") and (route.parameters|length == 0 or (route.parameters[0] and route.parameters[0] == 'store'))) %}
+									<div class="row">
+										<div class="col-sm-2 pull-right">
+											{# content-type spoofing by sending _ACCEPT #}
+											<select class="form-control input_format" name="_ACCEPT">
+												<option value="text/csv" selected="selected">CSV</option>
+												<option value="text/tsv">TSV</option>
+												<option value="application/json">JSON</option>
+											</select>
+										</div>
+										<label class="control-label pull-right">Format:</label>
+									</div>
 									<textarea class="form-control" name="body" placeholder="Request body..."></textarea>
 								{% endif %}
 

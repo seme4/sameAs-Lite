@@ -883,7 +883,8 @@ class WebApp
         }
 
         // reverse formats
-        $formats = join(', ', array_reverse(explode(',', $info['mimeTypes'])));
+        // $formats = join(', ', array_reverse(explode(',', $info['mimeTypes'])));
+        $formats = join(', ', explode(',', $info['mimeTypes']));
 
         // ensure all variables are in {foo} format, rather than :foo
         $endpointURL = $rootURI . $info['urlPath'];
@@ -907,7 +908,7 @@ class WebApp
 
         if (count($parameters) === 0 && ($method === 'PUT' || $method === 'POST')) {
             // Upload file command line string
-            $cmdLine = "curl --upload-file data.tsv $authString $host$endpointHTML";
+            $cmdLine = "curl --upload-file data.<span class='input_format_span'>csv</span> $authString $host$endpointHTML";
         } else {
             $cmdLine = "curl -X $method $authString $host$endpointHTML";
         }
@@ -1083,12 +1084,18 @@ class WebApp
         $this->app->view()->set('titleHTML', 'Canon query');
         $this->app->view()->set('titleHeader', 'Canon for \'' . $symbol . '\'');
         $canon = $this->stores[$store]->getCanon($symbol);
+
         if (!$canon) {
             $results = [];
         } else {
             $results = [$canon];
         }
-        $this->outputList($results);
+
+        if (\SameAsLite\Helper::isRDFRequest($this->mimeBest)) {
+            $this->outputRDF($results, 'list', 'ns:canon');
+        } else {
+            $this->outputList($results);
+        }
     }
 
     /**
@@ -1126,19 +1133,64 @@ class WebApp
 
         // if request body is empty, there is nothing to assert
         $body = $this->app->request->getBody();
-        if (!$body) { // body no longer exists in request obj
-            throw new Exception\InvalidRequestException('Empty request body. Nothing to assert.'); // TODO : this would also require HTTP status
+
+        // body may contain "_METHOD=PUT&_ACCEPT=csv&body="
+        $match = array();
+        $body = preg_match('~^_METHOD=(?:PUT|POST)(?:&?_ACCEPT=(.+))&?body=(.*)$~i', $body, $match);
+
+        if (isset($match[2])) {
+            // convert the url encoded body
+            $body = urldecode($match[2]);
+        } else {
+            $body = false;
+        }
+
+        // empty body?
+        if (!$this->app->request->getContentLength() || !$body) {
+
+            throw new Exception\InvalidRequestException('Empty request body. Nothing to assert.');
+
         } else {
 
-            // body may contain "_METHOD=PUT&body="
-            $body = preg_replace('~^_METHOD=(PUT|POST)&body=~i', '', $body);
-            // convert the url encoded body
-            // $body = str_replace('%09', "\t", $body)
-            $body = urldecode($body);
+            // get the content type - first try the spoof, then the HTTP Accept header
+            $input_format = strtolower(isset($match[1]) ? rtrim(urldecode($match[1]), '&') : $this->app->request->getMediaType());
 
-            // TODO: this should also be possible with other content formats, not only TSV
+            if (!$input_format || !in_array($input_format, array('text/csv', 'application/json', 'text/tsv'))) {
+                throw new Exception\InvalidRequestException('Only csv, tsv or json are accepted for POST and PUT requests.');
+            }
 
-            $this->stores[$store]->assertTSV($body);
+            switch ($input_format) {
+                case 'text/csv':
+
+                    $this->stores[$store]->assertDelimited($body, ',');
+
+                    break;
+
+                case 'text/tsv':
+
+                    $this->stores[$store]->assertDelimited($body, "\t");
+
+                    break;
+
+                case 'application/json':
+
+                    $body = json_decode($body);
+
+                    // The standard input form for json is:
+                    // [ ['aaa','bbb'] ]
+                    // If the incoming json was given as an object,
+                    // e.g. {"0": ["aaa","bbb"]}, convert it to an array.
+                    if (gettype($body) === 'object') {
+                        $body = (array) $body;
+                        //as we can't send numeric keys with json, turn them into numbers
+                        $body = array_values($body);
+                    }
+
+                    $this->stores[$store]->assertPairs($body);
+
+                    break;
+
+            }
 
             // $after = $this->stores[$store]->statistics();
             // TODO array_merge(array('Before:'), $before, array('After:'), $after));

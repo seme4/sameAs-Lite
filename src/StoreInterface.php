@@ -188,19 +188,22 @@ interface StoreInterface
 
 
     /**
-     * Take a string in TSV (Tab-separated values) representing pairs of symbols and assert them to the store
+     * Take a delimited string representing pairs of symbols and assert them to the store
      *
+     * in TSV (Tab-separated values):
      * EG:
      * ```
      * test1<TAB>test2<NEWLINE>test3<TAB>test4
      * ```
      *
-     * @param string $tsv The TSV data, as a string
+     * @param string $input     The TSV data, as a string
+     * @param string $delimiter The delimiter (e.g. ';' or "\t")
      *
      * @return bool True on success
+     *
      * @throws \Exception On FIRST pair to fail to be asserted
      */
-    public function assertTSV($tsv);
+    public function assertDelimited($input, $delimiter = ';');
 
 
     
