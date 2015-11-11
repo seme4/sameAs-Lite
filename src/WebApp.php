@@ -1136,13 +1136,12 @@ class WebApp
 
         // body may contain "_METHOD=PUT&_ACCEPT=csv&body="
         $match = array();
-        $body = preg_match('~^_METHOD=(?:PUT|POST)(?:&?_ACCEPT=(.+))&?body=(.*)$~i', $body, $match);
+        preg_match('~^_METHOD=(?:PUT|POST)(?:&?_ACCEPT=(.+))&?body=(.*)$~i', $body, $match);
 
-        if (isset($match[2])) {
-            // convert the url encoded body
+        if (isset($match[2]) && $match[2]) {
+            // content-type was spoofed
+            // url encode the body
             $body = urldecode($match[2]);
-        } else {
-            $body = false;
         }
 
         // empty body?

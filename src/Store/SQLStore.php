@@ -365,7 +365,7 @@ abstract class SQLStore implements \SameAsLite\StoreInterface
         }
 
         foreach ($data as $pair) {
-            $this->assertPair($pair[0], $pair[1]);
+            $this->assertPair(trim($pair[0]), trim($pair[1]));
         }
 
         return true; // TODO: improve return
