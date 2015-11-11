@@ -35,73 +35,74 @@
 
 namespace SameAsLite;
 
-
 /**
  * Interface that must be implimented for all SameAsLite Stores
  */
-interface StoreInterface {
+interface StoreInterface
+{
 
-/* TODO extends Traversable? */
-
-
-	/**
-	 * Constructor for an SQL store
-	 *
-	 * @param string $name   The name of the store
-	 * @param array  $options Array of options to pass on to the store
-	 */
-	public function __construct($name, array $options = array());
+// TODO extends Traversable?
 
 
-	/**
-	 * Sets the default options for a store
-	 * This can help prevent duplicate code when instantating multiple Stores
-	 *
-	 * @param array $options The default options to be passed into the store
-	 */
-	public static function setDefaultOptions(array $options);
+
+    /**
+     * Constructor for an SQL store
+     *
+     * @param string $name    The name of the store
+     * @param array  $options Array of options to pass on to the store
+     */
+    public function __construct($name, array $options = array());
 
 
-	/**
-	 * Gets an array of strings of the options accepted by this store
-	 *
-	 * @return string[] Options this store can take
-	 */
-	public static function getAvailableOptions();
+    /**
+     * Sets the default options for a store
+     * This can help prevent duplicate code when instantating multiple Stores
+     *
+     * @param array $options The default options to be passed into the store
+     */
+    public static function setDefaultOptions(array $options);
 
 
-	/**
-	* Establish a connection to the store (setup on each script run)
-	*/
-	public function connect();
+    /**
+     * Gets an array of strings of the options accepted by this store
+     *
+     * @return string[] Options this store can take
+     */
+    public static function getAvailableOptions();
 
-	/**
-	 * Returns whether the store has been connected to 
-	 *
-	 * @return bool Whether the store has been connected to
-	 */
-	public function isConnected();
 
-	/**
+    /**
+     * Establish a connection to the store (setup on each script run)
+     */
+    public function connect();
+
+    /**
+     * Returns whether the store has been connected to
+     *
+     * @return bool Whether the store has been connected to
+     */
+    public function isConnected();
+
+    /**
      * Disconnect from the store, this requires connect to be run again before the store can be used
      */
     public function disconnect();
 
 
-	/**
-	 * Set up the store for the first time
-	 * Do nothing if the store is already inited
-	 */
-	public function init();
+    /**
+     * Set up the store for the first time
+     * Do nothing if the store is already inited
+     */
+    public function init();
 
-	/**
-	 * Returns whether or not the store has been initialised
-	 *
-	 * @return bool Whether the store has been initialised
-	 */
-	public function isInit();
+    /**
+     * Returns whether or not the store has been initialised
+     *
+     * @return bool Whether the store has been initialised
+     */
+    public function isInit();
 
-	/**
+    /**
      * Delete a whole store
      * This means that the init needs to be called before the store can be used and all data is removed
      */
@@ -127,11 +128,11 @@ interface StoreInterface {
      *
      * @return string[] An array of the symbols, which is singleton of the given symbol of nothing was found
      */
-	public function querySymbol($symbol);
+    public function querySymbol($symbol);
 
 
 
-	/**
+    /**
      * Search for symbols in this store that contain the given pattern
      *
      * Looks up the given symbol in a store, and returns the bundle with all
@@ -176,7 +177,7 @@ interface StoreInterface {
     /**
      * Take a array of pairs (also an array) and assert those symbols to the store
      *
-     * @param string[][] $data The 2D array of pairs to be asserted
+     * @param array $data The 2D array of pairs to be asserted
      *
      * @return bool True on success
      * @throws \Exception On FIRST pair to fail to be asserted
@@ -187,22 +188,25 @@ interface StoreInterface {
 
 
     /**
-     * Take a string in TSV (Tab-separated values) representing pairs of symbols and assert them to the store
+     * Take a delimited string representing pairs of symbols and assert them to the store
      *
-     * EG: 
+     * in TSV (Tab-separated values):
+     * EG:
      * ```
      * test1<TAB>test2<NEWLINE>test3<TAB>test4
      * ```
      *
-     * @param string $tsv The TSV data, as a string
+     * @param string $input     The TSV data, as a string
+     * @param string $delimiter The delimiter (e.g. ';' or "\t")
      *
      * @return bool True on success
+     *
      * @throws \Exception On FIRST pair to fail to be asserted
      */
-    public function assertTSV($tsv);
+    public function assertDelimited($input, $delimiter = ';');
 
 
-	
+    
     /**
      * Remove a symbol from this store.
      * If the symbol is the bundle's canon then do not remove it unless it is also the only symbol in the bundle.
@@ -215,12 +219,12 @@ interface StoreInterface {
     /**
      * Remove an array of Symbols from the store
      * If you wish to remove a whole bundle from a given symbol the use {@link removeBundle()}
-	 *
-	 * @param string[] $symbols The symbols to be removed
-	 *
-	 * @return bool True on success
-	 * @throws \Exception On FIRST pair to fail to be removed
-	 */
+     *
+     * @param array $symbols The symbols to be removed
+     *
+     * @return bool True on success
+     * @throws \Exception On FIRST pair to fail to be removed
+     */
     public function removeSymbols(array $symbols);
 
     /**
@@ -238,8 +242,8 @@ interface StoreInterface {
      * If $restrict is false, remove the existing canon in the bundle.
      * If $restrict is true, do not change the canon if one already exists
      *
-     * @param string $symbol    The symbol to be set as the canon
-     * @param bool   $restrict  Whether to restrict if a canon already exists
+     * @param string  $symbol   The symbol to be set as the canon
+     * @param boolean $restrict Whether to restrict if a canon already exists
      */
     public function setCanon($symbol, $restrict = false);
 
@@ -274,30 +278,30 @@ interface StoreInterface {
 
     /**
      * Get all pairs (a 2 item array) from the store and return them as an array
-	 *
-	 * @return string[][] The 2D array of pairs in the form [ canon, symbol ]
-	 */
+     *
+     * @return string[][] The 2D array of pairs in the form [ canon, symbol ]
+     */
     public function dumpPairs();
 
     /**
      * Get all pairs and output them as a TSV string
-	 *
-	 * @return string The TSV string representing all the pairs in the store
-	 */
+     *
+     * @return string The TSV string representing all the pairs in the store
+     */
     public function dumpTSV();
 
 
     /**
      * Provide basic statistics on the store - number of symbols and number of bundles
-	 *
-	 * Should contain:
-	 * ```
-	 * Array
-	 *	(
-	 *	    [symbols] => <int>
-	 *	    [bundles] => <int>
-	 *	)
-	 * ```
+     *
+     * Should contain:
+     * ```
+     * Array
+     *  (
+     *      [symbols] => <int>
+     *      [bundles] => <int>
+     *  )
+     * ```
      *
      * @return mixed[] An associative array wih the statistics in
      */
@@ -321,179 +325,175 @@ interface StoreInterface {
      *    List of singleton bundle symbols
      *    Bundles without a canon
      *    Bundles with more than one canon
-	 *
-	 *
-	 * EXAMPLE OUTPUT:
-	 *	```
-	 * Array
-	 *	(
-	 *	    [meta] => Array
-	 *	        (
-	 *				// This is an example for a MySQL database
-	 *				// Anything can be in this section, depending on the store
-	 *	            [store_name] => table1
-	 *	            [database_name] => testdb
-	 *	        )
-	 *
-	 *	    [rows] => 20
-	 *	    [basic] => Array
-	 *	        (
-	 *	            [symbols] => 20
-	 *	            [bundles] => 10
-	 *	            [average_symbols_per_bundle] => 2
-	 *	            [median_bundle_size] => 1
-	 *	            [mode_bundle_size] => 1
-	 *	        )
-	 *
-	 *	    [bundle_size_count] => Array
-	 *	        (
-	 *	            [0] => Array
-	 *	                (
-	 *	                    [size] => 1
-	 *	                    [count] => 6
-	 *	                )
-	 *
-	 *	            [1] => Array
-	 *	                (
-	 *	                    [size] => 0
-	 *	                    [count] => 2
-	 *	                )
-	 *
-	 *	            [2] => Array
-	 *	                (
-	 *	                    [size] => 2
-	 *	                    [count] => 2
-	 *	                )
-	 *
-	 *	        )
-	 *
-	 *	    [symbols_type] => Array
-	 *	        (
-	 *	            [HTTP_symbols] => 3
-	 *	            [HTTPS_symbols] => 0
-	 *	            [plain_symbols] => 17
-	 *	        )
-	 *
-	 *	    [URIs_per_domain] => Array
-	 *	        (
-	 *	            [http] => Array
-	 *	                (
-	 *	                    [domain] => Array
-	 *	                        (
-	 *	                            [0] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => data.ordnancesurvey.co.uk
-	 *	                                )
-	 *
-	 *	                            [1] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => dbpedia.org
-	 *	                                )
-	 *
-	 *	                            [2] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => yago-knowledge.org
-	 *	                                )
-	 *
-	 *	                        )
-	 *
-	 *	                    [base+TLD] => Array
-	 *	                        (
-	 *	                            [0] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => co.uk
-	 *	                                )
-	 *
-	 *	                            [1] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => dbpedia.org
-	 *	                                )
-	 *
-	 *	                            [2] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => yago-knowledge.org
-	 *	                                )
-	 *
-	 *	                        )
-	 *
-	 *	                    [TLD] => Array
-	 *	                        (
-	 *	                            [0] => Array
-	 *	                                (
-	 *	                                    [size] => 1
-	 *	                                    [domain] => uk
-	 *	                                )
-	 *
-	 *	                            [1] => Array
-	 *	                                (
-	 *	                                    [size] => 2
-	 *	                                    [domain] => org
-	 *	                                )
-	 *
-	 *	                        )
-	 *
-	 *	                )
-	 *
-	 *	            [https] => Array
-	 *	                (
-	 *	                    [domain] => Array()
-	 *
-	 *	                    [base+TLD] => Array()
-	 *
-	 *	                    [TLD] => Array()
-	 *
-	 *	                )
-	 *
-	 *	        )
-	 *
-	 *	    [warnings] => Array
-	 *	        (
-	 *	            [singleton_bundle_symbols] => Array
-	 *	                (
-	 *	                    [0] => aaa
-	 *	                    [1] => maths
-	 *	                    [2] => nappy
-	 *	                    [3] => pavement
-	 *	                    [4] => rubbish
-	 *	                    [5] => trainers
-	 *	                )
-	 *
-	 *	        )
-	 *
-	 *	    [errors] => Array
-	 *	        (
-	 *	            [canons_without_symbols] => Array
-	 *	                (
-	 *	                    [0] => aaa
-	 *	                    [1] => crisps
-	 *	                    [2] => http://data.ordnancesurvey.co.uk/id/7000000000037256
-	 *	                    [3] => maths
-	 *	                    [4] => nappy
-	 *	                    [5] => pavement
-	 *	                    [6] => petrol
-	 *	                    [7] => rubbish
-	 *	                    [8] => test
-	 *	                    [9] => trainers
-	 *	                )
-	 *
-	 *	        )
-	 *
-	 *	)
-	 * ```
-	 *
-	 *
+     *
+     *
+     * EXAMPLE OUTPUT:
+     *  ```
+     * Array
+     *  (
+     *      [meta] => Array
+     *          (
+     *              // This is an example for a MySQL database
+     *              // Anything can be in this section, depending on the store
+     *              [store_name] => table1
+     *              [database_name] => testdb
+     *          )
+     *
+     *      [rows] => 20
+     *      [basic] => Array
+     *          (
+     *              [symbols] => 20
+     *              [bundles] => 10
+     *              [average_symbols_per_bundle] => 2
+     *              [median_bundle_size] => 1
+     *              [mode_bundle_size] => 1
+     *          )
+     *
+     *      [bundle_size_count] => Array
+     *          (
+     *              [0] => Array
+     *                  (
+     *                      [size] => 1
+     *                      [count] => 6
+     *                  )
+     *
+     *              [1] => Array
+     *                  (
+     *                      [size] => 0
+     *                      [count] => 2
+     *                  )
+     *
+     *              [2] => Array
+     *                  (
+     *                      [size] => 2
+     *                      [count] => 2
+     *                  )
+     *
+     *          )
+     *
+     *      [symbols_type] => Array
+     *          (
+     *              [HTTP_symbols] => 3
+     *              [HTTPS_symbols] => 0
+     *              [plain_symbols] => 17
+     *          )
+     *
+     *      [URIs_per_domain] => Array
+     *          (
+     *              [http] => Array
+     *                  (
+     *                      [domain] => Array
+     *                          (
+     *                              [0] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => data.ordnancesurvey.co.uk
+     *                                  )
+     *
+     *                              [1] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => dbpedia.org
+     *                                  )
+     *
+     *                              [2] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => yago-knowledge.org
+     *                                  )
+     *
+     *                          )
+     *
+     *                      [base+TLD] => Array
+     *                          (
+     *                              [0] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => co.uk
+     *                                  )
+     *
+     *                              [1] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => dbpedia.org
+     *                                  )
+     *
+     *                              [2] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => yago-knowledge.org
+     *                                  )
+     *
+     *                          )
+     *
+     *                      [TLD] => Array
+     *                          (
+     *                              [0] => Array
+     *                                  (
+     *                                      [size] => 1
+     *                                      [domain] => uk
+     *                                  )
+     *
+     *                              [1] => Array
+     *                                  (
+     *                                      [size] => 2
+     *                                      [domain] => org
+     *                                  )
+     *
+     *                          )
+     *
+     *                  )
+     *
+     *              [https] => Array
+     *                  (
+     *                      [domain] => Array()
+     *
+     *                      [base+TLD] => Array()
+     *
+     *                      [TLD] => Array()
+     *
+     *                  )
+     *
+     *          )
+     *
+     *      [warnings] => Array
+     *          (
+     *              [singleton_bundle_symbols] => Array
+     *                  (
+     *                      [0] => aaa
+     *                      [1] => maths
+     *                      [2] => nappy
+     *                      [3] => pavement
+     *                      [4] => rubbish
+     *                      [5] => trainers
+     *                  )
+     *
+     *          )
+     *
+     *      [errors] => Array
+     *          (
+     *              [canons_without_symbols] => Array
+     *                  (
+     *                      [0] => aaa
+     *                      [1] => crisps
+     *                      [2] => http://data.ordnancesurvey.co.uk/id/7000000000037256
+     *                      [3] => maths
+     *                      [4] => nappy
+     *                      [5] => pavement
+     *                      [6] => petrol
+     *                      [7] => rubbish
+     *                      [8] => test
+     *                      [9] => trainers
+     *                  )
+     *
+     *          )
+     *
+     *  )
+     * ```
+     *
+     *
      *
      * @return mixed[] The array wih the results in
      */
     public function analyse();
-
-
-
-
 }

@@ -22,6 +22,7 @@ body.error h4 { margin-top: 40px; }
 pre.white { background: transparent; border: 0; padding: 0; margin: 20px 0; }
 .centered { text-align: center; }
 .right { text-align: right; }
+table td.w50, table th.w50 { width:50%; }
 
 /* nav bar */
 .navbar { min-height: 70px; padding-top: 10px; margin-bottom: 0px; }
@@ -70,6 +71,9 @@ main > div.container > *:last-child { margin-bottom: 0; }
 div.alt-formats { float: right; text-align: right; }
 div.alt-formats a { background: #aaa; }
 div.alt-formats a:hover { background: #3498db; }
+div.alt-formats a.current { background: #888; cursor:default; }
+
+.list-group { margin-bottom: 0; }
 
 /* API pages */
 .panel-api .panel-heading { cursor: pointer; }
@@ -82,3 +86,17 @@ div.alt-formats a:hover { background: #3498db; }
 .panel-api input[type="submit"] { width: auto; float: left; }
 .panel-api textarea { margin-bottom: 5px; min-height: 100px; }
 ul li span.label { position: absolute; margin: 2px 0 0 10px; }
+
+.no-margin-top{padding-top:0;margin-top:0;}
+
+.pagination { float:left; margin:0; }
+.pagination .label.page { background: #eee; border: 1px solid #888; color: #888;}
+.pagination .label.page:hover { background: #3498db; color:#fff; }
+.pagination .label.page:active { background: #3498db; color:#fff; }
+.pagination .label.page.current { background: #888; color:#fff; cursor:default; }
+
+#content .pageActions { margin-bottom: 3em; }
+
+ul.table { margin:0; padding:0; }
+ul.table li { vertical-align: middle; border-color: inherit; }
+ul.table li { padding: 8px; line-height: 1.42857143; vertical-align: top; border-top: 1px solid #ddd; }

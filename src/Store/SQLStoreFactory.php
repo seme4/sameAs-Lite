@@ -39,78 +39,83 @@ namespace SameAsLite;
  * Class creates an SQL Store from a DSN instead of an option array
  * TODO: INCOMPLETE
  */
-class SQLStoreFactory {
+class SQLStoreFactory
+{
 
 
-	/**
-	 * Constructor to prevent class from instantiation
-	 */
-	private function __construct(){}
+    /**
+     * Constructor to prevent class from instantiation
+     */
+    private function __construct()
+    {
+    }
 
 
-	/**
-	 * TODO: complete this function (does not work great with sqlite)
-	 *
-	 * @param string $name     The name of the store
-	 * @param string $dsn      The DSN used to create the \PDO object
-	 * @param array  $options  Options
-	 *
-	 * @throws \Exception If the DSN is not compatable with the Store
-	 */
-	public static function create($name, $dsn, array $options = array()){
-		throw new \Exception('CLASS NOT COMPLETE, DO NOT USE');
+    /**
+     * TODO: complete this function (does not work great with sqlite)
+     *
+     * @param string $name    The name of the store
+     * @param string $dsn     The DSN used to create the \PDO object
+     * @param array  $options Options
+     *
+     * @throws \Exception If the DSN is not compatable with the Store
+     */
+    public static function create($name, $dsn, array $options = array())
+    {
+        throw new \Exception('CLASS NOT COMPLETE, DO NOT USE');
 
-		// Get the subclasses of MySQL
-		$subclasses = self::getSubclassesOf('Store\SQLStore');
+        // Get the subclasses of MySQL
+        $subclasses = self::getSubclassesOf('Store\SQLStore');
 
-		// Split DSN
-		list($prefix, $settingsString) = explode(':' $dsn);
+        // Split DSN
+        list($prefix, $settingsString) = explode(':' $dsn);
 
-		// Get the settings
-		$classOptions = null;
-		$class = null;
-		while(!isset($class) || count($subclasses) > 0){
-			$c = array_pop($subclasses);
-			$s = $c::getFactorySettings();
-			if($s['dsn_prefix'] === $prefix)){
-				$class = $c;
-				$classOptions = $s;
-			}
-		}
+        // Get the settings
+        $classOptions = null;
+        $class = null;
+        while (!isset($class) || count($subclasses) > 0) {
+            $c = array_pop($subclasses);
+            $s = $c::getFactorySettings();
+            if ($s['dsn_prefix'] === $prefix) {
+                )
+                $class = $c;
+                $classOptions = $s;
+            }
+        }
 
-		if(!isset($class)){
-			throw new \Exception('No class found to handle the given DSN');
-		}
+        if (!isset($class)) {
+            throw new \Exception('No class found to handle the given DSN');
+        }
 
-		$settings = [];
-		array_walk(explode(':', $settingsString), function($i){
-			list($a, $b) = explode('=', $i);
-			$settings[$a] = $b;
-		});
+        $settings = [];
+        array_walk(explode(':', $settingsString), function ($i) {
+            list($a, $b) = explode('=', $i);
+            $settings[$a] = $b;
+        });
 
-		
+        
 
-	}
-
-
-
+    }
 
 
-	/**
-	 * Returns the subclasses of a given parent class
-	 * Taken from http://stackoverflow.com/questions/3470008/how-to-obtain-all-subclasses-of-a-class-in-php
-	 *
-	 * @param mixed $parent Class name of parent class
-	 * @return string[] Array of classes that are a subclass of $parent
-	 */
-	private static function getSubclassesOf($parent) {
-	    $result = array();
-	    foreach (get_declared_classes() as $class) {
-	        if (is_subclass_of($class, $parent))
-	            $result[] = $class;
-	    }
-	    return $result;
-	}
 
+
+
+    /**
+     * Returns the subclasses of a given parent class
+     * Taken from http://stackoverflow.com/questions/3470008/how-to-obtain-all-subclasses-of-a-class-in-php
+     *
+     * @param mixed $parent Class name of parent class
+     * @return string[] Array of classes that are a subclass of $parent
+     */
+    private static function getSubclassesOf($parent)
+    {
+        $result = array();
+        foreach (get_declared_classes() as $class) {
+            if (is_subclass_of($class, $parent)) {
+                $result[] = $class;
+            }
+        }
+        return $result;
+    }
 }
-

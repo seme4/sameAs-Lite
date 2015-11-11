@@ -38,7 +38,8 @@ namespace SameAsLite\Store;
 /**
  * Store for SQLite databases
  */
-class SQLiteStore extends \SameAsLite\Store\SQLStore {
+class SQLiteStore extends \SameAsLite\Store\SQLStore
+{
 
 
     /** @var $dbLocation The location of the database, or false if in memory */
@@ -54,55 +55,66 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
 
 
     // TODO
-    //public static function getFactorySettings(){return [];}
+    // public static function getFactorySettings(){return [];}
 
 
 
 
     /**
-     * {@inheritDoc}
+     * Set default options (store location) of the application
+     * @deprecated
+     *
+     * @param array $options Array with options from the config.ini file
      */
-    public static function setDefaultOptions(array $options){
+    public static function setDefaultOptions(array $options)
+    {
         self::$defaultOptions = $options;
     }
 
 
     /**
-     * {@inheritDoc}
+     * Set default options (store location) of the application
+     *
+     * @returns array self::$availableOptions Stored options
      */
-     public static function getAvailableOptions(){
+    public static function getAvailableOptions()
+    {
         return self::$availableOptions;
-     }
+    }
 
 
     /*
-     * This is the constructor for a SameAs Lite SQLite store, validates and saves
-     * settings. Once a Store object is created, call the connect() function to
-     * establish connection to the underlying database.
-     *
-     * @param string $location  Location of the database file, if not supplied the database will be loaded into memory
-     *
-     * @throws \InvalidArgumentException If any parameters are deemed invalid
-     */
-    // TIHNS
+        * This is the constructor for a SameAs Lite SQLite store, validates and saves
+        * settings. Once a Store object is created, call the connect() function to
+        * establish connection to the underlying database.
+        *
+        * @param string $location  Location of the database file,
+        *    if not supplied the database will be loaded into memory
+        *
+        * @throws \InvalidArgumentException If any parameters are deemed invalid
+    */
 
     /**
      * Constructor takes the options for the SQLite store:
      * location  - The location of the DB file or null if stored in memory (optional)
      *
+     * @param string $name    Name of the option
+     * @param array  $options Options
+     *
      * @throws \InvalidArgumentException If any parameters are deemed invalid
      */
-    public function __construct($name, array $options = array()){
-        if(is_array(self::$defaultOptions)){
+    public function __construct($name, array $options = array())
+    {
+        if (is_array(self::$defaultOptions)) {
             // Merge arrays to get user defaults
             $options = array_merge(self::$defaultOptions, $options);
         }
 
         // Construct dsn string
         $dsn = 'sqlite:';
-        if(isset($options['location']) && !!$options['location']){
+        if (isset($options['location']) && !!$options['location']) {
             $dsn .= $options['location'];
-        }else{
+        } else {
             $dsn .= ':memory:';
             $options['location'] = false;
         }
@@ -124,13 +136,14 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     /**
      * {@inheritDoc}
      */
-    public function connect(){
+    public function connect()
+    {
         parent::connect();
 
         // For debugging and sanity, make PDO report any problems, not fail silently
         $this->pdoObject->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-        if(!$this->isInit()){
+        if (!$this->isInit()) {
             $this->init(); // Init the database if required
         }
     }
@@ -142,8 +155,9 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
      *
      * @throws \Exception When store cannot be created
      */
-    public function init(){
-        // Attempt to create the tables in the given DB     
+    public function init()
+    {
+        // Attempt to create the tables in the given DB
 
         // try to create tables for this store, if they don't exist
         try {
@@ -154,7 +168,7 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
                 ON {$this->getTableName()} (canon);";
 
             $this->pdoObject->exec($sql);
-        }catch(\PDOException $e) {
+        } catch (\PDOException $e) {
             throw new \Exception(
                 'Failed to create Store with name ' . $this->storeName .
                 $e->getMessage()
@@ -166,7 +180,8 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     /**
      * {@inheritDoc}
      */
-    public function isInit(){
+    public function isInit()
+    {
         $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='{$this->getTableName()}'";
         $a = $this->pdoObject->query($sql)->fetchAll();
         return count($a) > 0;
@@ -177,7 +192,8 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     /**
      * {@inheritDoc}
      */
-    public function deleteStore(){
+    public function deleteStore()
+    {
         $sql = "DROP INDEX IF EXISTS `{$this->getTableName()}_idx`";
         $this->pdoObject->exec($sql);
         $sql = "DROP TABLE IF EXISTS `{$this->getTableName()}`";
@@ -189,18 +205,63 @@ class SQLiteStore extends \SameAsLite\Store\SQLStore {
     /**
      * {@inheritDoc}
      */
-    public function emptyStore(){
-        try{
+    public function emptyStore()
+    {
+        try {
             $sql = "DELETE FROM `{$this->getTableName()}`";
             $this->pdoObject->exec($sql);
         } catch (\PDOException $e) {
             $this->error("Database failure to empty store", $e);
         }
+
         /*
-        Just recreate table instead?
-        $this->deleteStore();
-        $this->init();
+            Just recreate table instead?
+            $this->deleteStore();
+            $this->init();
         */
+
+    }
+
+
+
+    /**
+     * To order the results alphabetically, irregardless of the case,
+     * SQLite requires the COLLATE NOCASE keyword in the query
+     */
+    protected function replaceQueryOrdering($string)
+    {
+         // return preg_replace('~(ORDER\s+BY\s+`?.+`?)\s+([ASC|DESC]?)~iU', '$1 COLLATE NOCASE $2', $string);
+        $string = preg_replace('~(ORDER BY|,)(\s+\S+)\s+(?=ASC|DESC)~iU', ' $1$2 COLLATE NOCASE ', $string);
+        return $string;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function getQuerySymbolString($symbolId)
+    {
+        return $this->replaceQueryOrdering(parent::getQuerySymbolString($symbolId));
+    }
+    /**
+     * {@inheritDoc}
+     */
+    protected function getSearchString($string)
+    {
+        return $this->replaceQueryOrdering(parent::getSearchString($string));
+    }
+    /**
+     * {@inheritDoc}
+     */
+    protected function getAllCanonsString()
+    {
+        return $this->replaceQueryOrdering(parent::getAllCanonsString());
+    }
+    /**
+     * {@inheritDoc}
+     */
+    protected function getDumpPairsString()
+    {
+        return $this->replaceQueryOrdering(parent::getDumpPairsString());
     }
 
 }

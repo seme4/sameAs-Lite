@@ -5,12 +5,10 @@
 {% block body %}
 
 
-{% if list|length > 0 %}
-	<ul>
-		{% for item in list %}
-			<li>{{ item }}</li>
-		{% endfor %}
-	</ul>
+{% if list %}
+	<div id="result">
+		{{ list }}
+	</div>
 {% else %}
 	<p>No items found</p>
 {% endif %}

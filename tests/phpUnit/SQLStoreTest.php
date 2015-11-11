@@ -34,59 +34,62 @@
 
 namespace SameAsLite\Tests;
 
-require_once 'StoreTest.php';
+// require_once 'StoreTest.php';
+// use StoreTest;
+
 
 /**
  * PHPUnit tests for the \SameAsLite\Store\SQLStore subclasses.
  */
-abstract class SQLStoreTest extends StoreTest
+abstract class SQLStoreTest extends \SameAsLite\Tests\StoreTest
 {
 
-	/** @var \PDO $pdo The PDO object used by the store */
-	protected $pdo;
+    /** @var \PDO $pdo The PDO object used by the store */
+    protected $pdo;
 
 
-	/**
-	 * {@inheritDoc}
-	 */
-	protected function addPairToStore($symbol1, $symbol2){
-		// As the input is controled, we know $symbol1 is always the canon
-		$table = $this->store->getTableName();
-		$query = "INSERT INTO $table (`canon`, `symbol`) VALUES (:symbol1, :symbol2)";
+    /**
+     * {@inheritDoc}
+     */
+    protected function addPairToStore($symbol1, $symbol2)
+    {
+        // As the input is controled, we know $symbol1 is always the canon
+        $table = $this->store->getTableName();
+        $query = "INSERT INTO $table (`canon`, `symbol`) VALUES (:symbol1, :symbol2)";
 
-		$statement = $this->pdo->prepare($query);
-		$statement->execute([ ':symbol1' => $symbol1, ':symbol2' => $symbol2 ]);
-	}
-
-
-
-	/**
-	 * {@inheritDoc}
-	 */
-	protected function isPairInStore($symbol1, $symbol2){
-		$table = $this->store->getTableName();
-		$query = "SELECT COUNT(*) AS 'count' FROM $table WHERE `canon` = :symbol1 AND `symbol` = :symbol2";
-
-		$statement = $this->pdo->prepare($query);
-		$statement->execute([ ':symbol1' => $symbol1, ':symbol2' => $symbol2 ]);
-
-		$a = $statement->fetch(\PDO::FETCH_ASSOC);
-		return ($a['count'] > 0);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	protected function isSymbolInStore($symbol){
-		$table = $this->store->getTableName();
-		$query = "SELECT COUNT(*) as 'count' FROM $table WHERE `symbol` = :symbol";
-
-		$statement = $this->pdo->prepare($query);
-		$statement->execute([ ':symbol' => $symbol ]);
-
-		$a = $statement->fetch(\PDO::FETCH_ASSOC);
-		return ($a['count'] > 0);
-	}
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([ ':symbol1' => $symbol1, ':symbol2' => $symbol2 ]);
+    }
 
 
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function isPairInStore($symbol1, $symbol2)
+    {
+        $table = $this->store->getTableName();
+        $query = "SELECT COUNT(*) AS `count` FROM `$table` WHERE `canon` = :symbol1 AND `symbol` = :symbol2";
+
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([ ':symbol1' => $symbol1, ':symbol2' => $symbol2 ]);
+
+        $a = $statement->fetch(\PDO::FETCH_ASSOC);
+        return ($a['count'] > 0);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function isSymbolInStore($symbol)
+    {
+        $table = $this->store->getTableName();
+        $query = "SELECT COUNT(*) as `count` FROM `$table` WHERE `symbol` = :symbol";
+
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([ ':symbol' => $symbol ]);
+
+        $a = $statement->fetch(\PDO::FETCH_ASSOC);
+        return ($a['count'] > 0);
+    }
 }

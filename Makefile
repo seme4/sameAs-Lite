@@ -1,6 +1,6 @@
 C=/usr/bin/composer.phar
 
-.PHONY: docs dev libs tests
+.PHONY: docs tests
 
 default:
 	##
@@ -25,8 +25,8 @@ install-dev:
 
 checks:
 	# checking code style
-	-vendor/bin/phpcbf --standard=dev-tools/CodeStandard ./
-	-vendor/bin/phpcs  --standard=dev-tools/CodeStandard --colors --report-width=160 ./
+	-vendor/bin/phpcbf --ignore=vendor/*,dev-tools/*,components/* --extensions=js,php --standard=dev-tools/CodeStandard ./
+	-vendor/bin/phpcs  --ignore=vendor/*,dev-tools/*,components/* --extensions=js,php --standard=dev-tools/CodeStandard --colors --report-width=160 ./
 
 tests:
 	# run tests

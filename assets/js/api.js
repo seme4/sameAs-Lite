@@ -56,10 +56,16 @@ $(document).ready(function() {
         saveToStorage(panelId);
     });
 
-    $(".get-btn").click(function(e){
+    $(".get-btn").click(function (e) {
         // Set the sessionStorage value for this action (IE8+)
         var panelId = $(this).closest(".collapse").attr("id");
         saveToStorage(panelId);
+    });
+
+
+    $("form.api .input_format").on('change', function (e) {
+        var v = $(this).val().split('/')[1];
+        $(this).parents('form.api').find('span.input_format_span').text(v);
     });
 
 

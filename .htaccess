@@ -5,16 +5,23 @@ RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule . index.php [QSA,L]
 
+<IfModule mod_headers.c>
+# 2 weeks caching
+<FilesMatch "\.(jpg|png|gif)$">
+	Header set Cache-Control "max-age=1209600, public"
+</FilesMatch>
+<FilesMatch "\.(js|css)$">
+	Header set Cache-Control "max-age=1209600"
+</FilesMatch>
+Header set X-Powered-By "SameAs-Lite"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-Content-Type-Options "nosniff"
+Header set X-XSS-Protection "1;mode=block"
+Header set X-Permitted-Cross-Domain-Policies "master-only"
+</IfModule>
+
 ServerSignature Off
 Options -Indexes
-
-<Files config.ttl>
-  Order deny,allow
-  AuthType Basic
-  AuthName "Authentication Required"
-  AuthUserFile auth.htpasswd
-  Require valid-user
-</Files>
 
 <Files .htaccess>
   Order Allow,Deny

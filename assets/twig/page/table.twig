@@ -1,0 +1,36 @@
+{% extends "page.twig" %}
+
+{% block body %}
+
+<div id="result">
+	{% for table in tables %}
+		{% if table.title %}
+			<h3>{{ table.title }}</h3>
+		{% endif %}
+		<table class="table">
+			{% if table.headers %}
+				<thead>
+					<tr>
+						{% for header in table.headers %}
+							<th class="w50">{{ header }}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+			{% endif %}
+			<tbody>
+				{% for row in table.data %}
+					<tr>
+						{% for value in row %}
+							{% if value is not iterable %}
+							<td class="w50">{{ value }}</td>
+							{% endif %}
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endfor %}
+</div>
+
+
+{% endblock %}
