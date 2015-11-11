@@ -1355,7 +1355,7 @@ class WebApp
                 // add the alternate formats for ajax query and pagination buttons
                 $this->prepareWebResultView();
 
-                // fall through
+                // fall through !
 
             case 'text/tab-separated-values':
             case 'text/csv':
@@ -1369,6 +1369,21 @@ class WebApp
                 }
 
                 $this->outputTable(array($rows), $headers);
+
+                break;
+
+            case 'application/rdf+xml':
+            case 'text/turtle':
+            case 'application/x-turtle':
+
+                $out = array();
+                foreach ($results as $header => $value) {
+                     $out['stat:'.$header] = $value;
+                }
+
+                $storeurl = $this->app->request()->getURL() . $this->app->request()->getRootUri().'/datasets/' . urlencode($store);
+
+                $this->outputRDF($out, 'keyed', null, [ 'stat' => $storeurl ]);
 
                 break;
 
@@ -1490,7 +1505,7 @@ class WebApp
                     }
                 }
 
-                $this->outputArbitrary($out);
+                $this->outputRDF($out, 'list', 'eg:store');
 
                 break;
 
@@ -1568,6 +1583,10 @@ class WebApp
         }
     }
 
+
+
+
+
     /**
      * Output an HTML page
      *
@@ -1644,138 +1663,25 @@ class WebApp
         }
     }
 
-    /**
-     * Output data which is an keyed list of items, in the most appropriate
-     * MIME type
-     *
-     * @param array   $list          The items to output
-     * @param integer $status        HTTP status code
-     *
-     * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
-     * is not supported
-     */
-    protected function outputArbitrary(array $list = array(), $status = null)
-    {
-        // escaping for output
-        array_walk($list, '\SameAsLite\Helper::escapeInputArray');
-
-        if (!is_null($status)) {
-            $this->app->response->setStatus($status);
-        }//end if
-
-        switch ($this->mimeBest) {
-
-            case 'application/rdf+xml':
-            case 'text/turtle':
-            case 'application/x-turtle':
-
-                $domain = 'http://';
-                if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
-                    $domain = "https://";
-                }//end if
-                $domain .= $_SERVER["SERVER_NAME"];
-                if ($_SERVER["SERVER_PORT"] != "80") {
-                    $domain .= ":" . $_SERVER["SERVER_PORT"];
-                }//end if
-
-
-                // EasyRdf graph
-                $graph = new \EasyRdf_Graph();
-
-                foreach ($list as $key => $arr) {
-
-                    if (isset($arr['url'])) {
-                        $url = $arr['url'];
-                        unset($arr['url']);
-                    } else {
-                        $url = $domain . $_SERVER['REQUEST_URI'];
-                    }
-
-                    $resource = $graph->resource($url);
-
-                    if (is_array($arr)) {
-                        foreach ($arr as $predicate => $value) {
-                            if ($value) {
-                                if (strpos($value, 'http') === 0) {
-                                    $graph->addResource($resource, $predicate, $graph->resource(urldecode($value)));
-                                } else {
-                                    $graph->addLiteral($resource, $predicate, $value);
-                                }
-                            }
-                        }
-                    } else {
-                            if (strpos($arr, 'http') === 0) {
-                                $graph->addResource($resource, $key, $graph->resource(urldecode($arr)));
-                            } else {
-                                $graph->addLiteral($resource, $key, $arr);
-                            }
-                    }
-                }
-
-                if ($this->mimeBest === 'application/rdf+xml') {
-                    $format = 'rdf';
-                } else {
-                    $format = 'turtle';
-                }
-
-                $data = $graph->serialise($format);
-                //if (!is_scalar($data)) {
-                //    $data = var_export($data, true);
-                //}
-
-                $this->app->response->setBody(trim($data));
-
-                break;
-
-
-            case 'text/plain':
-
-                $this->app->response->setBody(print_r($list, true));
-
-                break;
-
-            case 'application/json':
-
-                $this->app->response->setBody(json_encode($list, JSON_PRETTY_PRINT)); // PHP 5.4+
-
-                break;
-
-            case 'text/html':
-            case 'application/xhtml+xml':
-
-                // add the alternate formats for ajax query and pagination buttons
-                $this->prepareWebResultView();
-
-                $list = array_map('\SameAsLite\Helper::linkify', $list); // Map array to linkify the contents
-
-                $this->app->render('page/output.twig', [
-                    'list' => '<pre>' . print_r($list, true) . '</pre>'
-                ]);
-
-                break;
-
-            default:
-                throw new Exception\ContentTypeException('Could not render list output as ' . $this->mimeBest);
-        }
-    }
-
 
     /**
      * Output data in RDF and Turtle format
      *
-     * @param array   $list      The items to output
-     * @param string  $format    The output format
-     * @param string  $predicate The predicate for the list
-     * @param integer $status    HTTP status code
+     * @param array   $data       The items to output
+     * @param string  $format     The output format
+     * @param string  $predicate  The predicate for the list
+     * @param string  $namespaces An associative array with the namespace, e.g. [ 'foaf' => 'http://xmlns.com/foaf/0.1/' ].
+     *                            Note that EasyRDF already adds the standard prefixes, such as dc, foaf, etc.
+     * @param integer $status     HTTP status code
      *
      * @uses \EasyRdf_Graph
      *
      * @throws \SameAsLite\Exception\ContentTypeException An exception may be thrown if the requested MIME type
      * is not supported
      */
-    protected function outputRDF(array $list = array(), $format = 'list', $predicate = 'owl:sameAs', $status = null)
+    protected function outputRDF(array $data = array(), $format = 'list', $predicate = 'owl:sameAs', array $namespaces = array(), $status = null)
     {
-        // escaping for output
+        // how to: escape
         // array_walk($list, '\SameAsLite\Helper::escapeInputArray');
 
         if (!is_null($status)) {
@@ -1788,36 +1694,58 @@ class WebApp
         if (!$symbol) {
             $symbol = $this->app->request()->params('symbol');
         }//end if
-        $symbol = ($symbol ? $symbol : false);
+        $symbol = ($symbol ? urldecode($symbol) : false);
         $store = ($this->store ? $this->store : false);
 
-
-        /*
-        // meta info
-        $domain = 'http://';
-        if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) {
-            $domain = "https://";
-        }//end if
-        $domain .= $_SERVER["SERVER_NAME"];
-        if ($_SERVER["SERVER_PORT"] != "80") {
-            $domain .= ":" . $_SERVER["SERVER_PORT"];
-        }//end if
-        */
+        $storeurl = $this->app->request()->getURL() . $this->app->request()->getRootUri().'/datasets/'.urlencode($store);
 
 
         // EASY RDF
 
         $graph = new \EasyRdf_Graph();
 
-        $result_block = $graph->newBNode();
 
-        //$meta_block = $graph->resource($this->app->request()->getURL() . $_SERVER['REQUEST_URI']);
-        $meta_block = $graph->resource($graph->resource('_:' . $result_block->getBNodeId()));
+        //-----------
+        // namespaces
+        // ----------
+        if (!empty($namespaces)) {
+            foreach ($namespaces as $prefix => $uri) {
+                \EasyRdf_Namespace::set($prefix, $uri);
+            }
+        }
+
+
+        //-------------
+        // result block
+        // ------------
+
+        if ($symbol && strpos($symbol, 'http') === 0) {
+
+            $graph_uri = $meta_uri = $graph->resource($symbol);
+
+        } else {
+
+            $graph_uri = $graph->newBNode();
+        }
+
+        $result_block = $graph->resource($graph_uri);
+
+
+        //-------------
+        // meta block
+        // ------------
+
+        $meta_uri = $this->app->request()->getURL() . $_SERVER['REQUEST_URI'];
+
+        $meta_block = $graph->resource($meta_uri);
+
+        // if this part is added, EasyRDF will merge the result block with the meta block
+        // $meta_block->add('foaf:primaryTopic', $graph->resource( '_:' . $result_block->getBNodeId() ));
 
         $meta_block->set('dc:creator', 'sameAsLite');
         // TODO: maybe also add info about store (storename, URI)?
         if ($store) {
-            $meta_block->set('dc:source', $graph->resource($this->app->request()->getURL() . $this->app->request()->getRootUri().'/datasets/'.urlencode($store)));
+            $meta_block->set('dc:source', $graph->resource($storeurl));
         }
         // $meta_block->set('dc:title', 'Co-references from sameAs.org for ' . $symbol);
         if (isset($this->appOptions['license']['url'])) {
@@ -1825,68 +1753,86 @@ class WebApp
         }
 
         // list
-        if ($format !== 'list') {
-            //sameAs relationships
-            if (strpos($symbol, 'http') === 0) {
-                $result_block = $graph->resource($symbol);
-                $meta_block->add('foaf:primaryTopic', $graph->resource(urldecode($symbol)));
-            } else {
-                $result_block = $graph->newBNode();
-                $meta_block->add('foaf:primaryTopic', $graph->resource('_:' . $result_block->getBNodeId()));
-            }
-            $predicate = 'owl:sameAs';
-            foreach ($list as $s) {
-                if (strpos($s, 'http') === 0) {
+        if ($format === 'list') {
+            // simple list
+
+            foreach ($data as $str) {
+                if (strpos($str, 'http') === 0) {
                     // resource
-                    $result_block->add($predicate, $graph->resource(urldecode($s)));
+                    $result_block->add($predicate, $graph->resource(urldecode($str)));
                 } else {
                     // literal values - not technically correct, because sameAs expects a resource
                     // but validates in W3C Validator
-                    $result_block->add($predicate, $s);
+                    $result_block->add($predicate, $str);
                 }
             }
+
+        } elseif ($format === 'table') {
+            // table output
+
+            // data is in the form of:
+            // [ [header1, header2, ...], [row1_1, row1_2, ...], [row2_1, row2_2, ...] ]
+
+            $preds = array_shift($data);
+
+            foreach ($data as $arr) {
+
+                // if (isset($val['url'])) {
+                //     $url = $val['url'];
+                //     unset($val['url']);
+                // } else {
+                //     $url = $graph_uri;
+                // }
+
+                $resources = array();
+
+                for ($i = 0, $s = count($arr); $i < $s; $i++) {
+
+                    $resources[$i] = $graph->resource($storeurl); // TODO
+
+                    for ($k = 0, $t = count($preds); $k < $t; $k++) {
+
+                        if (strpos($arr[$i], 'http') === 0) {
+                            // resource
+                            $graph->addResource($resources[$i], $preds[$k], $graph->resource(urldecode($arr[$i])));
+                        } else {
+                            // literal
+                            $graph->addLiteral($resources[$i], $preds[$k], urldecode($arr[$i]));
+                        }
+
+                    }
+                }
+
+            }
+
         } else {
-            //simple list
+            // keyed = 'arbitrary' output format (e.g. for analysis)
 
+            // Accepts data in the form of:
+            // [ [ $key1 => $value1 ], [ $key2 => $value2 ], [...] ]
+            // Will take key as predicate and
+            // value as resource (if url) or literal
 
-            $ns = array();
-            if (strpos($predicate, ':') !== false) {
+            $resource = $graph->resource($storeurl);
 
-                // create the namespace from the incoming predicate (<ns>:<predicate>)
-                $ns = explode(':', $predicate);
-                $ns['ns'] = $ns[0];
-                $ns['slug'] = $ns[1];
+            foreach ($data as $key => $value) {
 
-            } elseif (isset($this->appOptions['namespace']['prefix']) && isset($this->appOptions['namespace']['slug'])) {
-            // fallback: namespace from config.ini
-
-                $ns['ns'] = $this->appOptions['namespace']['prefix'];
-                // remove slashes
-                $ns['slug'] = trim($this->appOptions['namespace']['slug'], '/ ');
-
-            } else {
-
-                throw new \Exception("Expecting namespace setting in config.ini or $predicate parameter to be namespaced as <ns>:<predicate>");
-
-            }
-
-
-            \EasyRdf_Namespace::set($ns['ns'], 'http://sameas.org/' . $ns['slug'] . '/');
-            // $result_block = $graph->resource($this->app->request()->getURL() . '/datasets/' . $this->store. '/' . $ns['slug'] . '/');
-
-
-
-            foreach ($list as $s) {
-                if (strpos($s, 'http') === 0) {
+                if (strpos($value, 'http') === 0) {
                     // resource
-                    $result_block->add($predicate, $graph->resource(urldecode($s)));
+                    $graph->addResource($resource, $key, $graph->resource(urldecode($value)));
                 } else {
-                    // literal values - not technically correct, because sameAs expects a resource
-                    // but validates in W3C Validator
-                    $result_block->add($predicate, $s);
+                    // literal
+                    $graph->addLiteral($resource, $key, $value);
                 }
+
             }
+
         }
+
+
+        // ------
+        // output
+        // ------
 
         if ($this->mimeBest === 'application/rdf+xml') {
             $outFormat = 'rdf';
@@ -2072,7 +2018,9 @@ class WebApp
             case 'application/rdf+xml':
             case 'text/turtle':
             case 'application/x-turtle':
-                $this->outputArbitrary(array_merge($headers, $data));
+
+                $this->outputRDF(array_merge([$headers], $data), 'table', 'eg:predicate'); // TODO
+
                 break;
 
             case 'application/json':
