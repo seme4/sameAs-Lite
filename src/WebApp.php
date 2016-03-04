@@ -966,8 +966,8 @@ class WebApp
 
         // from web query, the body is this: string(17) "_METHOD=PUT&body="
         // filter out the _METHOD parameter
-        $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
-        $body = urldecode($body);
+        // $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
+        // $body = urldecode($body);
 
         if (empty($body)) {
 
@@ -975,28 +975,9 @@ class WebApp
             $this->emptyStore($store);
 
         } else {
+
             // PUT request with non-empty body => update (replace) the contents of the store
-
-            // TODO - need to detect the type of the incoming data
-            die('TODO (no data inserted)');
-
-
-
-
-
-
-
-
-
-
-            // determine the type of incoming data
-            $contentType = $this->app->request->getContentType(); // from web: application/x-www-form-urlencoded"
-            var_dump($contentType);die;
-
-
-            $body = json_decode($body);
-
-
+            $this->assertPairs($store);
 
         }
 
