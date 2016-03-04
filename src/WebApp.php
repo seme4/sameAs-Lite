@@ -1154,7 +1154,7 @@ class WebApp
             // get the content type - first try the spoof, then the HTTP Accept header
             $input_format = strtolower(isset($match[1]) ? rtrim(urldecode($match[1]), '&') : $this->app->request->getMediaType());
 
-            if (!$input_format || !in_array($input_format, array('text/csv', 'application/json', 'text/tsv'))) {
+            if (!$input_format || !in_array($input_format, array('text/csv', 'application/json', 'text/tab-separated-values'))) {
                 throw new Exception\InvalidRequestException('Only csv, tsv or json are accepted for POST and PUT requests.');
             }
 
@@ -1165,7 +1165,7 @@ class WebApp
 
                     break;
 
-                case 'text/tsv':
+                case 'text/tab-separated-values':
 
                     $this->stores[$store]->assertDelimited($body, "\t");
 
