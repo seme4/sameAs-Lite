@@ -144,8 +144,15 @@ var app = {
                             }
 
                             // get the table rows
-
-                            if (typeof data === 'object') {
+                            if (data instanceof Array) {
+                                s = data.length;
+                                for (i = 0; i < s; i++){
+                                    data_rows[i] = [];
+                                    $.each(header_values, function() {
+                                        data_rows[i].push(data[i][this]);
+                                    });
+                                }
+                            } else {
                                 Object.size = function(obj) {
                                     var size = 0, key;
                                     for (key in obj) {
@@ -159,15 +166,6 @@ var app = {
                                 $.each(data, function() {
                                     data_rows[0].push(this.toString());
                                 });
-
-                            } else {
-                                s = data.length;
-                                for (i = 0; i < s; i++){
-                                    data_rows[i] = [];
-                                    $.each(header_values, function() {
-                                        data_rows[i].push(data[i][this]);
-                                    });
-                                }
                             }
 
 
