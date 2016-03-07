@@ -966,8 +966,8 @@ class WebApp
 
         // from web query, the body is this: string(17) "_METHOD=PUT&body="
         // filter out the _METHOD parameter
-        $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
-        $body = urldecode($body);
+        // $body = preg_replace('~_METHOD=.+&body=~i', '', $body);
+        // $body = urldecode($body);
 
         if (empty($body)) {
 
@@ -975,28 +975,9 @@ class WebApp
             $this->emptyStore($store);
 
         } else {
+
             // PUT request with non-empty body => update (replace) the contents of the store
-
-            // TODO - need to detect the type of the incoming data
-            die('TODO (no data inserted)');
-
-
-
-
-
-
-
-
-
-
-            // determine the type of incoming data
-            $contentType = $this->app->request->getContentType(); // from web: application/x-www-form-urlencoded"
-            var_dump($contentType);die;
-
-
-            $body = json_decode($body);
-
-
+            $this->assertPairs($store);
 
         }
 
@@ -1154,7 +1135,7 @@ class WebApp
             // get the content type - first try the spoof, then the HTTP Accept header
             $input_format = strtolower(isset($match[1]) ? rtrim(urldecode($match[1]), '&') : $this->app->request->getMediaType());
 
-            if (!$input_format || !in_array($input_format, array('text/csv', 'application/json', 'text/tsv'))) {
+            if (!$input_format || !in_array($input_format, array('text/csv', 'application/json', 'text/tab-separated-values'))) {
                 throw new Exception\InvalidRequestException('Only csv, tsv or json are accepted for POST and PUT requests.');
             }
 
@@ -1165,7 +1146,7 @@ class WebApp
 
                     break;
 
-                case 'text/tsv':
+                case 'text/tab-separated-values':
 
                     $this->stores[$store]->assertDelimited($body, "\t");
 
